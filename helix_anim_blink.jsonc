@@ -1,0 +1,42 @@
+{
+    /*Simple blink animation test using custom animation system DNA Animator*/
+    "id": "blink", // the name of the animation. There can only be one animation of any id.
+    "length": 1000, // the length in miliseconds.
+    "loop": false, //whether or not the animation loops. Duh.
+    "tracks": { // each part of the eyes that get animated and when/how they get animated.
+        "left_eye.scale.y": [ // the scale of the left eye on the Y-axis. (vertically shrink/grow)
+            {
+                "time": 0,
+                "value": 1,
+                "easing": "linear" // constant/robotic speed
+            },
+            {
+                "time": 20,
+                "value": 0,
+                "easing": "ease-out" // starts fast -> slows down
+            },
+            {
+                "time": 40,
+                "value": 1,
+                "easeing": "ease-in" // starts slow -> speeds up
+            }
+        ],
+        "right_eye.scale.y": [
+            {
+                "time": 0,
+                "value": 1,
+                "easing": "linear"
+            },
+            {
+                "time": 20,
+                "value": 0,
+                "easing": "ease-out"
+            },
+            {
+                "time": 40,
+                "value": 1,
+                "easeing": "ease-in"
+            }
+        ]
+    }
+}
