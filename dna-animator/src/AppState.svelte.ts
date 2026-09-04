@@ -17,15 +17,27 @@ class AppState {
     config = $state(this.constAppConfig); //whatever should/needs to be persistant between sessions.
     loading = $state(true);
     loadingErrorMessage: string | null = $state(null);
-    currentPage: Page = $state(this.GetCurrentPage());
+    currentPage: Page = $state(Page.Home);
+    
+
+    constructor() {
+        $effect.root(() => {
+            $effect(() => {
+                
+            });
+        });
+    }
 
     GetCurrentPage() {
         switch (page.url.pathname) {
             case "/":
+                this.currentPage = Page.Home;
                 return Page.Home;
             case "/rig-tester":
+                this.currentPage = Page.RigPlayground;
                 return Page.RigPlayground;
             default:
+                this.currentPage = Page.UNKNOWN;
                 return Page.UNKNOWN;
         }
     }

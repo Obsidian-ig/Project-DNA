@@ -1,0 +1,14 @@
+directories:
+  output: dist
+  buildResources: build
+appId: com.obsidiansoftware.dna-animator
+productName: DNA Animator
+files:
+  - filter:
+      - out/**/*
+      - build/**/*
+      - package.json
+win:
+  target: nsis
+  icon: src/main/favicon.ico
+electronVersion: 44.2.0

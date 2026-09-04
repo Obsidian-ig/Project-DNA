@@ -2,7 +2,11 @@
     import { appState } from "../AppState.svelte.ts";
 </script>
 
-<h1>Helix Rig Tester And Playground</h1>
+<svelte:head>
+    <title>Home | DNA Animator</title>
+</svelte:head>
+
+<h1>Home</h1>
 <p>Current Theme: {appState.config.theme}</p>
 <button onclick={() => {
     let themeToChangeTo = appState.config.theme;

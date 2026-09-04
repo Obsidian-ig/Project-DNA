@@ -1,29 +1,52 @@
 {
 	"name": "dna-animator",
+	"productName": "DNA Animator",
+	"description": "Animation Tool For Helix Rigs",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
+	"main": "out/main/index.js",
+	"trustedDependencies": [
+		"electron"
+	],
 	"scripts": {
-		"dev": "vite dev",
-		"build": "vite build",
-		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "prettier --check . && eslint .",
-		"format": "prettier --write .",
-		"test:unit": "vitest",
-		"test": "npm run test:unit -- --run"
+		"dev:renderer": "vite dev",
+		"dev:main": "tsup src/main/index.ts src/main/preload.ts --out-dir out/main --format esm --watch --external electron --publicDir src/main",
+		"dev": "concurrently --kill-others --success first \"bun run dev:renderer\" \"bun run dev:main\" \"bunx electron .\"",
+		"build:renderer": "vite build",
+		"build:main": "tsup src/main/index.ts src/main/preload.ts --out-dir out/main --format esm --external electron --publicDir src/main",
+		"package": "bun run build:renderer && bun run build:main && electron-builder"
+	},
+	"build": {
+		"appId": "com.obsidiansoftware.dna-animator",
+		"productName": "DNA Animator",
+		"directories": {
+			"output": "dist"
+		},
+		"files": [
+			"out/**/*",
+			"build/**/*",
+			"package.json"
+		],
+		"win": {
+			"target": "nsis",
+			"icon": "src/main/favicon.ico"
+		}
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
 		"@sveltejs/adapter-auto": "^7.0.1",
+		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@tailwindcss/forms": "^0.5.11",
 		"@tailwindcss/vite": "^4.3.0",
 		"@types/node": "^26",
 		"@vitest/browser-playwright": "^4.1.8",
+		"concurrently": "^10.0.5",
+		"electron": "^44.2.0",
+		"electron-builder": "^26.15.3",
+		"electron-vite": "^5.0.0",
 		"eslint": "^10.4.1",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.19.0",
@@ -35,6 +58,7 @@
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
 		"tailwindcss": "^4.3.0",
+		"tsup": "^8.5.1",
 		"typescript": "^6.0.3",
 		"typescript-eslint": "^8.60.1",
 		"vite": "^8.0.16",

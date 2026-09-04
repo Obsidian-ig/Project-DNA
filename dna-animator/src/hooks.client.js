@@ -9,6 +9,7 @@ if (configObject) {
     console.log("Successfully retrieved appConfig from local storage!");
     appState.ImportConfigFromLocalStorage(configObject);
     appState.UpdateTheme();
+    appState.currentPage = appState.GetCurrentPage();
     appState.MarkAsDoneLoading();
 } else {
     console.log("Error when retrieving appConfig from local storage! Pulled Config: ", pulledConfig);
