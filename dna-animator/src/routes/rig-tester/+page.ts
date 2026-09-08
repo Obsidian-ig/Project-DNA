@@ -1,7 +1,6 @@
 import { appState, HeaderType, type PageConfig } from "../../AppState.svelte";
 
 export function load(): PageConfig {
-    appState.GetCurrentPage();
     return {
         title: "Rig Playground",
         header: {
@@ -33,8 +32,10 @@ export function load(): PageConfig {
                     {
                         name: "View",
                         options: [
+                            {label: "Toggle Rig Tree", id: "toggleRigTree"},
                             {label: "Toggle Properties Explorer", id: "togglePropertiesExplorer"},
-                            {label: "Toggle Draggable Indicators", id: "toggleDraggableIndicators"}
+                            {label: "Toggle Draggable Indicators", id: "toggleDraggableIndicators"},
+                            {label: "Toggle Sensors Simulation", id: "toggleSensorsSimulation"}
                         ]
                     },
                     {
@@ -42,7 +43,14 @@ export function load(): PageConfig {
                         options: [
                             {label: "Colors", id: "colors"},
                             {label: "Text & Font", id: "textAndFont"},
-                            {label: "Miscellaneous", id: "miscellaneous"}
+                            {label: "Miscellaneous", id: "miscellaneous"},
+                            {label: "Change Theme", id: "changeTheme"}
+                        ]
+                    },
+                    {
+                        name: "Device",
+                        options: [
+                            {label: "Toggle Device Live Preview", id: "toggleDeviceLivePreview"}
                         ]
                     }
                 ]

@@ -1,6 +1,5 @@
 /*This whole file is used for initialization.*/
 import { appState, Theme } from "./AppState.svelte";
-import { browser } from "$app/environment";
 
 console.log("App initializing...");
 let pulledConfig = localStorage.getItem("appConfig");
@@ -9,7 +8,6 @@ if (configObject) {
     console.log("Successfully retrieved appConfig from local storage!");
     appState.ImportConfigFromLocalStorage(configObject);
     appState.UpdateTheme();
-    appState.currentPage = appState.GetCurrentPage();
     appState.MarkAsDoneLoading();
     window.electronAPI.showWindow();
 } else {

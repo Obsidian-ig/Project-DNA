@@ -6,12 +6,6 @@ export enum Theme {
     Light,
     Dark
 }
-//all of the pages the user can visit
-export enum Page {
-    Home,
-    RigPlayground,
-    UNKNOWN
-}
 
 export enum HeaderType {
     Default,
@@ -44,8 +38,6 @@ class AppState {
     config = $state(this.constAppConfig); //whatever should/needs to be persistant between sessions.
     loading = $state(true);
     loadingErrorMessage: string | null = $state(null);
-    currentPage: Page = $state(Page.Home);
-    fullscreen = false;
 
     /*
     constructor() {
@@ -56,20 +48,6 @@ class AppState {
         });
     }
     */
-
-    GetCurrentPage() {
-        switch (page.url.pathname) {
-            case "/":
-                this.currentPage = Page.Home;
-                return Page.Home;
-            case "/rig-tester":
-                this.currentPage = Page.RigPlayground;
-                return Page.RigPlayground;
-            default:
-                this.currentPage = Page.UNKNOWN;
-                return Page.UNKNOWN;
-        }
-    }
     ImportConfigFromLocalStorage(config: { theme: Theme }) {
         this.config = config;
         console.log("Successfully imported config from local storage!");

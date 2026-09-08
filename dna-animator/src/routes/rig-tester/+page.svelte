@@ -1,9 +1,21 @@
 <!--RIG PLAYGROUND/TESTER-->
+<!--
+Ideas/Plans:
+-Rig Tree/Hierarchy Panel -> Shows all the components of the loaded rig in a hierarchy/tree style.
+-Selected tree component props panel -> shows all the properties of the selected item (scale, position, toggles, rotation, etc.)
+-Device Sensors Properties Panel -> Lets you simulate the devices sensors to make the rig behave a certain way
+-Rig preview -> Shows a 466x466 circular "display" simulation of what the rig would look like on the actual device
+-Live preview -> connects to the device via USB or Bluetooth and displays the rig on the device in real time.
+-Support third party rigs -> Start reworking the current rig "system" to allow for other rigs that people can make themselves
+-Rigs should have either .json, .jsonc, or .dna file types
+
+-->
+
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { appState, Theme } from '../../AppState.svelte.ts';
 	import {
-	Colors,
+		Colors,
 		Copy,
 		Cut,
 		Find,
@@ -14,28 +26,40 @@
 		TextAndFont,
 		Undo
 	} from '../header-actions.svelte.js';
+    import 'dockview/dist/styles/dockview.css'
+    import { createDockview, type IContentRenderer, type GroupPanelPartInitParameters, themeAbyss } from 'dockview';
 
 	registerHeaderActions({
 		file: [
 			{
 				id: 'importRig',
-				action: () => {console.log("Import Rig!");}
+				action: () => {
+					console.log('Import Rig!');
+				}
 			},
 			{
 				id: 'newRig',
-				action: () => {console.log("New Rig!");}
+				action: () => {
+					console.log('New Rig!');
+				}
 			},
 			{
 				id: 'saveRig',
-				action: () => {console.log("Save Rig!");}
+				action: () => {
+					console.log('Save Rig!');
+				}
 			},
 			{
 				id: 'saveRigAs',
-				action: () => {console.log("Save Rig As!");}
+				action: () => {
+					console.log('Save Rig As!');
+				}
 			},
 			{
 				id: 'openInFileExplorer',
-				action: () => {console.log("Open File Explorer!");}
+				action: () => {
+					console.log('Open File Explorer!');
+				}
 			}
 		],
 		edit: [
@@ -66,46 +90,100 @@
 		],
 		view: [
 			{
+				id: 'toggleRigTree',
+				action: () => {}
+			},
+			{
 				id: 'togglePropertiesExplorer',
-				action: () => {console.log("Toggle Props Explorer!");}
+				action: () => {
+					console.log('Toggle Props Explorer!');
+				}
 			},
 			{
 				id: 'toggleDraggableIndicators',
-				action: () => {console.log("Toggle Drag Indicators!");}
+				action: () => {
+					console.log('Toggle Drag Indicators!');
+				}
+			},
+			{
+				id: 'toggleSensorsSimulation',
+				action: () => {}
 			}
 		],
-        options: [
-            {
-                id: 'colors',
-                action: Colors
-            },
-            {
-                id: 'textAndFont',
-                action: TextAndFont
-            },
-            {
-                id: 'miscellaneous',
-                action: Miscellaneous
-            }
-        ]
+		options: [
+			{
+				id: 'colors',
+				action: Colors
+			},
+			{
+				id: 'textAndFont',
+				action: TextAndFont
+			},
+			{
+				id: 'miscellaneous',
+				action: Miscellaneous
+			},
+			{
+				id: 'changeTheme',
+				action: () => {
+					let themeToChangeTo = appState.config.theme;
+					if (themeToChangeTo >= 2) {
+						themeToChangeTo = 0;
+					} else {
+						themeToChangeTo++;
+					}
+					appState.ChangeTheme(themeToChangeTo);
+				}
+			}
+		],
+		device: [
+			{
+				id: 'toggleDeviceLivePreview',
+				action: () => {}
+			}
+		]
 	});
 	onDestroy(() => registerHeaderActions({})); //clears the registered actions obviously
+
+    class MyPanel implements IContentRenderer {
+        private readonly _element: HTMLElement;
+
+        get element() {
+            return this._element;
+        }
+
+        constructor() {
+            this._element = document.createElement('div');
+        }
+
+        init(params: GroupPanelPartInitParameters) {
+            this._element.textContent = params.params?.title ?? 'Panel';
+        }
+    }
+    const dockViewAPI = createDockview(document.getElementById('app'), {
+        theme: themeAbyss,
+        createComponent: (options) => new MyPanel(),
+    });
+    dockViewAPI.addPanel({
+        id: 'rig-tree',
+        component: 'default',
+        title: 'Rig Tree'
+    });
+    dockViewAPI.addPanel({
+        id: 'props-explorer',
+        component: 'default',
+        title: 'Properties Explorer',
+        position: {
+            referencePanel: 'rig-tree', direction: 'right'
+        }
+    });
+
 </script>
 
 <svelte:head>
 	<title>Rig Playground</title>
 </svelte:head>
 
-<h1>Helix Rig Tester And Playground</h1>
-<p>Current Theme: {Theme[appState.config.theme]}</p>
-<button
-	onclick={() => {
-		let themeToChangeTo = appState.config.theme;
-		if (themeToChangeTo >= 2) {
-			themeToChangeTo = 0;
-		} else {
-			themeToChangeTo++;
-		}
-		appState.ChangeTheme(themeToChangeTo);
-	}}>Change Theme</button
->
+<div class="app">
+    
+</div>

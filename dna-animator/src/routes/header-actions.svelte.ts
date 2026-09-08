@@ -8,6 +8,7 @@ export interface HeaderActionsPanels {
     edit?: HeaderAction[];
     view?: HeaderAction[];
     options?: HeaderAction[];
+    device?: HeaderAction[];
 }
 
 class HeaderActions {

@@ -1,9 +1,8 @@
 <!--The global header for DNA Animator-->
 <script lang="ts">
 	import logo from '$lib/assets/DNA Animator Logo.svg';
-	import windowIcon from '$lib/assets/square-icon-white.png';
 	import { resolve } from '$app/paths';
-	import { appState, Theme, Page, HeaderType } from '../AppState.svelte';
+	import { appState, Theme, HeaderType } from '../AppState.svelte';
 	import { headerActions } from './header-actions.svelte.ts';
 	import type { HeaderActionsPanels } from './header-actions.svelte.ts';
 	import type { PageConfig } from '../AppState.svelte';
@@ -13,8 +12,9 @@
 	let { pageConfig } : { pageConfig: PageConfig } = $props();
 
 	function HandleSelected(option: string) {
+		showDropdownMenu = !showDropdownMenu;
 		selectedOption = option;
-		showDropdownMenu = true;
+		if (!showDropdownMenu) selectedOption = null;
 	}
 	function HandleHovered(option: string) {
 		if (showDropdownMenu) {
@@ -87,6 +87,8 @@
 						const currentPanel = headerActions?.current?.[selectedOption?.toLowerCase() as keyof HeaderActionsPanels]; //(?.[index]?.action) ?? (() => {})
 						const panelAction = currentPanel?.find(a => a.id === option.id);
 						panelAction?.action();
+						showDropdownMenu = false;
+						selectedOption = null;
 					}}>{option.label}</button>
 				</li>
 			{/each}
@@ -148,10 +150,36 @@
 		position-anchor: --navbar-selected-option;
 		top: anchor(bottom);
 		left: anchor(left);
-		width: 200px;
-		height: 400px;
+		min-width: 200px;
+		width: fit-content;
+		height: fit-content;
+		padding: 10px;
 		background-color: var(--highlight);
 		z-index: 3;
+		border-bottom-left-radius: 12px;
+		border-bottom-right-radius: 12px;
+
+		.dropdown-options-list {
+			display: flex;
+			flex-direction: column;
+			gap: 3px;
+
+			.option-item {
+				border-radius: 12px;
+				padding-left: 10px;
+				padding-right: 10px;
+
+				&:hover {
+					backdrop-filter: brightness(0.8);
+				}
+
+				button {
+					width: 100%;
+					display: flex;
+				}
+			}
+		}
+		
 	}
 
 	.navbar-title {
@@ -178,7 +206,7 @@
 			justify-content: center;
 
 			&:hover {
-				backdrop-filter: brightness(3);
+				backdrop-filter: brightness(0.8);
 			}
 
 			svg {
