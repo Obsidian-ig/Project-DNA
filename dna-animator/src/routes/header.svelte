@@ -2,13 +2,14 @@
 <script lang="ts">
 	import logo from '$lib/assets/DNA Animator Logo.svg';
 	import { resolve } from '$app/paths';
-	import { appState, Theme, Page } from '../AppState.svelte';
+	import { appState, Theme, Page, HeaderType } from '../AppState.svelte';
+	import { headerActions } from './header-actions.svelte.ts';
+	import type { HeaderActionsPanels } from './header-actions.svelte.ts';
+	import type { PageConfig } from '../AppState.svelte';
 
-
-    appState.GetCurrentPage();
 	let showDropdownMenu = $state(false);
 	let selectedOption: string | null = $state(null); // "file", "edit", "view", "options"
-    let headerConfig = $props();
+	let { pageConfig } : { pageConfig: PageConfig } = $props();
 
 	function HandleSelected(option: string) {
 		selectedOption = option;
@@ -20,58 +21,54 @@
 		}
 	}
 
-    
+	$effect(() => {
+		let placeholder = pageConfig;
+		//page config changed -> is new page!
+		showDropdownMenu = false;
+		selectedOption = null;
+	})
 </script>
 
 <nav class="navbar">
 	<a href={resolve('/')}><img class="logo-icon" src={logo} alt="logo" /></a>
 	<div class="navbar-buttons-container" id="navbar-buttons-container">
-		<button
-			class="navbar-button"
-			class:option-selected={selectedOption === 'file'}
-			id="navbar-file"
-			onclick={() => HandleSelected('file')}
-			onmouseenter={() => HandleHovered('file')}><span>File</span></button
-		>
-		<button
-			class="navbar-button"
-			class:option-selected={selectedOption === 'edit'}
-			id="navbar-edit"
-			onclick={() => HandleSelected('edit')}
-			onmouseenter={() => HandleHovered('edit')}><span>Edit</span></button
-		>
-		<button
-			class="navbar-button"
-			class:option-selected={selectedOption === 'view'}
-			id="navbar-view"
-			onclick={() => HandleSelected('view')}
-			onmouseenter={() => HandleHovered('view')}><span>View</span></button
-		>
-		<button
-			class="navbar-button"
-			class:option-selected={selectedOption === 'options'}
-			id="navbar-options"
-			onclick={() => HandleSelected('options')}
-			onmouseenter={() => HandleHovered('options')}><span>Options</span></button
-		>
+		{#if pageConfig.header.menu.type === HeaderType.File}
+			{#each pageConfig.header.menu.panels as panel (panel.name)}
+				<button
+					class="navbar-button"
+					class:option-selected={selectedOption === panel.name}
+					id="navbar-{panel.name}"
+					onclick={() => HandleSelected(panel.name)}
+					onmouseenter={() => HandleHovered(panel.name)}><span>{panel.name}</span>
+				</button>
+			{/each}
+		{/if}
 	</div>
 </nav>
 {#if showDropdownMenu}
-    <button class="click-off-container" aria-label="Close Dialogue" onclick={() => {
-        showDropdownMenu = false;
-        selectedOption = null;
-    }}>
-    </button>
-    <div class="navbar-option-dropdown">
-        <ul class="dropdown-options-list">
-            {#each currentOptions as option (option.name) }
-                <li class="option-item">
-                    <button class="option-button" onclick={option.onclick}>{option.name}</button>
-                </li>
-            {/each}
-        </ul>
-    </div>
-	
+	<button
+		class="click-off-container"
+		aria-label="Close Dialogue"
+		onclick={() => {
+			showDropdownMenu = false;
+			selectedOption = null;
+		}}
+	>
+	</button>
+	<div class="navbar-option-dropdown">
+		<ul class="dropdown-options-list">
+			{#each pageConfig.header.menu.panels.find(p => p.name === selectedOption)?.options as option (option.id)}
+				<li class="option-item">
+					<button class="option-button" onclick={() => {
+						//find da action
+						const currentPanel = headerActions?.current?.[selectedOption?.toLowerCase() as keyof HeaderActionsPanels]; //(?.[index]?.action) ?? (() => {})
+						const panelAction = currentPanel?.find(a => a.id === option.id);
+						panelAction?.action();
+					}}>{option.label}</button>
+				</li>
+			{/each}
+		</ul>
+	</div>
 {/if}
 
 <style>
@@ -85,7 +82,7 @@
 		background-color: var(--bg-light);
 		padding-left: 10px;
 		box-shadow: black 0px -5px 10px;
-        z-index: 3;
+		z-index: 3;
 		-webkit-app-region: drag;
 
 		.logo-icon {
@@ -117,20 +114,20 @@
 			&.option-selected {
 				anchor-name: --navbar-selected-option;
 				background-color: var(--primary);
-                border-bottom-left-radius: 0;
-                border-bottom-right-radius: 0;
+				border-bottom-left-radius: 0;
+				border-bottom-right-radius: 0;
 			}
 		}
 	}
 
 	.navbar-option-dropdown {
-        position: absolute;
+		position: absolute;
 		position-anchor: --navbar-selected-option;
-        top: anchor(bottom);
-        left: anchor(left);
-        width: 200px;
-        height: 400px;
-        background-color: var(--highlight);
-        z-index: 3;
+		top: anchor(bottom);
+		left: anchor(left);
+		width: 200px;
+		height: 400px;
+		background-color: var(--highlight);
+		z-index: 3;
 	}
 </style>

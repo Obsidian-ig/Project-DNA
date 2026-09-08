@@ -3,10 +3,10 @@
 </script>
 
 <svelte:head>
-    <title>Home | DNA Animator</title>
+    <title>Dashboard</title>
 </svelte:head>
 
-<h1>Home</h1>
+<h1>Dashboard</h1>
 <p>Current Theme: {appState.config.theme}</p>
 <button onclick={() => {
     let themeToChangeTo = appState.config.theme;

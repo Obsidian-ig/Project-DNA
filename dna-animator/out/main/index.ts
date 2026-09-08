@@ -45,6 +45,12 @@ function createWindow() {
 ipcMain.on('window-minimize', () => {
   win?.minimize();
 });
+ipcMain.on('window-maximize', () => {
+  win?.maximize();
+});
+ipcMain.on('window-restore', () => {
+  win?.restore();
+});
 
 ipcMain.on('window-close', () => {
   win?.close();

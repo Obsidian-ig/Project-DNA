@@ -1,13 +1,17 @@
-export function load() {
+import { appState, HeaderType, type PageConfig } from "../../AppState.svelte";
+
+export function load(): PageConfig {
+    appState.GetCurrentPage();
     return {
+        title: "Rig Playground",
         header: {
-            title: "Rig Playground",
             menu: {
-                type: "file",
+                type: HeaderType.File,
                 panels: [
                     {
                         name: "File",
                         options: [
+                            {label: "Close Playground", id: "closePlayground"},
                             {label: "Import Rig", id: "importRig"},
                             {label: "New Rig", id: "newRig"},
                             {label: "Save Rig", id: "saveRig"},
@@ -23,7 +27,7 @@ export function load() {
                             {label: "Cut", id: "cut"},
                             {label: "Copy", id: "copy"},
                             {label: "Paste", id: "paste"},
-                            {label: "Find", id: "paste"}
+                            {label: "Find", id: "find"}
                         ]
                     },
                     {

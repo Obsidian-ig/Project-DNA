@@ -12,21 +12,49 @@ export enum Page {
     RigPlayground,
     UNKNOWN
 }
+
+export enum HeaderType {
+    Default,
+    File
+}
+
+export interface HeaderPanelOption {
+    label: string;
+    id: string;
+}
+
+export interface HeaderPanel {
+    name: string;
+    options: HeaderPanelOption[];
+}
+
+export interface PageConfig {
+    title: string;
+    header: {
+        menu: {
+            type: HeaderType,
+            panels: HeaderPanel[];
+        }
+    }
+}
+
+
 class AppState {
     constAppConfig = { theme: Theme.Device };
     config = $state(this.constAppConfig); //whatever should/needs to be persistant between sessions.
     loading = $state(true);
     loadingErrorMessage: string | null = $state(null);
     currentPage: Page = $state(Page.Home);
-    
 
+    /*
     constructor() {
         $effect.root(() => {
             $effect(() => {
-                
+
             });
         });
     }
+    */
 
     GetCurrentPage() {
         switch (page.url.pathname) {
