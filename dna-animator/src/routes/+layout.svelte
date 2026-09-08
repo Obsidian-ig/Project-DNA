@@ -3,8 +3,11 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { appState } from '../AppState.svelte';
 	import Header from './header.svelte';
+	import { page } from '$app/state';
 
 	let { children } = $props();
+
+	const headerConfig = $derived(page.data.header ?? {title: "DNA Animator", menu: {type: "default"}});
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>

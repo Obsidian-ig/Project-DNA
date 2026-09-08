@@ -8,39 +8,7 @@
     appState.GetCurrentPage();
 	let showDropdownMenu = $state(false);
 	let selectedOption: string | null = $state(null); // "file", "edit", "view", "options"
-    let currentOptions: {name: string, onclick: () => void}[] = $state([]);
-	const fileOptions = [
-		{
-			name: 'Open File',
-			onclick: () => {
-				console.log("Open File");
-			}
-		}
-	];
-    const editOptions = [
-		{
-			name: 'Open File',
-			onclick: () => {
-				//open the file select prompt/file explorer
-			}
-		}
-	];
-    const viewOptions = [
-		{
-			name: 'Open File',
-			onclick: () => {
-				//open the file select prompt/file explorer
-			}
-		}
-	];
-    const optionsOptions = [
-		{
-			name: 'Open File',
-			onclick: () => {
-				//open the file select prompt/file explorer
-			}
-		}
-	];
+    let headerConfig = $props();
 
 	function HandleSelected(option: string) {
 		selectedOption = option;
@@ -52,23 +20,7 @@
 		}
 	}
 
-    $effect(() => {
-        //selectedOption changed
-        switch (selectedOption) {
-            case "file":
-                currentOptions = fileOptions;
-                break;
-            case "edit":
-                currentOptions = editOptions;
-                break;
-            case "view":
-                currentOptions = viewOptions;
-                break;
-            case "options":
-                currentOptions = optionsOptions;
-                break;
-        }
-    });
+    
 </script>
 
 <nav class="navbar">

@@ -1,7 +1,19 @@
 <!--RIG PLAYGROUND/TESTER-->
 <script lang="ts">
+	import { onDestroy } from "svelte";
     import { appState, Theme } from "../../AppState.svelte.ts";
-    
+    import { registerHeaderActions } from "../header-actions-svelte.js";
+
+    registerHeaderActions({
+        importRig () {},
+        newRig() {},
+        saveRig() {},
+        saveRigAs() {},
+        openInFileExplorer() {},
+        togglePropertiesExplorer() {},
+        toggleDraggableIndicators() {}
+    });
+    onDestroy(() => registerHeaderActions({})); //clears the registered actions obviously
 </script>
 
 <svelte:head>

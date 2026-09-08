@@ -2,7 +2,6 @@ import { app, BrowserWindow, shell } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ipcMain } from 'electron/main';
-import { processError } from 'vitest/internal/browser';
 
 // Standard ESM fallback to safely resolve path names on Windows
 const __filename = fileURLToPath(import.meta.url);
@@ -25,7 +24,7 @@ function createWindow() {
       devTools: true,
       contextIsolation: true,
       nodeIntegration: false,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.cjs')
     }
   });
 
@@ -45,6 +44,12 @@ function createWindow() {
 
 ipcMain.on('window-minimize', () => {
   win?.minimize();
+});
+ipcMain.on('window-maximize', () => {
+  win?.maximize();
+});
+ipcMain.on('window-restore', () => {
+  win?.restore();
 });
 
 ipcMain.on('window-close', () => {
