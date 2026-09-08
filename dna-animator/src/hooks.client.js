@@ -11,6 +11,7 @@ if (configObject) {
     appState.UpdateTheme();
     appState.currentPage = appState.GetCurrentPage();
     appState.MarkAsDoneLoading();
+    window.electronAPI.showWindow();
 } else {
     console.log("Error when retrieving appConfig from local storage! Pulled Config: ", pulledConfig);
     console.log("Attempting to create new appConfig in local storage.");

@@ -45,6 +45,7 @@ class AppState {
     loading = $state(true);
     loadingErrorMessage: string | null = $state(null);
     currentPage: Page = $state(Page.Home);
+    fullscreen = false;
 
     /*
     constructor() {

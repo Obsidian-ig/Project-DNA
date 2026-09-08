@@ -1,6 +1,7 @@
 <!--The global header for DNA Animator-->
 <script lang="ts">
 	import logo from '$lib/assets/DNA Animator Logo.svg';
+	import windowIcon from '$lib/assets/square-icon-white.png';
 	import { resolve } from '$app/paths';
 	import { appState, Theme, Page, HeaderType } from '../AppState.svelte';
 	import { headerActions } from './header-actions.svelte.ts';
@@ -43,6 +44,28 @@
 				</button>
 			{/each}
 		{/if}
+	</div>
+	<p class="navbar-title">{pageConfig.title}</p>
+	<div class="navbar-window-buttons-container">
+		<button class="navbar-window-button" onclick={() => {
+			window.electronAPI?.minimizeWindow();
+		}}>_</button>
+		<button class="navbar-window-button" aria-label="Restore or Maximize" onclick={async () => {
+			let isFullscreen = await window.electronAPI.isFullscreen();
+			let isMaximized = await window.electronAPI.isMaximized();
+			if (isFullscreen || isMaximized) {
+				window.electronAPI.restoreWindow();
+				console.log("Was fullscreen!");
+			} else {
+				window.electronAPI.maximizeWindow();
+				console.log("Was not fullscreen!");
+			}
+		}}>
+		<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>
+	</button>
+		<button class="navbar-window-button" onclick={() => {
+			window.electronAPI.closeWindow();
+		}}>X</button>
 	</div>
 </nav>
 {#if showDropdownMenu}
@@ -129,5 +152,42 @@
 		height: 400px;
 		background-color: var(--highlight);
 		z-index: 3;
+	}
+
+	.navbar-title {
+		position: absolute;
+		left: 50%;
+		transform: translateX(calc(-50% - 2ch));
+		padding: 0;
+		margin: 0;
+		user-select: none;
+		-webkit-app-region: drag;
+	}
+	.navbar-window-buttons-container {
+		display: flex;
+		margin-left: auto;
+		gap: 5px;
+		position: relative;
+
+		button {
+			cursor: pointer;
+			width: 35px;
+			min-height: 100%;
+			padding: 5px;
+			display: flex;
+			justify-content: center;
+
+			&:hover {
+				backdrop-filter: brightness(3);
+			}
+
+			svg {
+				stroke-width: 2px;
+				width: 15px;
+				height: 15px;
+				stroke: var(--text);
+				margin-top: 5px;
+			}
+		}
 	}
 </style>

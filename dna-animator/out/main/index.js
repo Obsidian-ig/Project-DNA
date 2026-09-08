@@ -14,6 +14,7 @@ function createWindow() {
     frame: false,
     icon: iconPath,
     title: "DNA Animator",
+    show: false,
     webPreferences: {
       devTools: true,
       contextIsolation: true,
@@ -31,6 +32,9 @@ function createWindow() {
     win = null;
   });
 }
+ipcMain.once("window-show", () => {
+  win?.show();
+});
 ipcMain.on("window-minimize", () => {
   win?.minimize();
 });
@@ -39,6 +43,12 @@ ipcMain.on("window-maximize", () => {
 });
 ipcMain.on("window-restore", () => {
   win?.restore();
+});
+ipcMain.handle("is-fullscreen", () => {
+  return win?.isFullScreen();
+});
+ipcMain.handle("is-maximized", () => {
+  return win?.isMaximized();
 });
 ipcMain.on("window-close", () => {
   win?.close();
