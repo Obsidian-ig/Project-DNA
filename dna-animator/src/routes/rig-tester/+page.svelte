@@ -12,7 +12,7 @@ Ideas/Plans:
 -->
 
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { appState, Theme } from '../../AppState.svelte.ts';
 	import {
 		Colors,
@@ -26,8 +26,13 @@ Ideas/Plans:
 		TextAndFont,
 		Undo
 	} from '../header-actions.svelte.js';
-    import 'dockview/dist/styles/dockview.css'
-    import { createDockview, type IContentRenderer, type GroupPanelPartInitParameters, themeAbyss } from 'dockview';
+	import 'dockview/dist/styles/dockview.css';
+	import {
+		createDockview,
+		type IContentRenderer,
+		type GroupPanelPartInitParameters,
+		themeAbyss
+	} from 'dockview';
 
 	registerHeaderActions({
 		file: [
@@ -145,45 +150,51 @@ Ideas/Plans:
 	});
 	onDestroy(() => registerHeaderActions({})); //clears the registered actions obviously
 
-    class MyPanel implements IContentRenderer {
-        private readonly _element: HTMLElement;
+	class MyPanel implements IContentRenderer {
+		private readonly _element: HTMLElement;
 
-        get element() {
-            return this._element;
-        }
+		get element() {
+			return this._element;
+		}
 
-        constructor() {
-            this._element = document.createElement('div');
-        }
+		constructor() {
+			this._element = document.createElement('div');
+		}
 
-        init(params: GroupPanelPartInitParameters) {
-            this._element.textContent = params.params?.title ?? 'Panel';
-        }
-    }
-    const dockViewAPI = createDockview(document.getElementById('app'), {
-        theme: themeAbyss,
-        createComponent: (options) => new MyPanel(),
-    });
-    dockViewAPI.addPanel({
-        id: 'rig-tree',
-        component: 'default',
-        title: 'Rig Tree'
-    });
-    dockViewAPI.addPanel({
-        id: 'props-explorer',
-        component: 'default',
-        title: 'Properties Explorer',
-        position: {
-            referencePanel: 'rig-tree', direction: 'right'
-        }
-    });
+		init(params: GroupPanelPartInitParameters) {
+			this._element.textContent = params.params?.title ?? 'Panel';
+		}
+	}
 
+	let appContainer: HTMLDivElement | undefined = $state();
+	let dockViewAPI = null;
+	$effect(() => {
+        if (!appContainer) return;
+		dockViewAPI = createDockview(document.getElementById('app')!, {
+			theme: themeAbyss,
+			createComponent: (options) => new MyPanel()
+		});
+		dockViewAPI.addPanel({
+			id: 'rig-tree',
+			component: 'default',
+			title: 'Rig Tree',
+            renderer: "onlyWhenVisible"
+		});
+		dockViewAPI.addPanel({
+			id: 'props-explorer',
+			component: 'default',
+			title: 'Properties Explorer',
+			position: {
+				referencePanel: 'rig-tree',
+				direction: 'right'
+			},
+            renderer: "onlyWhenVisible"
+		});
+	});
 </script>
 
 <svelte:head>
 	<title>Rig Playground</title>
 </svelte:head>
 
-<div class="app">
-    
-</div>
+<div class="app" id="app" bind:this={appContainer}></div>
