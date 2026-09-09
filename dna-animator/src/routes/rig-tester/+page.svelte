@@ -12,7 +12,7 @@ Ideas/Plans:
 -->
 
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, mount, unmount, type ComponentProps } from 'svelte';
 	import { appState, Theme } from '../../AppState.svelte.ts';
 	import {
 		Colors,
@@ -31,8 +31,12 @@ Ideas/Plans:
 		createDockview,
 		type IContentRenderer,
 		type GroupPanelPartInitParameters,
-		themeAbyss
+		themeAbyss,
+		type HeaderPartInitParameters,
+		DockviewApi,
+		type DockviewPanelApi
 	} from 'dockview';
+	import RigTree from '../../components/RigTree.svelte';
 
 	registerHeaderActions({
 		file: [
@@ -150,10 +154,10 @@ Ideas/Plans:
 	});
 	onDestroy(() => registerHeaderActions({})); //clears the registered actions obviously
 
-	class MyPanel implements IContentRenderer {
+	class CustomTabRenderer {
 		private readonly _element: HTMLElement;
 
-		get element() {
+		get element(): HTMLElement {
 			return this._element;
 		}
 
@@ -161,35 +165,65 @@ Ideas/Plans:
 			this._element = document.createElement('div');
 		}
 
-		init(params: GroupPanelPartInitParameters) {
-			this._element.textContent = params.params?.title ?? 'Panel';
+		init(parameters: HeaderPartInitParameters): void {
+			this._element.textContent = parameters.title || 'Custom Tab';
+            
+		}
+
+		dispose(): void {
+			// Cleanup logic
 		}
 	}
 
 	let appContainer: HTMLDivElement | undefined = $state();
 	let dockViewAPI = null;
 	$effect(() => {
-        if (!appContainer) return;
+		if (!appContainer) return;
 		dockViewAPI = createDockview(document.getElementById('app')!, {
 			theme: themeAbyss,
-			createComponent: (options) => new MyPanel()
+			createComponent: (options) => {
+				let svelteInstance: any;
+				const element = document.createElement('div');
+				element.style.height = '100%';
+				element.style.width = '100%';
+
+				return {
+					element,
+
+					init: (parameters) => {
+						switch (options.id) {
+							case 'rig-tree':
+								svelteInstance = mount(RigTree, {
+									target: element,
+									props: { params: parameters } as ComponentProps<typeof RigTree>
+								});
+								break;
+							default:
+								break;
+						}
+					},
+					dispose: () => {
+						if (svelteInstance) unmount(svelteInstance);
+					}
+				};
+			}
 		});
 		dockViewAPI.addPanel({
 			id: 'rig-tree',
-			component: 'default',
+			component: 'rig_tree_view',
 			title: 'Rig Tree',
-            renderer: "onlyWhenVisible"
-		});
+			renderer: 'onlyWhenVisible'
+		}).group.header.hidden = true;
 		dockViewAPI.addPanel({
 			id: 'props-explorer',
-			component: 'default',
+			component: 'properties_explorer_view',
 			title: 'Properties Explorer',
 			position: {
 				referencePanel: 'rig-tree',
 				direction: 'right'
 			},
-            renderer: "onlyWhenVisible"
-		});
+			renderer: 'onlyWhenVisible'
+		}).group.header.hidden = true;
 	});
 </script>
 
@@ -198,3 +232,12 @@ Ideas/Plans:
 </svelte:head>
 
 <div class="app" id="app" bind:this={appContainer}></div>
+
+<style>
+	.app {
+		width: 100vw;
+		max-width: 100%;
+		height: 100vh;
+		max-height: 95.5vh;
+	}
+</style>
