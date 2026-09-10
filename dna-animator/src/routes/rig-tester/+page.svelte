@@ -26,16 +26,6 @@ Ideas/Plans:
 		TextAndFont,
 		Undo
 	} from '../header-actions.svelte.js';
-	import 'dockview/dist/styles/dockview.css';
-	import {
-		createDockview,
-		type IContentRenderer,
-		type GroupPanelPartInitParameters,
-		themeAbyss,
-		type HeaderPartInitParameters,
-		DockviewApi,
-		type DockviewPanelApi
-	} from 'dockview';
 	import RigTree from '../../components/RigTree.svelte';
 
 	registerHeaderActions({
@@ -154,84 +144,14 @@ Ideas/Plans:
 	});
 	onDestroy(() => registerHeaderActions({})); //clears the registered actions obviously
 
-	class CustomTabRenderer {
-		private readonly _element: HTMLElement;
-
-		get element(): HTMLElement {
-			return this._element;
-		}
-
-		constructor() {
-			this._element = document.createElement('div');
-		}
-
-		init(parameters: HeaderPartInitParameters): void {
-			this._element.textContent = parameters.title || 'Custom Tab';
-            
-		}
-
-		dispose(): void {
-			// Cleanup logic
-		}
-	}
-
-	let appContainer: HTMLDivElement | undefined = $state();
-	let dockViewAPI = null;
-	$effect(() => {
-		if (!appContainer) return;
-		dockViewAPI = createDockview(document.getElementById('app')!, {
-			theme: themeAbyss,
-			createComponent: (options) => {
-				let svelteInstance: any;
-				const element = document.createElement('div');
-				element.style.height = '100%';
-				element.style.width = '100%';
-
-				return {
-					element,
-
-					init: (parameters) => {
-						switch (options.id) {
-							case 'rig-tree':
-								svelteInstance = mount(RigTree, {
-									target: element,
-									props: { params: parameters } as ComponentProps<typeof RigTree>
-								});
-								break;
-							default:
-								break;
-						}
-					},
-					dispose: () => {
-						if (svelteInstance) unmount(svelteInstance);
-					}
-				};
-			}
-		});
-		dockViewAPI.addPanel({
-			id: 'rig-tree',
-			component: 'rig_tree_view',
-			title: 'Rig Tree',
-			renderer: 'onlyWhenVisible'
-		}).group.header.hidden = true;
-		dockViewAPI.addPanel({
-			id: 'props-explorer',
-			component: 'properties_explorer_view',
-			title: 'Properties Explorer',
-			position: {
-				referencePanel: 'rig-tree',
-				direction: 'right'
-			},
-			renderer: 'onlyWhenVisible'
-		}).group.header.hidden = true;
-	});
+	
 </script>
 
 <svelte:head>
 	<title>Rig Playground</title>
 </svelte:head>
 
-<div class="app" id="app" bind:this={appContainer}></div>
+<div class="app" id="app"></div>
 
 <style>
 	.app {

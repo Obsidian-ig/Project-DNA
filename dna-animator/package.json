@@ -68,7 +68,7 @@
 		"vitest-browser-svelte": "^2.1.1"
 	},
 	"dependencies": {
-		"dockview": "^8.2.0",
-		"electron-serve": "^3.0.1"
+		"electron-serve": "^3.0.1",
+		"svelte-splitpanes": "^8.0.12"
 	}
 }

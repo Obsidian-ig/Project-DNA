@@ -1,8 +1,5 @@
 <script lang="ts">
-	import type { GroupPanelPartInitParameters } from "dockview";
 
-
-    let { params }:{ params: GroupPanelPartInitParameters } = $props();
 </script>
 
 <div class="header">
