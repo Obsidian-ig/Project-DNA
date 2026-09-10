@@ -1,0 +1,203 @@
+{
+    /*This rig does not have any animations and is soley meant to be used as a visual/toy to mess with the eyes in the editor*/
+    /*all colors should be in hex format.*/
+    /*All values are relative to the default width/height/position on the screen; not in pixel values.*/
+    "matching_eye_colors": true, // This makes it so the "base_eye_background_color": "#3d008c" gets used as the bg color for all eyes. Same with the pupil color
+    "base_eye_background_color": "#3d008c", // by default it is a shade of darkish purple
+    "base_eye_pupil_color": "#065b9c", // by default it is a shade of almost a deep sky blue
+    "verity_mode": false, // Makes Helix look like Verity 🙂
+    /*Base -> Where the whole face initially sits on the screen. 
+    It is not recommended to mess with these as they represent the origin point on the display. 
+    They are essentially the offset values in a way.*/
+    "base": { 
+        "starting_position": { // relative to the center of the screen.
+            "x": 0.0,
+            "y": 0.0
+        },
+        "starting_rotation": {
+            "x": 0.0,
+            "y": 0.0
+        },
+        "starting_scale": {
+            "x": 1.0,
+            "y": 1.0
+        }
+    },
+    /*These Position/Rotation/Scale controls/parameters control the whole "face"*/
+    "position": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "rotation": { // for example, if you applied an X rotation to this like 180 then the whole "face" would be rotated upside down and then the individual eye rotations would be appplied on top of that.
+        "x": 0.0,
+        "y": 0.0
+    },
+    "scale": {
+        "x": 1.0,
+        "y": 1.0
+    },
+    /*/////////////////////////////////////////////////////////////////////////*/
+    "third_eye": { // controls/parameters for the third eye if enabled
+        "enabled": false, // whether or not the eye is visible
+        "oblate_shape": false, // wider than tall shape (sideways oval) (  O  )
+        "top": true, // if set to true, the eye will be on top of the left/right eyes, otherwise, it will be below the left/right eyes.
+        /*Position, Rotation, and Scale are for the entire eye group*/
+        "position": {
+            "x": 0.0,
+            "y": 0.0
+        },
+        "rotation": {
+            "x": 0.0,
+            "y": 0.0
+        },
+        "scale": {
+            "x": 1.0,
+            "y": 1.0
+        },
+        "background": {
+            "color": "", // if set to nothing, it will use the base_eye_background_color.
+            "rainbow": false, // if set to 'true', "color" will be ignored.
+            "position": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "top_curve": 0.0, // concaves the top of the eye when set to 1
+            "bottom_curve": 0.0 // concaves the bottom of the eye when set to 1
+        },
+        "pupil": {
+            "color": "", // if set to nothing, it will use the base_eye_pupil_color
+            "rainbow": false, // if set to 'true', "color" will be ignored.
+            "style": "default", //What style the pupil should be drawn as. (default/oval, cat, circle, angry, sad, sleepy, happy, confused, curious, suspisious, charging)
+            "position": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            }
+        }
+    },
+    "left_eye": { // controls/parameters for the left eye if enabled
+        "enabled": true, // whether or not the eye is visible
+        "oblate_shape": false, // wider than tall shape (sideways oval) (  O  )
+        /*Position, Rotation, and Scale are for the entire eye group*/
+        "position": {
+            "x": 0.0,
+            "y": 0.0
+        },
+        "rotation": {
+            "x": 0.0,
+            "y": 0.0
+        },
+        "scale": {
+            "x": 1.0,
+            "y": 1.0
+        },
+        "background": {
+            "color": "", // if set to nothing, it will use the base_eye_background_color.
+            "rainbow": false, // if set to 'true', "color" will be ignored.
+            "position": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "top_curve": 0.0, // concaves the top of the eye when set to 1
+            "bottom_curve": 0.0 // concaves the bottom of the eye when set to 1
+        },
+        "pupil": {
+            "color": "", // if set to nothing, it will use the base_eye_pupil_color
+            "rainbow": false, // if set to 'true', "color" will be ignored.
+            "style": "default", //What style the pupil should be drawn as. (default/oval, cat, circle, angry, sad, sleepy, happy, confused, curious, suspisious, charging)
+            "position": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            }
+        }
+    },
+    "right_eye": { // controls/parameters for the right eye if enabled
+        "enabled": true, // whether or not the eye is visible
+        "oblate_shape": false, // wider than tall shape (sideways oval) (  O  )
+        /*Position, Rotation, and Scale are for the entire eye group*/
+        "position": {
+            "x": 0.0,
+            "y": 0.0
+        },
+        "rotation": {
+            "x": 0.0,
+            "y": 0.0
+        },
+        "scale": {
+            "x": 1.0,
+            "y": 1.0
+        },
+        "background": {
+            "color": "", // if set to nothing, it will use the base_eye_background_color.
+            "rainbow": false, // if set to 'true', "color" will be ignored.
+            "position": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "top_curve": 0.0, // concaves the top of the eye when set to 1
+            "bottom_curve": 0.0 // concaves the bottom of the eye when set to 1
+        },
+        "pupil": {
+            "color": "", // if set to nothing, it will use the base_eye_pupil_color
+            "rainbow": false, // if set to 'true', "color" will be ignored.
+            "style": "default", //What style the pupil should be drawn as. (default/oval, cat, circle, angry, sad, sleepy, happy, confused, curious, suspisious, charging)
+            "position": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            }
+        }
+    },
+    "defined_shapes": [
+        {
+            "name": "left_eye",
+            //some values and shit
+        }
+    ]
+}

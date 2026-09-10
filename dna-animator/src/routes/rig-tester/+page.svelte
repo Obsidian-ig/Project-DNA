@@ -27,6 +27,7 @@ Ideas/Plans:
 		Undo
 	} from '../header-actions.svelte.js';
 	import RigTree from '../../components/RigTree.svelte';
+	import { Pane, Splitpanes } from 'svelte-splitpanes';
 
 	registerHeaderActions({
 		file: [
@@ -143,21 +144,56 @@ Ideas/Plans:
 		]
 	});
 	onDestroy(() => registerHeaderActions({})); //clears the registered actions obviously
-
-	
 </script>
 
 <svelte:head>
 	<title>Rig Playground</title>
 </svelte:head>
 
-<div class="app" id="app"></div>
+<div class="app" id="app">
+	<Splitpanes style="height:100%; max-height: 100%; overflow: hidden;">
+		<Pane snapSize={3}>
+			<RigTree />
+		</Pane>
+        <Pane snapSize={3}>
+            <!--Rig Item Properties Explorer-->
+        </Pane>
+        <Pane>
+            <Splitpanes horizontal={true}>
+                <Pane snapSize={3}>
+                    <!--Render Preview Screen-->
+                </Pane>
+                <Pane snapSize={3}>
+                    <!--Device Sensor Settings/Simulation-->
+                </Pane>
+            </Splitpanes>
+        </Pane>
+	</Splitpanes>
+</div>
 
 <style>
 	.app {
 		width: 100vw;
 		max-width: 100%;
-		height: 100vh;
-		max-height: 95.5vh;
+		height: calc(100vh - 35px); /*The viewport height - header height*/
+	}
+
+	:global(.splitpanes.default-theme) {
+        &.splitpanes--vertical .splitpanes__splitter {
+            width: 2px !important;
+        }
+        &.splitpanes--horizontal .splitpanes__splitter {
+            height: 2px !important;
+            width: 100% !important; /*fixes issue with width being set to 2px cause of vertical style above*/
+        }
+
+        & .splitpanes__pane {
+            background-color: var(--bg) !important;
+        }
+
+        & .splitpanes__splitter {
+            background-color: var(--highlight) !important;
+            border: none !important;
+        }
 	}
 </style>
