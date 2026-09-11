@@ -14,5 +14,6 @@ export interface ElectronAPI {
 declare global {
   interface Window {
     electronAPI: ElectronAPI;
+    showOpenFilePicker(options?: any): Promise<any[]>;
   }
 }

@@ -162,7 +162,7 @@ Ideas/Plans:
 	});
 	onDestroy(() => registerHeaderActions({})); //clears the registered actions obviously
 
-    let currentRigFile: File | null = null;
+    let currentRigFile: File | null = $state(null);
 </script>
 
 <svelte:head>
@@ -171,10 +171,10 @@ Ideas/Plans:
 
 <div class="app" id="app">
 	<Splitpanes style="height:100%; max-height: 100%; overflow: hidden;">
-		<Pane snapSize={3}>
+		<Pane snapSize={5}>
 			<RigTree rigFile={currentRigFile} />
 		</Pane>
-		<Pane snapSize={3}>
+		<Pane snapSize={5}>
 			<!--Rig Item Properties Explorer-->
 		</Pane>
 		<Pane>

@@ -1,10 +1,16 @@
+import { browser } from "$app/environment";
 import { page } from "$app/state";
+import type { RigObject, SelectedNode } from "./DNARig";
 
 //supported themes
 export enum Theme {
     Device,
     Light,
     Dark
+}
+
+export interface AppConfig {
+    theme: Theme;
 }
 
 export enum HeaderType {
@@ -32,12 +38,18 @@ export interface PageConfig {
     }
 }
 
+export interface RigPlaygroundState {
+    loadedRig: RigObject | null;
+    selectedNode: SelectedNode | null;
+}
+
 
 class AppState {
     constAppConfig = { theme: Theme.Device };
     config = $state(this.constAppConfig); //whatever should/needs to be persistant between sessions.
     loading = $state(true);
     loadingErrorMessage: string | null = $state(null);
+    rigPlaygroundState: RigPlaygroundState = $state({loadedRig: null, selectedNode: null});
 
     /*
     constructor() {
@@ -48,9 +60,26 @@ class AppState {
         });
     }
     */
-    ImportConfigFromLocalStorage(config: { theme: Theme }) {
+    ImportConfigFromLocalStorage(config: AppConfig) {
         this.config = config;
         console.log("Successfully imported config from local storage!");
+    }
+    ImportRigPlaygroundStateFromLocalStorage(state: RigPlaygroundState) {
+        if (state) this.rigPlaygroundState = state;
+    }
+    UpdateRigPlaygroundStateLoadedRig(rig: RigObject | null) {
+        this.rigPlaygroundState.loadedRig = rig;
+        this.UpdateRigPlaygroundStateInLocalStorage();
+    }
+    UpdateRigPlaygroundStateSelectedNode(node: SelectedNode | null) {
+        this.rigPlaygroundState.selectedNode = node;
+        this.UpdateRigPlaygroundStateInLocalStorage();
+    }
+    UpdateRigPlaygroundStateInLocalStorage() {
+        if (browser) {
+            localStorage.setItem("rigPlaygroundState", JSON.stringify(this.rigPlaygroundState));
+            console.log("Updated rig playground state in local storage.");
+        }
     }
     private UpdateAppState() {
         localStorage.setItem("appConfig", JSON.stringify(this.config));

@@ -3,135 +3,150 @@
 
 /*Theme Provided By https://iamsajid.com/ui-colors/ (thank you for making this tool)*/
 :root {
-  /* hsl (fallback color) */
-  --bg-dark: hsl(270 52% 2%);
-  --bg: hsl(274 33% 5%);
-  --bg-light: hsl(274 19% 9%);
-  --text: hsl(273 100% 98%);
-  --text-muted: hsl(273 18% 72%);
-  --highlight: hsl(273 11% 41%);
-  --border: hsl(274 14% 30%);
-  --border-muted: hsl(274 21% 20%);
-  --primary: hsl(274 52% 75%);
-  --secondary: hsl(90 35% 61%);
-  --danger: hsl(9 26% 64%);
-  --warning: hsl(52 19% 57%);
-  --success: hsl(146 17% 59%);
-  --info: hsl(217 28% 65%);
-  /* oklch */
-  --bg-dark: oklch(0.1 0.02 310);
-  --bg: oklch(0.15 0.02 310);
-  --bg-light: oklch(0.2 0.02 310);
-  --text: oklch(0.96 0.04 310);
-  --text-muted: oklch(0.76 0.04 310);
-  --highlight: oklch(0.5 0.04 310);
-  --border: oklch(0.4 0.04 310);
-  --border-muted: oklch(0.3 0.04 310);
-  --primary: oklch(0.76 0.1 310);
-  --secondary: oklch(0.76 0.1 130);
-  --danger: oklch(0.7 0.05 30);
-  --warning: oklch(0.7 0.05 100);
-  --success: oklch(0.7 0.05 160);
-  --info: oklch(0.7 0.05 260);
+    /* hsl (fallback color) */
+    --bg-dark: hsl(270 52% 2%);
+    --bg: hsl(274 33% 5%);
+    --bg-light: hsl(274 19% 9%);
+    --text: hsl(273 100% 98%);
+    --text-muted: hsl(273 18% 72%);
+    --highlight: hsl(273 11% 41%);
+    --border: hsl(274 14% 30%);
+    --border-muted: hsl(274 21% 20%);
+    --primary: hsl(274 52% 75%);
+    --secondary: hsl(90 35% 61%);
+    --danger: hsl(9 26% 64%);
+    --warning: hsl(52 19% 57%);
+    --success: hsl(146 17% 59%);
+    --info: hsl(217 28% 65%);
+    /* oklch */
+    --bg-dark: oklch(0.1 0.02 310);
+    --bg: oklch(0.15 0.02 310);
+    --bg-light: oklch(0.2 0.02 310);
+    --text: oklch(0.96 0.04 310);
+    --text-muted: oklch(0.76 0.04 310);
+    --highlight: oklch(0.5 0.04 310);
+    --border: oklch(0.4 0.04 310);
+    --border-muted: oklch(0.3 0.04 310);
+    --primary: oklch(0.76 0.1 310);
+    --secondary: oklch(0.76 0.1 130);
+    --danger: oklch(0.7 0.05 30);
+    --warning: oklch(0.7 0.05 100);
+    --success: oklch(0.7 0.05 160);
+    --info: oklch(0.7 0.05 260);
+    /* other data */
+    --img-filter: invert(0);
+    --outline-width: 1px;
 }
+
 body.light {
-  /* hsl (fallback color) */
-  --bg-dark: hsl(273 30% 91%);
-  --bg: hsl(273 71% 96%);
-  --bg-light: hsl(273 100% 100%);
-  --text: hsl(275 59% 6%);
-  --text-muted: hsl(274 14% 30%);
-  --highlight: hsl(273 100% 100%);
-  --border: hsl(273 10% 53%);
-  --border-muted: hsl(273 14% 65%);
-  --primary: hsl(276 35% 32%);
-  --secondary: hsl(84, 90%, 30%);
-  --danger: hsl(9 21% 41%);
-  --warning: hsl(52 23% 34%);
-  --success: hsl(147 19% 36%);
-  --info: hsl(217 22% 41%);
-  /* oklch */
-  --bg-dark: oklch(0.92 0.02 310);
-  --bg: oklch(0.96 0.02 310);
-  --bg-light: oklch(1 0.02 310);
-  --text: oklch(0.15 0.04 310);
-  --text-muted: oklch(0.4 0.04 310);
-  --highlight: oklch(1 0.04 310);
-  --border: oklch(0.6 0.04 310);
-  --border-muted: oklch(0.7 0.04 310);
-  --primary: oklch(49.52% 0.12719 310.095);
-  --secondary: oklch(48.742% 0.12472 130.771);
-  --danger: oklch(0.5 0.05 30);
-  --warning: oklch(0.5 0.05 100);
-  --success: oklch(0.5 0.05 160);
-  --info: oklch(0.5 0.05 260);
+    /* hsl (fallback color) */
+    --bg-dark: hsl(273 30% 91%);
+    --bg: hsl(273 71% 96%);
+    --bg-light: hsl(273 100% 100%);
+    --text: hsl(275 59% 6%);
+    --text-muted: hsl(274 14% 30%);
+    --highlight: hsl(273 100% 100%);
+    --border: hsl(273 10% 53%);
+    --border-muted: hsl(273 14% 65%);
+    --primary: hsl(276 35% 32%);
+    --secondary: hsl(84, 90%, 30%);
+    --danger: hsl(9 21% 41%);
+    --warning: hsl(52 23% 34%);
+    --success: hsl(147 19% 36%);
+    --info: hsl(217 22% 41%);
+    /* oklch */
+    --bg-dark: oklch(0.92 0.02 310);
+    --bg: oklch(0.96 0.02 310);
+    --bg-light: oklch(1 0.02 310);
+    --text: oklch(0.15 0.04 310);
+    --text-muted: oklch(0.4 0.04 310);
+    --highlight: oklch(1 0.04 310);
+    --border: oklch(0.6 0.04 310);
+    --border-muted: oklch(0.7 0.04 310);
+    --primary: oklch(49.52% 0.12719 310.095);
+    --secondary: oklch(48.742% 0.12472 130.771);
+    --danger: oklch(0.5 0.05 30);
+    --warning: oklch(0.5 0.05 100);
+    --success: oklch(0.5 0.05 160);
+    --info: oklch(0.5 0.05 260);
+    /* other data */
+    --img-filter: invert(1);
+    --outline-width: 2px;
 }
+
 @media (prefers-color-scheme: dark) {
     body.device {
         /* hsl (fallback color) */
-  --bg-dark: hsl(270 52% 2%);
-  --bg: hsl(274 33% 5%);
-  --bg-light: hsl(274 19% 9%);
-  --text: hsl(273 100% 98%);
-  --text-muted: hsl(273 18% 72%);
-  --highlight: hsl(273 11% 41%);
-  --border: hsl(274 14% 30%);
-  --border-muted: hsl(274 21% 20%);
-  --primary: hsl(274 52% 75%);
-  --secondary: hsl(90 35% 61%);
-  --danger: hsl(9 26% 64%);
-  --warning: hsl(52 19% 57%);
-  --success: hsl(146 17% 59%);
-  --info: hsl(217 28% 65%);
-  /* oklch */
-  --bg-dark: oklch(0.1 0.02 310);
-  --bg: oklch(0.15 0.02 310);
-  --bg-light: oklch(0.2 0.02 310);
-  --text: oklch(0.96 0.04 310);
-  --text-muted: oklch(0.76 0.04 310);
-  --highlight: oklch(0.5 0.04 310);
-  --border: oklch(0.4 0.04 310);
-  --border-muted: oklch(0.3 0.04 310);
-  --primary: oklch(0.76 0.1 310);
-  --secondary: oklch(0.76 0.1 130);
-  --danger: oklch(0.7 0.05 30);
-  --warning: oklch(0.7 0.05 100);
-  --success: oklch(0.7 0.05 160);
-  --info: oklch(0.7 0.05 260);
+        --bg-dark: hsl(270 52% 2%);
+        --bg: hsl(274 33% 5%);
+        --bg-light: hsl(274 19% 9%);
+        --text: hsl(273 100% 98%);
+        --text-muted: hsl(273 18% 72%);
+        --highlight: hsl(273 11% 41%);
+        --border: hsl(274 14% 30%);
+        --border-muted: hsl(274 21% 20%);
+        --primary: hsl(274 52% 75%);
+        --secondary: hsl(90 35% 61%);
+        --danger: hsl(9 26% 64%);
+        --warning: hsl(52 19% 57%);
+        --success: hsl(146 17% 59%);
+        --info: hsl(217 28% 65%);
+        /* oklch */
+        --bg-dark: oklch(0.1 0.02 310);
+        --bg: oklch(0.15 0.02 310);
+        --bg-light: oklch(0.2 0.02 310);
+        --text: oklch(0.96 0.04 310);
+        --text-muted: oklch(0.76 0.04 310);
+        --highlight: oklch(0.5 0.04 310);
+        --border: oklch(0.4 0.04 310);
+        --border-muted: oklch(0.3 0.04 310);
+        --primary: oklch(0.76 0.1 310);
+        --secondary: oklch(0.76 0.1 130);
+        --danger: oklch(0.7 0.05 30);
+        --warning: oklch(0.7 0.05 100);
+        --success: oklch(0.7 0.05 160);
+        --info: oklch(0.7 0.05 260);
+        /* other data */
+        --img-filter: invert(0);
+        --outline-width: 1px;
     }
 }
+
 @media (prefers-color-scheme: light) {
     body.device {
         /* hsl (fallback color) */
-  --bg-dark: hsl(273 30% 91%);
-  --bg: hsl(273 71% 96%);
-  --bg-light: hsl(273 100% 100%);
-  --text: hsl(275 59% 6%);
-  --text-muted: hsl(274 14% 30%);
-  --highlight: hsl(273 100% 100%);
-  --border: hsl(273 10% 53%);
-  --border-muted: hsl(273 14% 65%);
-  --primary: hsl(276 35% 32%);
-  --secondary: hsl(84 76% 18%);
-  --danger: hsl(9 21% 41%);
-  --warning: hsl(52 23% 34%);
-  --success: hsl(147 19% 36%);
-  --info: hsl(217 22% 41%);
-  /* oklch */
-  --bg-dark: oklch(0.92 0.02 310);
-  --bg: oklch(0.96 0.02 310);
-  --bg-light: oklch(1 0.02 310);
-  --text: oklch(0.15 0.04 310);
-  --text-muted: oklch(0.4 0.04 310);
-  --highlight: oklch(1 0.04 310);
-  --border: oklch(0.6 0.04 310);
-  --border-muted: oklch(0.7 0.04 310);
-  --primary: oklch(0.4 0.1 310);
-  --secondary: oklch(0.4 0.1 130);
-  --danger: oklch(0.5 0.05 30);
-  --warning: oklch(0.5 0.05 100);
-  --success: oklch(0.5 0.05 160);
-  --info: oklch(0.5 0.05 260);
+        --bg-dark: hsl(273 30% 91%);
+        --bg: hsl(273 71% 96%);
+        --bg-light: hsl(273 100% 100%);
+        --text: hsl(275 59% 6%);
+        --text-muted: hsl(274 14% 30%);
+        --highlight: hsl(273 100% 100%);
+        --border: hsl(273 10% 53%);
+        --border-muted: hsl(273 14% 65%);
+        --primary: hsl(276 35% 32%);
+        --secondary: hsl(84 76% 18%);
+        --danger: hsl(9 21% 41%);
+        --warning: hsl(52 23% 34%);
+        --success: hsl(147 19% 36%);
+        --info: hsl(217 22% 41%);
+        /* oklch */
+        --bg-dark: oklch(0.92 0.02 310);
+        --bg: oklch(0.96 0.02 310);
+        --bg-light: oklch(1 0.02 310);
+        --text: oklch(0.15 0.04 310);
+        --text-muted: oklch(0.4 0.04 310);
+        --highlight: oklch(1 0.04 310);
+        --border: oklch(0.6 0.04 310);
+        --border-muted: oklch(0.7 0.04 310);
+        --primary: oklch(0.4 0.1 310);
+        --secondary: oklch(0.4 0.1 130);
+        --danger: oklch(0.5 0.05 30);
+        --warning: oklch(0.5 0.05 100);
+        --success: oklch(0.5 0.05 160);
+        --info: oklch(0.5 0.05 260);
+        /* other data */
+        --img-filter: invert(1);
+        --outline-width: 2px;
     }
 }
 

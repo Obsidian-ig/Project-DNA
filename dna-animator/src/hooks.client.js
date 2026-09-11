@@ -7,6 +7,11 @@ let configObject = pulledConfig ? JSON.parse(pulledConfig) : undefined;
 if (configObject) {
     console.log("Successfully retrieved appConfig from local storage!");
     appState.ImportConfigFromLocalStorage(configObject);
+    let pulledRigPlaygroundState = localStorage.getItem("rigPlaygroundState");
+    if (pulledRigPlaygroundState) {
+        let stateObject = pulledRigPlaygroundState ? JSON.parse(pulledRigPlaygroundState) : undefined;
+        appState.ImportRigPlaygroundStateFromLocalStorage(stateObject);
+    }
     appState.UpdateTheme();
     appState.MarkAsDoneLoading();
     window.electronAPI.showWindow();
