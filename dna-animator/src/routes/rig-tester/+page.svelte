@@ -28,13 +28,30 @@ Ideas/Plans:
 	} from '../header-actions.svelte.js';
 	import RigTree from '../../components/RigTree.svelte';
 	import { Pane, Splitpanes } from 'svelte-splitpanes';
+	import type { File } from 'node:buffer';
 
 	registerHeaderActions({
 		file: [
 			{
 				id: 'importRig',
-				action: () => {
+				action: async () => {
 					console.log('Import Rig!');
+					const options = {
+						types: [
+							{
+								description: 'Rig File',
+								accept: {
+									'json/*': ['.dnar', '.jsonc', '.json']
+								}
+							}
+						],
+						excludeAcceptAllOption: true,
+						multiple: false // Set to true to allow selecting multiple files
+					};
+					const [fileHandle] = await window.showOpenFilePicker(options);
+                    const file = await fileHandle.getFile();
+                    console.log("Chose Rig File: " + file.name);
+                    currentRigFile = file;
 				}
 			},
 			{
@@ -144,6 +161,8 @@ Ideas/Plans:
 		]
 	});
 	onDestroy(() => registerHeaderActions({})); //clears the registered actions obviously
+
+    let currentRigFile: File | null = null;
 </script>
 
 <svelte:head>
@@ -153,21 +172,21 @@ Ideas/Plans:
 <div class="app" id="app">
 	<Splitpanes style="height:100%; max-height: 100%; overflow: hidden;">
 		<Pane snapSize={3}>
-			<RigTree />
+			<RigTree rigFile={currentRigFile} />
 		</Pane>
-        <Pane snapSize={3}>
-            <!--Rig Item Properties Explorer-->
-        </Pane>
-        <Pane>
-            <Splitpanes horizontal={true}>
-                <Pane snapSize={3}>
-                    <!--Render Preview Screen-->
-                </Pane>
-                <Pane snapSize={3}>
-                    <!--Device Sensor Settings/Simulation-->
-                </Pane>
-            </Splitpanes>
-        </Pane>
+		<Pane snapSize={3}>
+			<!--Rig Item Properties Explorer-->
+		</Pane>
+		<Pane>
+			<Splitpanes horizontal={true}>
+				<Pane snapSize={3}>
+					<!--Render Preview Screen-->
+				</Pane>
+				<Pane snapSize={3}>
+					<!--Device Sensor Settings/Simulation-->
+				</Pane>
+			</Splitpanes>
+		</Pane>
 	</Splitpanes>
 </div>
 
@@ -179,21 +198,21 @@ Ideas/Plans:
 	}
 
 	:global(.splitpanes.default-theme) {
-        &.splitpanes--vertical .splitpanes__splitter {
-            width: 2px !important;
-        }
-        &.splitpanes--horizontal .splitpanes__splitter {
-            height: 2px !important;
-            width: 100% !important; /*fixes issue with width being set to 2px cause of vertical style above*/
-        }
+		&.splitpanes--vertical .splitpanes__splitter {
+			width: 2px !important;
+		}
+		&.splitpanes--horizontal .splitpanes__splitter {
+			height: 2px !important;
+			width: 100% !important; /*fixes issue with width being set to 2px cause of vertical style above*/
+		}
 
-        & .splitpanes__pane {
-            background-color: var(--bg) !important;
-        }
+		& .splitpanes__pane {
+			background-color: var(--bg) !important;
+		}
 
-        & .splitpanes__splitter {
-            background-color: var(--highlight) !important;
-            border: none !important;
-        }
+		& .splitpanes__splitter {
+			background-color: var(--primary) !important;
+			border: none !important;
+		}
 	}
 </style>
