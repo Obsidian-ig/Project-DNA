@@ -29,9 +29,24 @@ Ideas/Plans:
 	import RigTree from '../../components/RigTree.svelte';
 	import { Pane, Splitpanes } from 'svelte-splitpanes';
 	import type { File } from 'node:buffer';
+	import RigPropsExplorer from '../../components/RigPropsExplorer.svelte';
 
 	registerHeaderActions({
 		file: [
+            {
+                id: 'closePlayground',
+                action: () => {
+                    navigation.navigate("/");
+                }
+            },
+            {
+                id: 'closeRig',
+                action: () => {
+                    currentRigFile = null;
+                    appState.UpdateRigPlaygroundStateLoadedRig(null);
+                    appState.UpdateRigPlaygroundStateSelectedNode(null);
+                }
+            },
 			{
 				id: 'importRig',
 				action: async () => {
@@ -176,6 +191,7 @@ Ideas/Plans:
 		</Pane>
 		<Pane snapSize={5}>
 			<!--Rig Item Properties Explorer-->
+            <RigPropsExplorer rigFile={currentRigFile} />
 		</Pane>
 		<Pane>
 			<Splitpanes horizontal={true}>

@@ -1,7 +1,7 @@
 {
     "name": "Default Rig",
     "rig_version": 0.1,
-    "rig_structure_version": 2.0,
+    "rig_structure_version": 2.1,
     "expanded": false,
     "base": {
         "starting_position": {
@@ -173,6 +173,16 @@
             ],
             "closed": true,
             "fill_color": "#065b9c"
+        }
+    ],
+    "enums": [
+        {
+            "id": "interpolation_type",
+            "allowed_values": [
+                "linear",
+                "cubic",
+                "quadratic"
+            ]
         }
     ]
 }

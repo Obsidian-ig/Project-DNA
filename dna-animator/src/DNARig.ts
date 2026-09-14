@@ -9,10 +9,10 @@ export const RigPath2InterpolationType = {
 } as const;
 export type RigPath2InterpolationType =
     (typeof RigPath2InterpolationType)[keyof typeof RigPath2InterpolationType];
-export interface RigPath2 {
-    point_one: RigVector2;
-    point_two: RigVector2;
+export interface RigPathPoint {
+    point: RigVector2;
     interpolation_type: RigPath2InterpolationType;
+    controls?: RigVector2[]; //for the interpolation
 }
 export interface RigElement {
     name: string;
@@ -26,8 +26,13 @@ export interface RigElement {
     rotation: RigVector2;
     scale: RigVector2;
     transform_origin: RigVector2; // the origin point in which modifications happen. idk how this works/how to implement it tho
-    paths: RigPath2[];
+    points: RigPathPoint[];
+    closed: boolean; //whether or not the last point should automatically connect to  the first point.
     fill_color: string;
+}
+export interface RigEnum {
+    id: string;
+    allowed_values: any[];
 }
 export interface RigObject {
     name: string;
@@ -44,12 +49,13 @@ export interface RigObject {
     rotation: RigVector2;
     scale: RigVector2;
     elements: RigElement[];
+    enums: RigEnum[]; //defines strict allowed values to fields with the id of the enum. Will throw error if field contains value the enum doesn't.
     //add animations field/data types later
 }
 export const SelectedNodeType = {
     Root: 'Root',
     Element: 'Element',
-    Path: 'Path',
+    Point: 'Point',
     None: 'None'
 } as const;
 export type SelectedNodeType = (typeof SelectedNodeType)[keyof typeof SelectedNodeType];

@@ -17,10 +17,15 @@ export enum HeaderType {
     Default,
     File
 }
-
+export const HeaderPanelOptionType = {
+    Default: "default",
+    Expand: "expand"
+} as const;
+export type HeaderPanelOptionType = (typeof HeaderPanelOptionType)[keyof typeof HeaderPanelOptionType]
 export interface HeaderPanelOption {
     label: string;
     id: string;
+    type: HeaderPanelOptionType;
 }
 
 export interface HeaderPanel {

@@ -28,7 +28,8 @@
 						position: (data as any)?.position ?? { x: 0.0, y: 0.0 },
 						rotation: (data as any)?.rotation ?? { x: 0.0, y: 0.0 },
 						scale: (data as any)?.scale ?? { x: 0.0, y: 0.0 },
-						elements: (data as any)?.elements ?? []
+						elements: (data as any)?.elements ?? [],
+                        enums: (data as any)?.enums ?? []
 					};
 					return {
 						...data,
@@ -123,9 +124,9 @@
 					>
 				</div>
 				{#if element.expanded}
-					{#each element.paths as path, pathIndex}
+					{#each element.points as point, pathIndex}
 						<div
-							class="rig-node path-node {selectedNode?.type === DNARig.SelectedNodeType.Path &&
+							class="rig-node path-node {selectedNode?.type === DNARig.SelectedNodeType.Point &&
 							selectedNode.index === pathIndex &&
 							selectedNode.name === element.name
 								? 'selected'
@@ -138,10 +139,10 @@
 									if (rigObject)
 										selectedNode = {
 											name: element.name,
-											type: DNARig.SelectedNodeType.Path,
+											type: DNARig.SelectedNodeType.Point,
 											index: pathIndex
 										};
-								}}>Path: {pathIndex}</button
+								}}>Point: {pathIndex}</button
 							>
 						</div>
 					{/each}
@@ -160,6 +161,7 @@
 		background-color: var(--bg-dark);
 		text-overflow: ellipsis;
 		text-wrap: nowrap;
+        user-select: none;
 	}
 
 	.rig-tree-container {
