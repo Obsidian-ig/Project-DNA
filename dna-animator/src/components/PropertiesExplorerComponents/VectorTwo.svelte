@@ -34,10 +34,6 @@
         flex-wrap: nowrap;
 		flex-direction: column;
         align-items: center;
-
-		&:hover {
-			background-color: var(--highlight);
-		}
 	}
 
 	.header {
@@ -94,6 +90,7 @@
         border-left: none;
         border-color: var(--border);
         box-shadow: none;
+        background-color: transparent;
 
         &:active,
         &:focus {

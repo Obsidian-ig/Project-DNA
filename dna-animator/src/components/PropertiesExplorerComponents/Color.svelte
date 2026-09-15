@@ -1,14 +1,14 @@
 <script lang="ts">
-	let { label, value = $bindable() }: { label: string; value: number } = $props();
+	let { label, value = $bindable() }: { label: string; value: string } = $props();
 </script>
 
-<label class="number-property">
+<label class="color-property">
 	<p class="label">{label}</p>
-	<input type="number" class="number-input" bind:value />
+	<input type="color" class="color-input" bind:value />
 </label>
 
 <style>
-	.number-property {
+	.color-property {
 		background-color: var(--bg-light);
 		padding: 5px;
 		border-radius: 5px;
@@ -28,7 +28,7 @@
 		user-select: none;
 	}
 
-	.number-input {
+	.color-input {
 		border-radius: 8px;
 		padding: 2px;
         padding-left: 5px;

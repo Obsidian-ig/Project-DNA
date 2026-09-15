@@ -30,6 +30,7 @@ Ideas/Plans:
 	import { Pane, Splitpanes } from 'svelte-splitpanes';
 	import type { File } from 'node:buffer';
 	import RigPropsExplorer from '../../components/RigPropsExplorer.svelte';
+	import RigDisplay from '../../components/RigDisplay.svelte';
 
 	registerHeaderActions({
 		file: [
@@ -191,12 +192,13 @@ Ideas/Plans:
 		</Pane>
 		<Pane snapSize={5}>
 			<!--Rig Item Properties Explorer-->
-            <RigPropsExplorer rigFile={currentRigFile} />
+            <RigPropsExplorer />
 		</Pane>
 		<Pane>
 			<Splitpanes horizontal={true}>
 				<Pane snapSize={3}>
 					<!--Render Preview Screen-->
+                    <RigDisplay />
 				</Pane>
 				<Pane snapSize={3}>
 					<!--Device Sensor Settings/Simulation-->

@@ -48,7 +48,7 @@
 		align-items: center;
 
 		&:hover {
-			background-color: var(--highlight);
+			background-color: var(--hover);
 		}
 	}
 
