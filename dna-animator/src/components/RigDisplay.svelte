@@ -39,25 +39,17 @@
         }
 
 		rigObject?.elements.forEach((element) => {
-			element.points.forEach((point, index) => {
-                ctx.beginPath();
-                let calculatedPosition = CalculatePhysicalPositionFromRigCenter(point.point);
-				ctx.arc(calculatedPosition.x, calculatedPosition.y, 1.5 * scaleUnit, 0, 2 * Math.PI);
-                ctx.fillStyle = element.fill_color;
-                ctx.fill();
-                ctx.moveTo(calculatedPosition.x, calculatedPosition.y);
-                if (index === element.points.length - 1) {
-                    if (element.closed) {
-                        let endPointCalculatedPosition = CalculatePhysicalPositionFromRigCenter(element.points[0].point);
-                        ctx.lineTo(endPointCalculatedPosition.x, endPointCalculatedPosition.y);
-                    }
-                } else {
-                    let nextPointCalculatedPosition = CalculatePhysicalPositionFromRigCenter(element.points[index + 1].point);
-                    ctx.lineTo(nextPointCalculatedPosition.x, nextPointCalculatedPosition.y);
-                }
-                ctx.strokeStyle = "rgb(255, 255, 255)";
-                ctx.stroke();
-			});
+            ctx.beginPath();
+            if (element.points.length <= 2) return;
+            let calculatedPosition = CalculatePhysicalPositionFromRigCenter(element.points[0].point);
+            ctx.moveTo(calculatedPosition.x, calculatedPosition.y);
+            for (let i = 1; i < element.points.length; i++) {
+                calculatedPosition = CalculatePhysicalPositionFromRigCenter(element.points[i].point);
+                ctx.lineTo(calculatedPosition.x, calculatedPosition.y);
+            }
+            ctx.closePath();
+            ctx.fillStyle = element.fill_color;
+            ctx.fill();
 		});
 	});
 </script>
