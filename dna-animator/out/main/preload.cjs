@@ -15,5 +15,9 @@ import_electron.contextBridge.exposeInMainWorld("electronAPI", {
   },
   closeWindow: () => import_electron.ipcRenderer.send("window-close"),
   setWindowTitle: (title) => import_electron.ipcRenderer.send("set-window-title", title),
-  openFileExplorer: (folderPath) => import_electron.ipcRenderer.send("open-file-explorer", folderPath)
+  openFileExplorer: (folderPath) => import_electron.ipcRenderer.send("open-file-explorer", folderPath),
+  saveOrCreateFile: (filePath, data) => import_electron.ipcRenderer.invoke("save-or-create-file", filePath, data),
+  openFile: (windowTitle, fileTypeName, acceptedFileExtensions) => import_electron.ipcRenderer.invoke("open-file", windowTitle, fileTypeName, acceptedFileExtensions),
+  readFile: (filePath) => import_electron.ipcRenderer.invoke("read-file", filePath),
+  saveNewFile: (windowTitle, fileTypeName, acceptedFileExtensions, data) => import_electron.ipcRenderer.invoke("save-new-file", windowTitle, fileTypeName, acceptedFileExtensions, data)
 });

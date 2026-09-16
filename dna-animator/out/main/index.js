@@ -1,8 +1,9 @@
 // src/main/index.ts
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, dialog, shell } from "electron";
 import path from "path";
 import { fileURLToPath } from "url";
 import { ipcMain } from "electron/main";
+import * as fs from "fs/promises";
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = path.dirname(__filename);
 var win = null;
@@ -60,6 +61,59 @@ ipcMain.on("open-file-explorer", async (event, folderpath) => {
   const errorMessage = await shell.openPath(folderpath);
   if (errorMessage) {
     console.error("Failed to open folder: }" + folderpath);
+  }
+});
+ipcMain.handle("open-file", async (event, windowTitle, fileTypeName, acceptedFileExtensions) => {
+  if (!win) return;
+  const openOptions = {
+    title: windowTitle,
+    properties: ["openFile"],
+    filters: [
+      {
+        name: fileTypeName,
+        extensions: acceptedFileExtensions
+      }
+    ]
+  };
+  const result = await dialog.showOpenDialogSync(win, openOptions);
+  return result;
+});
+ipcMain.handle("read-file", async (event, filePath) => {
+  return await fs.readFile(filePath, "utf-8");
+});
+ipcMain.handle("save-or-create-file", async (event, filePath, data) => {
+  try {
+    await fs.writeFile(filePath, data);
+    return true;
+  } catch (error) {
+    console.log(error);
+    return false;
+  }
+});
+ipcMain.handle("save-new-file", async (event, windowTitle, fileTypeName, acceptedFileExtensions, data) => {
+  try {
+    if (!win) return;
+    const saveOptions = {
+      title: windowTitle,
+      filters: [
+        {
+          name: fileTypeName,
+          extensions: acceptedFileExtensions
+        }
+      ]
+    };
+    const result = await dialog.showSaveDialogSync(win, saveOptions);
+    await fs.writeFile(result, data);
+    return {
+      success: true,
+      filePath: result
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      success: false,
+      filePath: null
+    };
   }
 });
 app.whenReady().then(() => {

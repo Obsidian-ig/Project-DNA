@@ -37,7 +37,7 @@
 			</Section>
 			<Section label="Rig Enums">
 				{#each rigObject.enums as rigEnum}
-					<EnumEditor label={rigEnum.id} value={rigEnum} />
+					<EnumEditor value={rigEnum} />
 				{/each}
 			</Section>
 		{:else if selectedNode?.type === SelectedNodeType.Element}

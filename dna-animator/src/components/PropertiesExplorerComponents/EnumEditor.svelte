@@ -2,7 +2,7 @@
 	import type { RigEnum } from '../../DNARig';
 	import trashIcon from '$lib/assets/trash-icon-white.png';
 
-	let { label, value = $bindable() }: { label: string; value: RigEnum } = $props();
+	let { value = $bindable() }: { value: RigEnum } = $props();
 </script>
 
 <div class="enumeditor-property">

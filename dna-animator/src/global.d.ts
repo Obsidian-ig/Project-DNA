@@ -9,11 +9,15 @@ export interface ElectronAPI {
   closeWindow: () => void;
   setWindowTitle: (title: string) => void;
   openFileExplorer: (folderPath: string) => void;
+  saveOrCreateFile: (filePath: string, data: string) => Promise<boolean>;
+  openFile: (windowTitle: string, fileTypeName: string, acceptedFileExtensions: string[]) => Promise<string[] | undefined>;
+  readFile: (filePath: string) => Promise<string>;
+  saveNewFile: (windowTitle: string, fileTypeName: string, acceptedFileExtensions: string[], data: string) => Promise<{success: boolean, filePath: string}>;
 }
 
 declare global {
   interface Window {
     electronAPI: ElectronAPI;
-    showOpenFilePicker(options?: any): Promise<any[]>;
+    showOpenFilePicker(options?: *): Promise<*[]>;
   }
 }

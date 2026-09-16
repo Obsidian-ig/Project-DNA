@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { File } from 'node:buffer';
 	import downArrowIcon from '$lib/assets/down-arrow-icon-white.png';
     import * as DNARig from '../DNARig';
 	import { appState } from '../AppState.svelte';

@@ -9,5 +9,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     isMaximized: () => { return ipcRenderer.invoke('is-maximized'); },
     closeWindow: () => ipcRenderer.send('window-close'),
     setWindowTitle: (title: string) => ipcRenderer.send('set-window-title', title),
-    openFileExplorer: (folderPath: string) => ipcRenderer.send('open-file-explorer', folderPath)
+    openFileExplorer: (folderPath: string) => ipcRenderer.send('open-file-explorer', folderPath),
+    saveOrCreateFile: (filePath: string, data: string) => ipcRenderer.invoke('save-or-create-file', filePath, data),
+    openFile: (windowTitle: string, fileTypeName: string, acceptedFileExtensions: string[]) => ipcRenderer.invoke('open-file', windowTitle, fileTypeName, acceptedFileExtensions),
+    readFile: (filePath: string) => ipcRenderer.invoke('read-file', filePath),
+    saveNewFile: (windowTitle: string, fileTypeName: string, acceptedFileExtensions: string[], data: string) => ipcRenderer.invoke('save-new-file', windowTitle, fileTypeName, acceptedFileExtensions, data)
 });

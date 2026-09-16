@@ -1,0 +1,188 @@
+{
+  "name": "Default Rig",
+  "rig_version": 0.1,
+  "rig_structure_version": 2.1,
+  "expanded": true,
+  "base": {
+    "starting_position": {
+      "x": 0,
+      "y": 0
+    },
+    "starting_rotation": {
+      "x": 0,
+      "y": 0
+    },
+    "starting_scale": {
+      "x": 0,
+      "y": 0
+    },
+    "transform_origin": {
+      "x": 0,
+      "y": 0
+    }
+  },
+  "position": {
+    "x": 0,
+    "y": 0
+  },
+  "rotation": {
+    "x": 0,
+    "y": 0
+  },
+  "scale": {
+    "x": 0,
+    "y": 0
+  },
+  "elements": [
+    {
+      "name": "Eye_Background",
+      "expanded": false,
+      "offsets": {
+        "position": {
+          "x": -20,
+          "y": 0
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0
+        },
+        "scale": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0,
+        "y": 0
+      },
+      "transform_origin": {
+        "x": 0,
+        "y": 0
+      },
+      "points": [
+        {
+          "point": {
+            "x": -60,
+            "y": -40
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        },
+        {
+          "point": {
+            "x": -40,
+            "y": 40
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        },
+        {
+          "point": {
+            "x": 40,
+            "y": 40
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        },
+        {
+          "point": {
+            "x": 40,
+            "y": -40
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        }
+      ],
+      "closed": true,
+      "fill_color": "#3d008c"
+    },
+    {
+      "name": "Eye_Pupil",
+      "expanded": true,
+      "offsets": {
+        "position": {
+          "x": -30,
+          "y": 0
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0
+        },
+        "scale": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0,
+        "y": 0
+      },
+      "transform_origin": {
+        "x": 0,
+        "y": 0
+      },
+      "points": [
+        {
+          "point": {
+            "x": -6,
+            "y": -6
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        },
+        {
+          "point": {
+            "x": -3,
+            "y": 6
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        },
+        {
+          "point": {
+            "x": 3,
+            "y": 6
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        },
+        {
+          "point": {
+            "x": 3,
+            "y": -6
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        }
+      ],
+      "closed": true,
+      "fill_color": "#065b9c"
+    }
+  ],
+  "enums": [
+    {
+      "id": "interpolation_type",
+      "allowed_values": [
+        "Linear",
+        "Cubic",
+        "Quadratic"
+      ]
+    }
+  ]
+}

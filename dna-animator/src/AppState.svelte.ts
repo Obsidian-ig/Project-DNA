@@ -1,5 +1,4 @@
 import { browser } from "$app/environment";
-import { page } from "$app/state";
 import type { RigObject, SelectedNode } from "./DNARig";
 
 //supported themes
@@ -45,6 +44,7 @@ export interface PageConfig {
 
 export interface RigPlaygroundState {
     loadedRig: RigObject | null;
+    loadedRigFilePath: string | null | undefined;
     selectedNode: SelectedNode | null;
 }
 
@@ -54,7 +54,7 @@ class AppState {
     config = $state(this.constAppConfig); //whatever should/needs to be persistant between sessions.
     loading = $state(true);
     loadingErrorMessage: string | null = $state(null);
-    rigPlaygroundState: RigPlaygroundState = $state({loadedRig: null, selectedNode: null});
+    rigPlaygroundState: RigPlaygroundState = $state({loadedRig: null, loadedRigFilePath: null, selectedNode: null});
 
     /*
     constructor() {
@@ -73,7 +73,11 @@ class AppState {
         if (state) this.rigPlaygroundState = state;
     }
     UpdateRigPlaygroundStateLoadedRig(rig: RigObject | null) {
-        this.rigPlaygroundState.loadedRig = rig;
+    this.rigPlaygroundState.loadedRig = rig;
+    this.UpdateRigPlaygroundStateInLocalStorage();
+}
+    UpdateRigPlaygroundStateRigFilePath(filePath: string | null) {
+        this.rigPlaygroundState.loadedRigFilePath = filePath;
         this.UpdateRigPlaygroundStateInLocalStorage();
     }
     UpdateRigPlaygroundStateSelectedNode(node: SelectedNode | null) {

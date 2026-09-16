@@ -12,8 +12,8 @@ Ideas/Plans:
 -->
 
 <script lang="ts">
-	import { onDestroy, onMount, mount, unmount, type ComponentProps } from 'svelte';
-	import { appState, Theme } from '../../AppState.svelte.ts';
+	import { onDestroy } from 'svelte';
+	import { appState } from '../../AppState.svelte.ts';
 	import {
 		Colors,
 		Copy,
@@ -28,9 +28,9 @@ Ideas/Plans:
 	} from '../header-actions.svelte.js';
 	import RigTree from '../../components/RigTree.svelte';
 	import { Pane, Splitpanes } from 'svelte-splitpanes';
-	import type { File } from 'node:buffer';
 	import RigPropsExplorer from '../../components/RigPropsExplorer.svelte';
 	import RigDisplay from '../../components/RigDisplay.svelte';
+	import type { RigObject } from '../../DNARig.ts';
 
 	registerHeaderActions({
 		file: [
@@ -45,6 +45,7 @@ Ideas/Plans:
                 action: () => {
                     currentRigFile = null;
                     appState.UpdateRigPlaygroundStateLoadedRig(null);
+					appState.UpdateRigPlaygroundStateRigFilePath("");
                     appState.UpdateRigPlaygroundStateSelectedNode(null);
                 }
             },
@@ -52,22 +53,14 @@ Ideas/Plans:
 				id: 'importRig',
 				action: async () => {
 					console.log('Import Rig!');
-					const options = {
-						types: [
-							{
-								description: 'Rig File',
-								accept: {
-									'json/*': ['.dnar', '.jsonc', '.json']
-								}
-							}
-						],
-						excludeAcceptAllOption: true,
-						multiple: false // Set to true to allow selecting multiple files
-					};
-					const [fileHandle] = await window.showOpenFilePicker(options);
-                    const file = await fileHandle.getFile();
-                    console.log("Chose Rig File: " + file.name);
-                    currentRigFile = file;
+					let selectedFilePaths = await window.electronAPI.openFile("Select a Rig File", "DNA Rig Files", ["dnar", "json"]);
+					let rigFilePath = selectedFilePaths?.[0];
+					console.log("Rig File Path: " + rigFilePath);
+					if (!rigFilePath) {console.log("Failed to get rig file path!"); return;}
+					let fileData = await window.electronAPI.readFile(rigFilePath);
+					let rigObject: RigObject | null = JSON.parse(fileData) as RigObject;
+					appState.UpdateRigPlaygroundStateLoadedRig(rigObject);
+					appState.UpdateRigPlaygroundStateRigFilePath(rigFilePath);
 				}
 			},
 			{
@@ -78,14 +71,27 @@ Ideas/Plans:
 			},
 			{
 				id: 'saveRig',
-				action: () => {
+				action: async () => {
 					console.log('Save Rig!');
+					if (!appState.rigPlaygroundState.loadedRigFilePath) {
+						console.log("Unable to save rig as the file path is invalid!");
+						return;
+					}
+					let result = await window.electronAPI.saveOrCreateFile(appState.rigPlaygroundState.loadedRigFilePath, JSON.stringify(appState.rigPlaygroundState.loadedRig, null, 2));
+					console.log((result ? "Saved Rig Successfully!" : "Failed to save rig :("));
 				}
 			},
 			{
 				id: 'saveRigAs',
-				action: () => {
+				action: async () => {
 					console.log('Save Rig As!');
+					let result = await window.electronAPI.saveNewFile("Save New Rig", "DNA Rig Files", ["dnar", "json"], JSON.stringify(appState.rigPlaygroundState.loadedRig, null, 2));
+					if (result.success) {
+						console.log("Successfully saved new rig!");
+						appState.UpdateRigPlaygroundStateRigFilePath(result.filePath);
+					} else {
+						console.log("Failed to save new rig :(");
+					}
 				}
 			},
 			{
