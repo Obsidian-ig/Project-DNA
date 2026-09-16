@@ -28,7 +28,7 @@
     --border: oklch(0.4 0.04 310);
     --border-muted: oklch(0.3 0.04 310);
     --primary: oklch(0.76 0.1 310);
-    --secondary: oklch(0.76 0.1 130);
+    --secondary: oklch(65.703% 0.08495 130.093);
     --danger: oklch(0.7 0.05 30);
     --warning: oklch(0.7 0.05 100);
     --success: oklch(0.7 0.05 160);
@@ -105,7 +105,7 @@ body.light {
         --border: oklch(0.4 0.04 310);
         --border-muted: oklch(0.3 0.04 310);
         --primary: oklch(0.76 0.1 310);
-        --secondary: oklch(0.76 0.1 130);
+        --secondary: oklch(65.703% 0.08495 130.093);
         --danger: oklch(0.7 0.05 30);
         --warning: oklch(0.7 0.05 100);
         --success: oklch(0.7 0.05 160);
