@@ -39,8 +39,8 @@
       "expanded": false,
       "offsets": {
         "position": {
-          "x": -20,
-          "y": 0
+          "x": -26,
+          "y": 5
         },
         "rotation": {
           "x": 0,
@@ -86,16 +86,16 @@
         },
         {
           "point": {
-            "x": 40,
-            "y": 40
+            "x": 20,
+            "y": 10
           },
           "interpolation_type": "Linear",
           "controls": []
         },
         {
           "point": {
-            "x": 40,
-            "y": -40
+            "x": 20,
+            "y": -10
           },
           "interpolation_type": "Linear",
           "controls": []
@@ -110,7 +110,7 @@
       "offsets": {
         "position": {
           "x": -30,
-          "y": 0
+          "y": 5
         },
         "rotation": {
           "x": 0,

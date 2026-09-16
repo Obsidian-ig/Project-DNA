@@ -42,11 +42,51 @@
 			}
 			GetFileTextAndUpdateRigObject();
 		}
+
+        /*Dragging Element Nodes Logic*/
+        let nodesContainer = document.querySelector(".rig-tree-container");
+        let elementNodes = document.querySelectorAll(".element-node");
+        elementNodes.forEach((elementNode) => {
+            elementNode.addEventListener("dragstart", () => {
+                setTimeout(() => elementNode.classList.add("dragging"), 0);
+            });
+            elementNode.addEventListener("dragend", () => {
+                elementNode.classList.remove("dragging");
+            })
+        });
+        const initSortableList = (e: any) => {
+            e.preventDefault();
+            const draggingItem: HTMLElement = document.querySelector(".dragging") as HTMLElement;
+            let siblings = [...document.querySelectorAll(".element-node:not(.dragging)")] as HTMLElement[];
+            let nextSibling = siblings.find(sibling => {
+                return e.clientY <= sibling.offsetTop + sibling.offsetHeight / 2;
+            });
+            if (!nextSibling) return;
+            
+            let draggedElementIndex = rigObject?.elements.findIndex(el => el.name === draggingItem.id);
+            if (draggedElementIndex === undefined || draggedElementIndex === -1) return;
+            let draggedElement = rigObject?.elements.splice(draggedElementIndex, 1)
+            if (!draggedElement) return;
+            let nextSiblingElementIndex = rigObject?.elements.findIndex(el => el.name === nextSibling.id);
+            if (nextSiblingElementIndex === undefined || nextSiblingElementIndex === -1) return;
+            if (draggedElementIndex < nextSiblingElementIndex) nextSiblingElementIndex--;
+            rigObject?.elements.splice(nextSiblingElementIndex, 0, draggedElement[0]);
+        };
+        nodesContainer?.addEventListener("dragover", initSortableList);
+        nodesContainer?.addEventListener("dragenter", (e) => e.preventDefault());
+        /*End Dragging Element Nodes Logic*/
+
+        /*Context Menu Logic*/
+        let showContextMenu = false;
+        
 	});
 
     $effect(() => {
         appState.UpdateRigPlaygroundStateSelectedNode(selectedNode);
     });
+
+
+
 </script>
 
 <div class="header">
@@ -62,9 +102,7 @@
 
 		}}
 	>
-		<div
-			class="rig-node root-node {selectedNode?.type === DNARig.SelectedNodeType.Root ? 'selected' : ''}"
-		>
+		<div class="rig-node root-node {selectedNode?.type === DNARig.SelectedNodeType.Root ? 'selected' : ''}">
 			<button
 				class="expand-button"
 				onclick={(e) => {
@@ -95,6 +133,8 @@
 					selectedNode.name === element.name
 						? 'selected'
 						: ''}"
+                    id={element.name}
+                    draggable="true"
 				>
 					<button
 						class="expand-button"
@@ -150,6 +190,12 @@
 		{/if}
 	</div>
 {/if}
+
+<ul class="context-menu">
+    <li class="context-item">
+
+    </li>
+</ul>
 
 <style>
 	.header {
