@@ -22,7 +22,8 @@ Helix can not only be useful though, he is also a cool little accessory that you
 
 This is my own self-made vector graphics animation software that I designed to be used with microcontrollers. The animator can be used to make your own "Rigs" or characters for Helix. It allows for either direct value and JSON editing or visual editing to make rig creation easier. It also allows you to easily design your own animations and display them on the Helix device live without having to flash the firmware every time you change something. This will make it easier for you to verify that what you created actually works and looks good on the actual hardware.
 
-<img width="1599" height="852" alt="image" src="https://github.com/user-attachments/assets/a99629e5-8d96-41e0-bc87-6e6abd804aad" />
-<img width="1599" height="852" alt="image" src="https://github.com/user-attachments/assets/32b6dfcd-c7a5-4131-8d72-c5df4f66fced" />
-<img width="1599" height="850" alt="image" src="https://github.com/user-attachments/assets/56ce2f5d-2854-46d6-b8c5-61852d9f85f8" />
+<img width="1598" height="850" alt="image" src="https://github.com/user-attachments/assets/827a947f-f6ea-4795-9bc2-592cefdfe3c9" />
+<img width="1598" height="849" alt="image" src="https://github.com/user-attachments/assets/63d2ed4e-d75c-406f-a95c-b5f13016e9b0" />
+
+
 *This software is still heavily under development and has really just begun its development; so, stuff is bound to change*
