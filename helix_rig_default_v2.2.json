@@ -17,8 +17,8 @@
       "z": 0
     },
     "starting_scale": {
-      "x": 0,
-      "y": 0
+      "x": 0.8,
+      "y": 0.8
     },
     "transform_origin": {
       "x": 0,
@@ -27,7 +27,7 @@
   },
   "position": {
     "x": 0,
-    "y": 0
+    "y": 2
   },
   "rotation": {
     "x": 0,

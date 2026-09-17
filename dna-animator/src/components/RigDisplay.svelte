@@ -50,6 +50,33 @@
             };
         }
 
+		function RotatePhysicalPointFromPhysicalOrigin(physicalPoint: RigVector2, degrees: number): RigVector2 {
+			let radians = degrees * (Math.PI / 180);
+			physicalPoint.x =
+				physicalPoint.x * Math.cos(radians) -
+				physicalPoint.y * Math.sin(radians);
+			physicalPoint.y =
+				physicalPoint.x * Math.sin(radians) +
+				physicalPoint.y * Math.cos(radians);
+
+			return physicalPoint;
+		}
+		function ScalePhysicalPointFromPhysicalOrigin(physicalPoint: RigVector2, scaleMultiplier: RigVector2): RigVector2 {
+			if (!rigObject) return { x: 0, y: 0};
+			physicalPoint.x = physicalPoint.x * scaleMultiplier.x;
+			physicalPoint.y = physicalPoint.y * scaleMultiplier.y;
+			return physicalPoint;
+		}
+		function CalculatePointPositionWithParams(physicalOrigin: RigVector2, physicalPoint: RigVector2, degreesOfRotation: number, scaleMultiplier: RigVector2) {
+			physicalPoint.x -= physicalOrigin.x;
+			physicalPoint.y -= physicalOrigin.y;
+			physicalPoint = RotatePhysicalPointFromPhysicalOrigin(physicalPoint, degreesOfRotation); //rotate
+			physicalPoint = ScalePhysicalPointFromPhysicalOrigin(physicalPoint, scaleMultiplier); //scale
+			physicalPoint.x += physicalOrigin.x;
+			physicalPoint.y += physicalOrigin.y;
+			return physicalPoint;
+		}
+
 		function DrawElement(element: RigElement) {
 			if (!ctx || !rigObject) return;
 			ctx.beginPath();
@@ -62,24 +89,32 @@
 				element.transform_origin,
 				elementCalculatedPosition
 			);
+			let totalOriginRotation = rigObject.base.starting_rotation.z + rigObject.rotation.z;
+			calculatedOrigin = RotatePhysicalPointFromPhysicalOrigin(calculatedOrigin, totalOriginRotation);
+			let originUHat = {
+				x: Math.sin(totalOriginRotation * (Math.PI / 180)),
+				y: Math.cos(totalOriginRotation * (Math.PI / 180))
+			};
+			let originRHat = {
+				x: Math.cos(totalOriginRotation * (Math.PI / 180)),
+				y: -(Math.sin(totalOriginRotation * (Math.PI / 180)))
+			};
+			//LEFT OFF HERE 9/17/2026: Use the UHat and RHat to rotate the individual points based on the "direction" the origin is facing from rig rotation:
+			// Global Position/Physical Position = Origin + (Xlocal * rHat) + (Ylocal * uHat);
+			
 			let calculatedPosition = CalculatePhysicalPositionFromPhysicalPosition(
 				element.points[0].point,
 				elementCalculatedPosition
 			);
 
-			//apply rotation
-			let tempX = calculatedPosition.x - calculatedOrigin.x;
-			let tempY = calculatedPosition.y - calculatedOrigin.y;
-            let totalRotation = (rigObject.base.starting_rotation.z + rigObject.rotation.z + element.offsets.rotation.z + element.rotation.z) * (Math.PI / 180); //add offset+rotation and convert to radians
-			calculatedPosition.x =
-				tempX * Math.cos(totalRotation) -
-				tempY * Math.sin(totalRotation);
-			calculatedPosition.y =
-				tempX * Math.sin(totalRotation) +
-				tempY * Math.cos(totalRotation);
-			calculatedPosition.x += calculatedOrigin.x;
-			calculatedPosition.y += calculatedOrigin.y;
-            //finish rotation
+			
+			let scaleMultiplier = {
+				x: rigObject.base.starting_scale.x + rigObject.scale.x + element.offsets.scale.x + element.scale.x,
+				y: rigObject.base.starting_scale.y + rigObject.scale.y + element.offsets.scale.y + element.scale.y
+			};
+			let totalRotation =  element.offsets.rotation.z + element.rotation.z;
+            
+			calculatedPosition = CalculatePointPositionWithParams(calculatedOrigin, calculatedPosition, totalRotation, scaleMultiplier);
 
 			ctx.moveTo(calculatedPosition.x, calculatedPosition.y);
 			for (let i = 1; i < element.points.length; i++) {
@@ -87,18 +122,7 @@
 					element.points[i].point,
 					elementCalculatedPosition
 				);
-                //apply rotation
-				tempX = calculatedPosition.x - calculatedOrigin.x;
-				tempY = calculatedPosition.y - calculatedOrigin.y;
-				calculatedPosition.x =
-					tempX * Math.cos(totalRotation) -
-					tempY * Math.sin(totalRotation);
-				calculatedPosition.y =
-					tempX * Math.sin(totalRotation) +
-					tempY * Math.cos(totalRotation);
-				calculatedPosition.x += calculatedOrigin.x;
-				calculatedPosition.y += calculatedOrigin.y;
-                //finish rotation
+                calculatedPosition = CalculatePointPositionWithParams(calculatedOrigin, calculatedPosition, totalRotation, scaleMultiplier);
 				ctx.lineTo(calculatedPosition.x, calculatedPosition.y);
 			}
 			ctx.closePath();
