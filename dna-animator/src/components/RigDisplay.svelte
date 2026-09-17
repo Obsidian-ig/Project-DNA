@@ -70,7 +70,7 @@
 			//apply rotation
 			let tempX = calculatedPosition.x - calculatedOrigin.x;
 			let tempY = calculatedPosition.y - calculatedOrigin.y;
-            let totalRotation = (element.offsets.rotation.x + element.rotation.x) * (Math.PI / 180); //add offset+rotation and convert to radians
+            let totalRotation = (rigObject.base.starting_rotation.z + rigObject.rotation.z + element.offsets.rotation.z + element.rotation.z) * (Math.PI / 180); //add offset+rotation and convert to radians
 			calculatedPosition.x =
 				tempX * Math.cos(totalRotation) -
 				tempY * Math.sin(totalRotation);

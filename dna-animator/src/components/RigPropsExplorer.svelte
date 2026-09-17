@@ -8,6 +8,7 @@
 	import Number from './PropertiesExplorerComponents/Number.svelte';
 	import Section from './PropertiesExplorerComponents/Section.svelte';
 	import Text from './PropertiesExplorerComponents/Text.svelte';
+	import VectorThree from './PropertiesExplorerComponents/VectorThree.svelte';
 	import VectorTwo from './PropertiesExplorerComponents/VectorTwo.svelte';
 
 	let rigObject = $derived(appState.rigPlaygroundState.loadedRig);
@@ -27,12 +28,12 @@
 			<Boolean label="Node Expanded" bind:value={rigObject.expanded} />
 			<Section label="Base Offsets">
 				<VectorTwo label="Starting Position" bind:value={rigObject.base.starting_position} />
-				<VectorTwo label="Starting Rotation" bind:value={rigObject.base.starting_rotation} />
+				<VectorThree label="Starting Rotation" bind:value={rigObject.base.starting_rotation} />
 				<VectorTwo label="Starting Scale" bind:value={rigObject.base.starting_scale} />
 			</Section>
 			<Section label="Rig Transforms">
 				<VectorTwo label="Position" bind:value={rigObject.position} />
-				<VectorTwo label="Rotation" bind:value={rigObject.rotation} />
+				<VectorThree label="Rotation" bind:value={rigObject.rotation} />
 				<VectorTwo label="Scale" bind:value={rigObject.scale} />
 			</Section>
 			<Section label="Rig Enums">
@@ -52,12 +53,12 @@
 				<Boolean label="Node Expanded" bind:value={currentElement.expanded} />
 				<Section label="Element Offsets">
 					<VectorTwo label="Starting Position" bind:value={currentElement.offsets.position} />
-					<VectorTwo label="Starting Rotation" bind:value={currentElement.offsets.rotation} />
+					<VectorThree label="Starting Rotation" bind:value={currentElement.offsets.rotation} />
 					<VectorTwo label="Starting Scale" bind:value={currentElement.offsets.scale} />
 				</Section>
 				<Section label="Element Transforms">
 					<VectorTwo label="Position" bind:value={currentElement.position} />
-					<VectorTwo label="Rotation" bind:value={currentElement.rotation} />
+					<VectorThree label="Rotation" bind:value={currentElement.rotation} />
 					<VectorTwo label="Scale" bind:value={currentElement.scale} />
 					<VectorTwo label="Transform Origin" bind:value={currentElement.transform_origin} />
 				</Section>
