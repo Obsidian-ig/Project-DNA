@@ -13,7 +13,7 @@ Ideas/Plans:
 
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { appState } from '../../AppState.svelte.ts';
+	import { appState, HeaderPanelOptionType, HeaderType, type PageConfig } from '../../AppState.svelte.ts';
 	import {
 		Colors,
 		Copy,
@@ -31,32 +31,40 @@ Ideas/Plans:
 	import RigPropsExplorer from '../../components/RigPropsExplorer.svelte';
 	import RigDisplay from '../../components/RigDisplay.svelte';
 	import type { RigObject } from '../../DNARig.ts';
+	import Header from '../header.svelte';
 
 	registerHeaderActions({
 		file: [
-            {
-                id: 'closePlayground',
-                action: () => {
-                    navigation.navigate("/");
-                }
-            },
-            {
-                id: 'closeRig',
-                action: () => {
-                    currentRigFile = null;
-                    appState.UpdateRigPlaygroundStateLoadedRig(null);
-					appState.UpdateRigPlaygroundStateRigFilePath("");
-                    appState.UpdateRigPlaygroundStateSelectedNode(null);
-                }
-            },
+			{
+				id: 'closePlayground',
+				action: () => {
+					navigation.navigate('/');
+				}
+			},
+			{
+				id: 'closeRig',
+				action: () => {
+					currentRigFile = null;
+					appState.UpdateRigPlaygroundStateLoadedRig(null);
+					appState.UpdateRigPlaygroundStateRigFilePath('');
+					appState.UpdateRigPlaygroundStateSelectedNode(null);
+				}
+			},
 			{
 				id: 'importRig',
 				action: async () => {
 					console.log('Import Rig!');
-					let selectedFilePaths = await window.electronAPI.openFile("Select a Rig File", "DNA Rig Files", ["dnar", "json"]);
+					let selectedFilePaths = await window.electronAPI.openFile(
+						'Select a Rig File',
+						'DNA Rig Files',
+						['dnar', 'json']
+					);
 					let rigFilePath = selectedFilePaths?.[0];
-					console.log("Rig File Path: " + rigFilePath);
-					if (!rigFilePath) {console.log("Failed to get rig file path!"); return;}
+					console.log('Rig File Path: ' + rigFilePath);
+					if (!rigFilePath) {
+						console.log('Failed to get rig file path!');
+						return;
+					}
 					let fileData = await window.electronAPI.readFile(rigFilePath);
 					let rigObject: RigObject | null = JSON.parse(fileData) as RigObject;
 					appState.UpdateRigPlaygroundStateLoadedRig(rigObject);
@@ -74,24 +82,34 @@ Ideas/Plans:
 				action: async () => {
 					console.log('Save Rig!');
 					if (!appState.rigPlaygroundState.loadedRigFilePath) {
-						console.log("Unable to save rig as the file path is invalid!");
+						console.log('Unable to save rig as the file path is invalid!');
 						return;
 					}
-					let result = await window.electronAPI.saveOrCreateFile(appState.rigPlaygroundState.loadedRigFilePath, JSON.stringify(appState.rigPlaygroundState.loadedRig, null, 2));
-					console.log((result ? "Saved Rig Successfully!" : "Failed to save rig :("));
+					let result = await window.electronAPI.saveOrCreateFile(
+						appState.rigPlaygroundState.loadedRigFilePath,
+						JSON.stringify(appState.rigPlaygroundState.loadedRig, null, 2)
+					);
+					console.log(result ? 'Saved Rig Successfully!' : 'Failed to save rig :(');
+					savedChanges = true;
 				}
 			},
 			{
 				id: 'saveRigAs',
 				action: async () => {
 					console.log('Save Rig As!');
-					let result = await window.electronAPI.saveNewFile("Save New Rig", "DNA Rig Files", ["dnar", "json"], JSON.stringify(appState.rigPlaygroundState.loadedRig, null, 2));
+					let result = await window.electronAPI.saveNewFile(
+						'Save New Rig',
+						'DNA Rig Files',
+						['dnar', 'json'],
+						JSON.stringify(appState.rigPlaygroundState.loadedRig, null, 2)
+					);
 					if (result.success) {
-						console.log("Successfully saved new rig!");
+						console.log('Successfully saved new rig!');
 						appState.UpdateRigPlaygroundStateRigFilePath(result.filePath);
 					} else {
-						console.log("Failed to save new rig :(");
+						console.log('Failed to save new rig :(');
 					}
+					savedChanges = true;
 				}
 			},
 			{
@@ -184,11 +202,125 @@ Ideas/Plans:
 	});
 	onDestroy(() => registerHeaderActions({})); //clears the registered actions obviously
 
-    let currentRigFile: File | null = $state(null);
+	let currentRigFile: File | null = $state(null);
+	let savedChanges = $state(true);
+	let rigObject = $derived(JSON.parse(JSON.stringify(appState.rigPlaygroundState.loadedRig)));
+
+	$effect(() => {
+		let config = {
+			title: 'Rig Playground',
+			id: 'Rig Playground',
+			header: {
+				menu: {
+					type: HeaderType.File,
+					panels: [
+						{
+							name: 'File',
+							options: [
+								{
+									label: 'Close Playground',
+									id: 'closePlayground',
+									type: HeaderPanelOptionType.Default
+								},
+								{ label: 'Close Rig', id: 'closeRig', type: HeaderPanelOptionType.Default },
+								{ label: 'Import Rig', id: 'importRig', type: HeaderPanelOptionType.Default },
+								{ label: 'New Rig', id: 'newRig', type: HeaderPanelOptionType.Default },
+								{ label: 'Save Rig', id: 'saveRig', type: HeaderPanelOptionType.Default },
+								{ label: 'Save Rig As', id: 'saveRigAs', type: HeaderPanelOptionType.Default },
+								{
+									label: 'Open In File Explorer',
+									id: 'openInFileExplorer',
+									type: HeaderPanelOptionType.Default
+								}
+							]
+						},
+						{
+							name: 'Edit',
+							options: [
+								{ label: 'Undo', id: 'undo', type: HeaderPanelOptionType.Default },
+								{ label: 'Redo', id: 'redo', type: HeaderPanelOptionType.Default },
+								{ label: 'Cut', id: 'cut', type: HeaderPanelOptionType.Default },
+								{ label: 'Copy', id: 'copy', type: HeaderPanelOptionType.Default },
+								{ label: 'Paste', id: 'paste', type: HeaderPanelOptionType.Default },
+								{ label: 'Find', id: 'find', type: HeaderPanelOptionType.Default }
+							]
+						},
+						{
+							name: 'View',
+							options: [
+								{
+									label: 'Toggle Rig Tree',
+									id: 'toggleRigTree',
+									type: HeaderPanelOptionType.Default
+								},
+								{
+									label: 'Toggle Properties Explorer',
+									id: 'togglePropertiesExplorer',
+									type: HeaderPanelOptionType.Default
+								},
+								{
+									label: 'Toggle Draggable Indicators',
+									id: 'toggleDraggableIndicators',
+									type: HeaderPanelOptionType.Default
+								},
+								{
+									label: 'Toggle Sensors Simulation',
+									id: 'toggleSensorsSimulation',
+									type: HeaderPanelOptionType.Default
+								},
+								{ label: 'Layout', id: 'layout', type: HeaderPanelOptionType.Expand }
+							]
+						},
+						{
+							name: 'Options',
+							options: [
+								{ label: 'Colors', id: 'colors', type: HeaderPanelOptionType.Default },
+								{ label: 'Text & Font', id: 'textAndFont', type: HeaderPanelOptionType.Default },
+								{
+									label: 'Miscellaneous',
+									id: 'miscellaneous',
+									type: HeaderPanelOptionType.Default
+								},
+								{ label: 'Change Theme', id: 'changeTheme', type: HeaderPanelOptionType.Default }
+							]
+						},
+						{
+							name: 'Device',
+							options: [
+								{
+									label: 'Toggle Device Live Preview',
+									id: 'toggleDeviceLivePreview',
+									type: HeaderPanelOptionType.Default
+								}
+							]
+						}
+					]
+				}
+			}
+		};
+		config.title = config.title + (savedChanges ? "" : " *");
+		appState.UpdatePageConfig(config);
+	});
+
+	$effect(() => {
+		if (rigObject) {
+			savedChanges = false;
+		}
+	})
+
+	$effect(() => {
+		if (appState.currentPageConfig) {
+			if (savedChanges) {
+				appState.currentPageConfig.title = "Rig Playground";
+			} else {
+				appState.currentPageConfig.title = "Rig Playground *";
+			}
+		}
+	});
 </script>
 
 <svelte:head>
-	<title>Rig Playground</title>
+	<title>{appState.currentPageConfig?.title}{savedChanges ? "" : " *"}</title>
 </svelte:head>
 
 <div class="app" id="app">
@@ -198,13 +330,13 @@ Ideas/Plans:
 		</Pane>
 		<Pane snapSize={5}>
 			<!--Rig Item Properties Explorer-->
-            <RigPropsExplorer />
+			<RigPropsExplorer />
 		</Pane>
 		<Pane>
 			<Splitpanes horizontal={true}>
 				<Pane snapSize={3}>
 					<!--Render Preview Screen-->
-                    <RigDisplay />
+					<RigDisplay />
 				</Pane>
 				<Pane snapSize={3}>
 					<!--Device Sensor Settings/Simulation-->

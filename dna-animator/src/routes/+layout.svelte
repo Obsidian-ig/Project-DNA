@@ -6,13 +6,11 @@
 	import { page } from '$app/state';
 
 	let { children } = $props();
-
-	const pageConfig: PageConfig = $derived(page.data as PageConfig);
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 {#if !appState.loading}
-	<Header {pageConfig} />
+	<Header />
 	<div class="content">
 		{@render children()}
 	</div>

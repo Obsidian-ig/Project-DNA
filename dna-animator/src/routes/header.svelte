@@ -9,7 +9,7 @@
 
 	let showDropdownMenu = $state(false);
 	let selectedOption: string | null = $state(null); // "file", "edit", "view", "options"
-	let { pageConfig } : { pageConfig: PageConfig } = $props();
+	let pageConfig = $derived(appState.currentPageConfig);
 
 	function HandleSelected(option: string) {
 		showDropdownMenu = !showDropdownMenu;
@@ -23,17 +23,21 @@
 	}
 
 	$effect(() => {
-		let placeholder = pageConfig;
 		//page config changed -> is new page!
+		let placeholder = pageConfig?.id;
 		showDropdownMenu = false;
 		selectedOption = null;
+	});
+	$effect(() => {
+		console.log($state.snapshot(pageConfig?.title));
+		if (pageConfig) pageConfig.title = pageConfig.title;
 	})
 </script>
 
 <nav class="navbar">
 	<a href={resolve('/')}><img class="logo-icon" src={logo} alt="logo" /></a>
 	<div class="navbar-buttons-container" id="navbar-buttons-container">
-		{#if pageConfig.header.menu.type === HeaderType.File}
+		{#if pageConfig?.header.menu.type === HeaderType.File}
 			{#each pageConfig.header.menu.panels as panel (panel.name)}
 				<button
 					class="navbar-button"
@@ -45,7 +49,7 @@
 			{/each}
 		{/if}
 	</div>
-	<p class="navbar-title">{pageConfig.title}</p>
+	<p class="navbar-title">{pageConfig?.title}</p>
 	<div class="navbar-window-buttons-container">
 		<button class="navbar-window-button" onclick={() => {
 			window.electronAPI?.minimizeWindow();
@@ -80,7 +84,7 @@
 	</button>
 	<div class="navbar-option-dropdown">
 		<ul class="dropdown-options-list">
-			{#each pageConfig.header.menu.panels.find(p => p.name === selectedOption)?.options as option (option.id)}
+			{#each pageConfig?.header.menu.panels.find(p => p.name === selectedOption)?.options as option (option.id)}
 				<li class="option-item">
 					<button class="option-button" onclick={() => {
 						//find da action

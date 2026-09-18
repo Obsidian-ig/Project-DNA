@@ -34,6 +34,7 @@ export interface HeaderPanel {
 
 export interface PageConfig {
     title: string;
+    id: string;
     header: {
         menu: {
             type: HeaderType,
@@ -54,28 +55,28 @@ class AppState {
     config = $state(this.constAppConfig); //whatever should/needs to be persistant between sessions.
     loading = $state(true);
     loadingErrorMessage: string | null = $state(null);
-    rigPlaygroundState: RigPlaygroundState = $state({loadedRig: null, loadedRigFilePath: null, selectedNode: null});
+    rigPlaygroundState: RigPlaygroundState = $state({ loadedRig: null, loadedRigFilePath: null, selectedNode: null });
+    currentPageConfig: PageConfig | null = $state(null);
 
-    /*
     constructor() {
         $effect.root(() => {
             $effect(() => {
-
+                console.log("Page Title Changed: " + this.currentPageConfig?.title);
             });
         });
     }
-    */
     ImportConfigFromLocalStorage(config: AppConfig) {
         this.config = config;
         console.log("Successfully imported config from local storage!");
     }
+
     ImportRigPlaygroundStateFromLocalStorage(state: RigPlaygroundState) {
         if (state) this.rigPlaygroundState = state;
     }
     UpdateRigPlaygroundStateLoadedRig(rig: RigObject | null) {
-    this.rigPlaygroundState.loadedRig = rig;
-    this.UpdateRigPlaygroundStateInLocalStorage();
-}
+        this.rigPlaygroundState.loadedRig = rig;
+        this.UpdateRigPlaygroundStateInLocalStorage();
+    }
     UpdateRigPlaygroundStateRigFilePath(filePath: string | null) {
         this.rigPlaygroundState.loadedRigFilePath = filePath;
         this.UpdateRigPlaygroundStateInLocalStorage();
@@ -121,5 +122,10 @@ class AppState {
             }
         }
     }
+    UpdatePageConfig(config: PageConfig) {
+        let temp = structuredClone(config);
+        this.currentPageConfig = temp;
+    }
 }
+
 export const appState = new AppState();

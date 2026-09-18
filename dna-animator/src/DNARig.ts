@@ -22,14 +22,19 @@ export interface RigPathPoint {
 export interface RigElement {
     name: string;
     expanded: boolean;
+    visible: boolean;
+    show_position_point: boolean;
+    show_origin_point: boolean;
     offsets: {
         position: RigVector2;
-        rotation: RigVector3;
+        rotation: number;
         scale: RigVector2;
+        rotation_two: number;
     };
     position: RigVector2;
-    rotation: RigVector3;
+    rotation: number;
     scale: RigVector2;
+    rotation_two: number;
     transform_origin: RigVector2; // the origin point in which modifications happen. idk how this works/how to implement it tho
     points: RigPathPoint[];
     closed: boolean; //whether or not the last point should automatically connect to  the first point.
@@ -49,14 +54,16 @@ export interface RigObject {
     author_link: string;
     last_updated_utc: Date;
     expanded: boolean;
+    disable_all_debug_options: boolean;
+    hide_all_elements: boolean;
     base: {
         // essentially the initial "offsets" of the rig. The initial values everything else is based off of.
         starting_position: RigVector2;
-        starting_rotation: RigVector3;
+        starting_rotation: number;
         starting_scale: RigVector2;
     };
     position: RigVector2;
-    rotation: RigVector3;
+    rotation: number;
     scale: RigVector2;
     elements: RigElement[];
     enums: RigEnum[]; //defines strict allowed values to fields with the id of the enum. Will throw error if field contains value the enum doesn't.

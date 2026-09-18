@@ -26,6 +26,8 @@
 					let finishedObject: DNARig.RigObject = {
 						name: (data as any)?.name ?? 'null',
 						expanded: (data as any)?.expanded,
+						disable_all_debug_options: false,
+						hide_all_elements: false,
 						rig_version: (data as any)?.rig_version ?? 0,
 						rig_structure_version: (data as any)?.rig_structure_version ?? 0,
                         author: (data as any)?.author,
@@ -112,34 +114,31 @@
 				rigObject.elements.push({
 					name: 'New_Element_' + numberToUse,
 					expanded: false,
+					visible: true,
+					show_position_point: false,
+					show_origin_point: false,
 					offsets: {
 						position: {
 							x: 0,
 							y: 0
 						},
-						rotation: {
-							x: 0,
-							y: 0,
-                            z: 0
-						},
+						rotation: 0,
 						scale: {
 							x: 0,
 							y: 0
-						}
+						},
+						rotation_two: 0
 					},
 					position: {
 						x: 0,
 						y: 0
 					},
-					rotation: {
-						x: 0,
-						y: 0,
-                        z: 0
-					},
+					rotation: 0,
 					scale: {
 						x: 0,
 						y: 0
 					},
+					rotation_two: 0,
 					transform_origin: {
 						x: 0,
 						y: 0

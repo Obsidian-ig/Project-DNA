@@ -26,14 +26,16 @@
 			<Number label="Rig Version" bind:value={rigObject.rig_version} />
 			<Number label="Rig Structure Version" bind:value={rigObject.rig_structure_version} />
 			<Boolean label="Node Expanded" bind:value={rigObject.expanded} />
+			<Boolean label="Disable All Debug Options" bind:value={rigObject.disable_all_debug_options} />
+			<Boolean label="Hide All Elements" bind:value={rigObject.hide_all_elements} />
 			<Section label="Base Offsets">
 				<VectorTwo label="Starting Position" bind:value={rigObject.base.starting_position} />
-				<VectorThree label="Starting Rotation" bind:value={rigObject.base.starting_rotation} />
+				<Number label="Starting Rotation" bind:value={rigObject.base.starting_rotation} />
 				<VectorTwo label="Starting Scale" bind:value={rigObject.base.starting_scale} />
 			</Section>
 			<Section label="Rig Transforms">
 				<VectorTwo label="Position" bind:value={rigObject.position} />
-				<VectorThree label="Rotation" bind:value={rigObject.rotation} />
+				<Number label="Rotation" bind:value={rigObject.rotation} />
 				<VectorTwo label="Scale" bind:value={rigObject.scale} />
 			</Section>
 			<Section label="Rig Enums">
@@ -51,15 +53,20 @@
 			{#if currentElement}
 				<Text label="Element Name" bind:value={currentElement.name} />
 				<Boolean label="Node Expanded" bind:value={currentElement.expanded} />
+				<Boolean label="Visible" bind:value={currentElement.visible} />
+				<Boolean label="Debug: Show Position Point" bind:value={currentElement.show_position_point} />
+				<Boolean label="Debug: Show Origin Point" bind:value={currentElement.show_origin_point} />
 				<Section label="Element Offsets">
 					<VectorTwo label="Starting Position" bind:value={currentElement.offsets.position} />
-					<VectorThree label="Starting Rotation" bind:value={currentElement.offsets.rotation} />
+					<Number label="Starting Rotation" bind:value={currentElement.offsets.rotation} />
 					<VectorTwo label="Starting Scale" bind:value={currentElement.offsets.scale} />
+					<Number label="Starting Rotation 2" bind:value={currentElement.offsets.rotation_two} />
 				</Section>
 				<Section label="Element Transforms">
 					<VectorTwo label="Position" bind:value={currentElement.position} />
-					<VectorThree label="Rotation" bind:value={currentElement.rotation} />
+					<Number label="Rotation" bind:value={currentElement.rotation} />
 					<VectorTwo label="Scale" bind:value={currentElement.scale} />
+					<Number label="Rotation 2" bind:value={currentElement.rotation_two} />
 					<VectorTwo label="Transform Origin" bind:value={currentElement.transform_origin} />
 				</Section>
 				<Boolean label="Closed Shape" bind:value={currentElement.closed} />
