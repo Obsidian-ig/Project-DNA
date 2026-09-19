@@ -1,7 +1,7 @@
 {
   "name": "Default Rig",
   "rig_version": 0.2,
-  "rig_structure_version": 2.3,
+  "rig_structure_version": 2.4,
   "author": "ObsidianDev",
   "author_link": "https://github.com/Obsidian-ig",
   "last_updated_utc": "9/16/2026 10:48:00 PM",
@@ -60,7 +60,7 @@
       "rotation": 0,
       "scale": {
         "x": 0,
-        "y": -0.5
+        "y": 0
       },
       "rotation_two": 0,
       "transform_origin": {
@@ -321,7 +321,7 @@
     },
     {
       "name": "Top_Eye_Background",
-      "expanded": true,
+      "expanded": false,
       "visible": true,
       "show_position_point": false,
       "show_origin_point": false,
@@ -388,7 +388,7 @@
     },
     {
       "name": "Top_Eye_Pupil",
-      "expanded": true,
+      "expanded": false,
       "visible": true,
       "show_position_point": false,
       "show_origin_point": false,
