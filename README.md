@@ -13,6 +13,7 @@ For example:
 *This feature can be switched on or off depending on whether or not you want him to ask to escalate every time or he will just do it automatically if off.*  
 
 Also, while Helix is connected to the app, he is able to control your phone's settings if you ask him to. If you just got off of work and are in your car or something but still have DND on, you can just say: "Hey Helix, turn off do not disturb." and he will do it.  
+*Device-related features like changing phone settings is limited to Android devices only as apple does not expose their APIs*
 
 Helix can not only be useful though, he is also a cool little accessory that you can attach to anything you would like! Helix can react to his surrounding based off of what his sensors and camera tell him. Helix has a camera, two digital mics, a temperature sensor, and a motion/rotation sensor that let him to react to his surroundings. For example if he gets hot, he will show it with his expressions on the devices built in AMOLED display. If you shake him violently, his will bounce around the sides of the screen depending on how much force you use. Also, Helix has gesture and facial recognition while using his camera, so he can recognize his beloved owner. But if you flip him off, he will not be happy.  
 
