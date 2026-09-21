@@ -5,9 +5,9 @@ This is where all the source code for all development related to Project DNA wil
 ## Helix
 Helix is the name of your virtual pet. Or at least the default one. You can change this yourself if you would like. The main point of Helix is to be a digital pet accessory while still maintaining usefulness other than just for looks. By default Helix can connect to your phone via Bluetooth with no app required. This allows him to be used for his primary function: a media controller. Helix is able to be used with voice commands to play/resume your media, skip to the next song, etc. with little to no delay unlike your phones AI Assistant. Have you ever been driving yours or someone else's car and wanted to skip the current song or something, but the buttons are in an annoying spot? Well helix can solve that (as long as you are playing audio to the car stereo using your phone). Just say: "Hey Helix, Skip." or "Hey Helix, next song.". And he will react instantly and send a command to your phone to skip the song without you having to press a single button! Now, this might seem quite limited for actual capabilities, but if you install the Android app onto your phone and pair the app with Helix, he becomes much more capable. The app allows him to understand much more natural speech such as exact percentages, and other variations of certain commands like "Hey helix, turn the volume up by 12%."  But the app also allows for him to be connected to your own or a 3rd party's LLM to make him smarter. If you ask Helix a question that he doesn't have the answer to, he will ask you if you would like to escalate the question to the connected LLM. For example: 
 You: "Hey Helix, how many calories are in a banana?" 
-Helix: "Sorry, I don't know that info off the top of my head, want me to ask <ai name here>?" 
+Helix: "Sorry, I don't know that info off the top of my head, want me to ask (ai name here)?" 
 You: "Yes" 
-Helix: "So <ai name here> said '.....'"
+Helix: "So (ai name here) said '.....'"
 
 *This feature can be switched on or off depending on whether or not you want him to ask to escalate every time or he will just do it automatically if off.*
 
