@@ -30,9 +30,9 @@
 						hide_all_elements: false,
 						rig_version: (data as any)?.rig_version ?? 0,
 						rig_structure_version: (data as any)?.rig_structure_version ?? 0,
-                        author: (data as any)?.author,
-                        author_link: (data as any)?.author_link,
-                        last_updated_utc: (data as any)?.last_updated_utc,
+						author: (data as any)?.author,
+						author_link: (data as any)?.author_link,
+						last_updated_utc: (data as any)?.last_updated_utc,
 						base: (data as any)?.base ?? {
 							starting_position: { x: 0.0, y: 0.0 },
 							starting_rotation: { x: 0.0, y: 0.0 },
@@ -42,6 +42,7 @@
 						rotation: (data as any)?.rotation ?? { x: 0.0, y: 0.0 },
 						scale: (data as any)?.scale ?? { x: 0.0, y: 0.0 },
 						elements: (data as any)?.elements ?? [],
+						groups: (data as any)?.groups ?? [],
 						enums: (data as any)?.enums ?? []
 					};
 					return {
@@ -63,7 +64,7 @@
 		const initSortableList = (e: any) => {
 			e.preventDefault();
 			const draggingItem: HTMLElement = document.querySelector('.dragging') as HTMLElement;
-            console.log(draggingItem);
+			console.log(draggingItem);
 			let siblings = [
 				...document.querySelectorAll('.element-node:not(.dragging)')
 			] as HTMLElement[];
@@ -72,7 +73,7 @@
 			});
 			if (!nextSibling) return;
 
-			let draggedElementIndex = rigObject?.elements.findIndex(el => el.name === draggingItem.id);
+			let draggedElementIndex = rigObject?.elements.findIndex((el) => el.name === draggingItem.id);
 			if (draggedElementIndex === undefined || draggedElementIndex === -1) return;
 			let draggedElement = rigObject?.elements.splice(draggedElementIndex, 1);
 			if (!draggedElement) return;
@@ -109,10 +110,14 @@
 					let lastElementNumber = Number.parseInt(
 						newElements?.[newElements.length - 1]?.name.split('_')?.[2]
 					);
-					numberToUse = lastElementNumber++;
+					console.log('Last Element Number: ' + lastElementNumber);
+					if (lastElementNumber >= 0) {
+						numberToUse = lastElementNumber + 1;
+					}
 				}
 				rigObject.elements.push({
-					name: 'New_Element_' + numberToUse,
+					name: 'New_Element_' + numberToUse.toString(),
+					group_id: null,
 					expanded: false,
 					visible: true,
 					show_position_point: false,
@@ -153,9 +158,9 @@
 						}
 					],
 					fill_color: '#FFFFFF',
-                    stroke_color: '#FFFFFF',
+					stroke_color: '#FFFFFF',
 					closed: true,
-                    filled: true
+					filled: true
 				});
 			}
 
@@ -310,38 +315,26 @@
 		</div>
 		<!--foreach loop here for all of the rig elements -> forloop in each of the elements for each of their paths-->
 		{#if rigObject.expanded}
-			{#each rigObject.elements as element, elementIndex (element.name)}
+			<!--Loop through each group first, and then through all elements and check if they have the same group_id-->
+			{#each rigObject.groups as group, groupIndex (group.id)}
 				<div
-					class="rig-node element-node context-target {selectedNode?.type ===
-						DNARig.SelectedNodeType.Element && selectedNode.name === element.name
+					class="rig-node first-node context-target {selectedNode?.type ===
+						DNARig.SelectedNodeType.Group &&
+					selectedNode?.name === group.id &&
+					selectedNode?.index === groupIndex
 						? 'selected'
 						: ''}"
-					id={element.name}
-					draggable="true"
-					ondragstart={(e) => {
-                        let target = e.currentTarget;
-						setTimeout(() => {
-							if (target instanceof HTMLElement) {
-								target.classList.add('dragging');
-							}
-						}, 0);
-					}}
-					ondragend={(e) => {
-                        let target = e.currentTarget;
-						if (target instanceof HTMLElement) {
-							target.classList.remove('dragging');
-						}
-					}}
 				>
+					<!--Group Element-->
 					<button
 						class="expand-button"
 						onclick={(e) => {
 							e.stopPropagation();
-							if (rigObject) element.expanded = !element.expanded;
+							group.expanded = !group.expanded;
 						}}
 					>
 						<img
-							class="expand-arrow-icon {element.expanded ? 'expanded' : ''}"
+							class="expand-arrow-icon {group.expanded ? 'expanded' : ''}"
 							src={downArrowIcon}
 							alt="Expand/Collapse Arrow"
 						/>
@@ -352,39 +345,174 @@
 							e.stopPropagation();
 							if (rigObject)
 								selectedNode = {
-									name: element.name,
-									type: DNARig.SelectedNodeType.Element,
-									index: elementIndex
+									name: group.id,
+									type: DNARig.SelectedNodeType.Group,
+									index: groupIndex
 								};
-						}}>{element.name}</button
+						}}>{group.id}</button
 					>
 				</div>
-				{#if element.expanded}
-					{#each element.points as point, pointIndex}
-						<div
-							class="rig-node point-node context-target {selectedNode?.type ===
-								DNARig.SelectedNodeType.Point &&
-							selectedNode.index === pointIndex &&
-							selectedNode.name === element.name
-								? 'selected'
-								: ''}"
-							id={pointIndex.toString()}
-							data-element-name={element.name}
-						>
-							<button
-								class="rig-node-select-button"
-								onclick={(e) => {
-									e.stopPropagation();
-									if (rigObject)
-										selectedNode = {
-											name: element.name,
-											type: DNARig.SelectedNodeType.Point,
-											index: pointIndex
-										};
-								}}>Point: {pointIndex}</button
+
+				{#if group.expanded}
+					{#each rigObject.elements as element, elementIndex (element.name)}
+						{#if element.group_id === group.id}
+							<div
+								class="rig-node second-node context-target {selectedNode?.type ===
+									DNARig.SelectedNodeType.Element && selectedNode.name === element.name
+									? 'selected'
+									: ''}"
+								id={element.name}
+								draggable="true"
+								ondragstart={(e) => {
+									let target = e.currentTarget;
+									setTimeout(() => {
+										if (target instanceof HTMLElement) {
+											target.classList.add('dragging');
+										}
+									}, 0);
+								}}
+								ondragend={(e) => {
+									let target = e.currentTarget;
+									if (target instanceof HTMLElement) {
+										target.classList.remove('dragging');
+									}
+								}}
 							>
-						</div>
+								<button
+									class="expand-button"
+									onclick={(e) => {
+										e.stopPropagation();
+										if (rigObject) element.expanded = !element.expanded;
+									}}
+								>
+									<img
+										class="expand-arrow-icon {element.expanded ? 'expanded' : ''}"
+										src={downArrowIcon}
+										alt="Expand/Collapse Arrow"
+									/>
+								</button>
+								<button
+									class="rig-node-select-button"
+									onclick={(e) => {
+										e.stopPropagation();
+										if (rigObject)
+											selectedNode = {
+												name: element.name,
+												type: DNARig.SelectedNodeType.Element,
+												index: elementIndex
+											};
+									}}>{element.name}</button
+								>
+							</div>
+							{#if element.expanded}
+								{#each element.points as point, pointIndex}
+									<div
+										class="rig-node third-node context-target {selectedNode?.type ===
+											DNARig.SelectedNodeType.Point &&
+										selectedNode.index === pointIndex &&
+										selectedNode.name === element.name
+											? 'selected'
+											: ''}"
+										id={pointIndex.toString()}
+										data-element-name={element.name}
+									>
+										<button
+											class="rig-node-select-button"
+											onclick={(e) => {
+												e.stopPropagation();
+												if (rigObject)
+													selectedNode = {
+														name: element.name,
+														type: DNARig.SelectedNodeType.Point,
+														index: pointIndex
+													};
+											}}>Point: {pointIndex}</button
+										>
+									</div>
+								{/each}
+							{/if}
+						{/if}
 					{/each}
+				{/if}
+			{/each}
+			<!--Elements not part of a group-->
+			{#each rigObject.elements as element, elementIndex (element.name)}
+				{#if element.group_id === ''}
+					<div
+						class="rig-node first-node context-target {selectedNode?.type ===
+							DNARig.SelectedNodeType.Element && selectedNode.name === element.name
+							? 'selected'
+							: ''}"
+						id={element.name}
+						draggable="true"
+						ondragstart={(e) => {
+							let target = e.currentTarget;
+							setTimeout(() => {
+								if (target instanceof HTMLElement) {
+									target.classList.add('dragging');
+								}
+							}, 0);
+						}}
+						ondragend={(e) => {
+							let target = e.currentTarget;
+							if (target instanceof HTMLElement) {
+								target.classList.remove('dragging');
+							}
+						}}
+					>
+						<button
+							class="expand-button"
+							onclick={(e) => {
+								e.stopPropagation();
+								if (rigObject) element.expanded = !element.expanded;
+							}}
+						>
+							<img
+								class="expand-arrow-icon {element.expanded ? 'expanded' : ''}"
+								src={downArrowIcon}
+								alt="Expand/Collapse Arrow"
+							/>
+						</button>
+						<button
+							class="rig-node-select-button"
+							onclick={(e) => {
+								e.stopPropagation();
+								if (rigObject)
+									selectedNode = {
+										name: element.name,
+										type: DNARig.SelectedNodeType.Element,
+										index: elementIndex
+									};
+							}}>{element.name}</button
+						>
+					</div>
+					{#if element.expanded}
+						{#each element.points as point, pointIndex}
+							<div
+								class="rig-node second-node context-target {selectedNode?.type ===
+									DNARig.SelectedNodeType.Point &&
+								selectedNode.index === pointIndex &&
+								selectedNode.name === element.name
+									? 'selected'
+									: ''}"
+								id={pointIndex.toString()}
+								data-element-name={element.name}
+							>
+								<button
+									class="rig-node-select-button"
+									onclick={(e) => {
+										e.stopPropagation();
+										if (rigObject)
+											selectedNode = {
+												name: element.name,
+												type: DNARig.SelectedNodeType.Point,
+												index: pointIndex
+											};
+									}}>Point: {pointIndex}</button
+								>
+							</div>
+						{/each}
+					{/if}
 				{/if}
 			{/each}
 		{/if}
@@ -474,13 +602,18 @@
 		}
 	}
 
-	.element-node {
+	.first-node {
 		margin-left: 20px;
 		margin-top: 3px;
 	}
 
-	.point-node {
+	.second-node {
 		margin-left: 70px;
+		margin-top: 3px;
+	}
+
+	.third-node {
+		margin-left: 120px;
 		margin-top: 3px;
 	}
 
@@ -512,7 +645,7 @@
 				position: relative;
 				z-index: 4 !important;
 				cursor: pointer;
-                color: var(--text);
+				color: var(--text);
 				&:hover {
 					backdrop-filter: brightness(0.9);
 					border-radius: 8px;

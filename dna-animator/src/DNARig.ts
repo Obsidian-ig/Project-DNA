@@ -21,6 +21,7 @@ export interface RigPathPoint {
 }
 export interface RigElement {
     name: string;
+    group_id: string | null | undefined;
     expanded: boolean;
     visible: boolean;
     show_position_point: boolean;
@@ -41,6 +42,10 @@ export interface RigElement {
     filled: boolean;
     fill_color: string;
     stroke_color: string;
+}
+export interface RigGroup {
+    id: string;
+    expanded: boolean;
 }
 export interface RigEnum {
     id: string;
@@ -66,11 +71,13 @@ export interface RigObject {
     rotation: number;
     scale: RigVector2;
     elements: RigElement[];
+    groups: RigGroup[];
     enums: RigEnum[]; //defines strict allowed values to fields with the id of the enum. Will throw error if field contains value the enum doesn't.
     //add animations field/data types later
 }
 export const SelectedNodeType = {
     Root: 'Root',
+    Group: 'Group',
     Element: 'Element',
     Point: 'Point',
     None: 'None'

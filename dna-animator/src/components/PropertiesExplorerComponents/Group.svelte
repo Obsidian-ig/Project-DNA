@@ -1,39 +1,43 @@
 <script lang="ts">
-	import type { RigEnum } from '../../DNARig';
+	import type { RigGroup } from '../../DNARig';
 	import downArrowIcon from '$lib/assets/down-arrow-icon-white.png';
 
 	let {
 		label,
 		value = $bindable(),
-		rigEnum
-	}: { label: string; value: string | number | boolean; rigEnum: RigEnum } = $props();
+		rigGroups
+	}: { label: string; value: string; rigGroups: RigGroup[] } = $props();
 	let expanded = $state(false);
 </script>
 
-<label class="enum-property">
+<label class="group-property">
 	<span class="header">
 		<p class="label">{label}</p>
 	</span>
-	<button class="enum-button {expanded?"expanded":""}" onclick={() => {
+	<button class="group-button {expanded?"expanded":""}" onclick={() => {
         expanded = !expanded;
     }}>
 		<p>{value}</p>
 		<img class="expand-arrow-icon {expanded?"expanded":""}" src={downArrowIcon} alt="expand/collapse arrow" />
 	</button>
 	{#if expanded}
-		<div class="enum-dropdown-menu">
-			{#each rigEnum.allowed_values as allowedValue}
-				<button class="enum-option-button" onclick={() => {
-                    value = allowedValue;
+		<div class="group-dropdown-menu">
+			{#each rigGroups as group}
+				<button class="group-option-button" onclick={() => {
+                    value = group.id;
                     expanded = false;
-                }}>{allowedValue}</button>
+                }}>{group.id}</button>
 			{/each}
+            <button class="group-option-button" onclick={() => {
+                value = "";
+                expanded = false;
+            }}>None</button>
 		</div>
 	{/if}
 </label>
 
 <style>
-	.enum-property {
+	.group-property {
 		background-color: var(--bg-light);
 		padding: 5px;
 		border-radius: 5px;
@@ -60,7 +64,7 @@
 		}
 	}
 
-    .enum-button {
+    .group-button {
         display: flex;
         align-items: center;
         border: solid 1px var(--border);
@@ -91,7 +95,7 @@
         }
     }
 
-    .enum-dropdown-menu {
+    .group-dropdown-menu {
         width: 97%;
         border: solid 1px var(--border);
         border-bottom-left-radius: 12px;
@@ -101,7 +105,7 @@
         flex-direction: column;
         
 
-        .enum-option-button {
+        .group-option-button {
             border-top: solid 1px var(--border);
         }
     }

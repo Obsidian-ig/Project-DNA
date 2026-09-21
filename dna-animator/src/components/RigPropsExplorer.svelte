@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { appState } from '../AppState.svelte';
 	import { type RigObject, type RigEnum, type RigVector2, SelectedNodeType } from '../DNARig';
+	import GroupEditor from './PropertiesExplorerComponents/GroupEditor.svelte';
 	import Boolean from './PropertiesExplorerComponents/Boolean.svelte';
 	import Color from './PropertiesExplorerComponents/Color.svelte';
 	import Enum from './PropertiesExplorerComponents/Enum.svelte';
 	import EnumEditor from './PropertiesExplorerComponents/EnumEditor.svelte';
+	import Group from './PropertiesExplorerComponents/Group.svelte';
 	import Number from './PropertiesExplorerComponents/Number.svelte';
 	import Section from './PropertiesExplorerComponents/Section.svelte';
 	import Text from './PropertiesExplorerComponents/Text.svelte';
@@ -38,6 +40,9 @@
 				<Number label="Rotation" bind:value={rigObject.rotation} />
 				<VectorTwo label="Scale" bind:value={rigObject.scale} />
 			</Section>
+			<Section label="Rig Groups">
+				<GroupEditor bind:value={rigObject.groups} />
+			</Section>
 			<Section label="Rig Enums">
 				{#each rigObject.enums as rigEnum}
 					<EnumEditor value={rigEnum} />
@@ -52,6 +57,7 @@
 			)}
 			{#if currentElement}
 				<Text label="Element Name" bind:value={currentElement.name} />
+				<Group label="Element Group" bind:value={(currentElement.group_id!)} rigGroups={rigObject.groups} />
 				<Boolean label="Node Expanded" bind:value={currentElement.expanded} />
 				<Boolean label="Visible" bind:value={currentElement.visible} />
 				<Boolean label="Debug: Show Position Point" bind:value={currentElement.show_position_point} />
