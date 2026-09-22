@@ -18,7 +18,7 @@
 
 	$effect(() => {
 		if (rigFile) {
-			console.log('Rig Tree => Received new rig!');
+			//console.log('Rig Tree => Received new rig!');
 			async function GetFileTextAndUpdateRigObject() {
 				const rigFileContent = await rigFile?.text();
 				if (!rigFileContent) return;
@@ -64,7 +64,7 @@
 		const initSortableList = (e: any) => {
 			e.preventDefault();
 			const draggingItem: HTMLElement = document.querySelector('.dragging') as HTMLElement;
-			console.log(draggingItem);
+			//console.log(draggingItem);
 			let siblings = [
 				...document.querySelectorAll('.element-node:not(.dragging)')
 			] as HTMLElement[];

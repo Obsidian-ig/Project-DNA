@@ -24,8 +24,14 @@ function createWindow() {
     }
   });
   win.setAutoHideMenuBar(true);
+  function LoadUrl() {
+    if (!win) return;
+    win.loadURL("http://localhost:5173").catch(() => {
+      setTimeout(LoadUrl, 500);
+    });
+  }
   if (!app.isPackaged) {
-    win.loadURL("http://localhost:5173");
+    LoadUrl();
   } else {
     win.loadFile(path.join(__dirname, "../../build/index.html"));
   }
