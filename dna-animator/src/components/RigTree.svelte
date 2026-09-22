@@ -83,6 +83,11 @@
 			if (nextSiblingElementIndex === undefined || nextSiblingElementIndex === -1) return;
 			if (draggedElementIndex < nextSiblingElementIndex) nextSiblingElementIndex--;
 			rigObject?.elements.splice(nextSiblingElementIndex, 0, draggedElement[0]);
+			let draggedElementObject = rigObject?.elements.find(e => e.name === draggedElement[0]?.name);
+			if (!draggedElementObject) return;
+			let siblingElementObject = rigObject?.elements.find(e => e.name === nextSibling.id);
+			if (!siblingElementObject) return;
+			draggedElementObject.group_id = siblingElementObject.group_id;
 		};
 		nodesContainer?.addEventListener('dragover', initSortableList);
 		nodesContainer?.addEventListener('dragenter', (e) => e.preventDefault());
@@ -102,7 +107,7 @@
 				return;
 			}
 
-			function CreateNewElement() {
+			function CreateNewElement(groupId: string) {
 				if (!rigObject) return;
 				let newElements = rigObject.elements.filter((el) => el.name.includes('New_Element_'));
 				let numberToUse = 0;
@@ -115,9 +120,9 @@
 						numberToUse = lastElementNumber + 1;
 					}
 				}
-				rigObject.elements.push({
+				let newElement = {
 					name: 'New_Element_' + numberToUse.toString(),
-					group_id: null,
+					group_id: groupId,
 					expanded: false,
 					visible: true,
 					show_position_point: false,
@@ -154,14 +159,16 @@
 								x: 0,
 								y: 0
 							},
-							interpolation_type: 'Linear'
+							interpolation_type: DNARig.RigPath2InterpolationType.Linear
 						}
 					],
 					fill_color: '#FFFFFF',
 					stroke_color: '#FFFFFF',
 					closed: true,
 					filled: true
-				});
+				};
+				//rigObject.elements.push(newElement);
+				return newElement;
 			}
 
 			function AddPointToElement(elementName: string) {
@@ -182,13 +189,54 @@
 					options: [
 						{
 							label: 'Create New Element',
-							action: CreateNewElement
+							action: () => {
+								let element = CreateNewElement("");
+								if (!rigObject || !element) return;
+								rigObject.elements.push(element);
+							}
 						},
 						{
 							label: rigObject.expanded ? 'Collapse Node' : 'Expand Node',
 							action: () => {
 								if (!rigObject) return;
 								rigObject.expanded = !rigObject.expanded;
+							}
+						}
+					]
+				};
+			} else if (target.classList.contains('group-node')) {
+				let group = rigObject.groups.find(g => g.id === target.id);
+				if (!group || !rigObject) return;
+				currentContextMenuOptions = {
+					options: [
+						{
+							label: 'Add New Element',
+							action: () => {
+								if (!rigObject) return;
+								let newElement = CreateNewElement(group.id);
+								if (!newElement) return;
+								let groupElements =rigObject.elements.filter(e => e.group_id === group.id);
+								if (!groupElements) return;
+								let lastElementofGroupIndex = rigObject.elements.findIndex(e => e.name === groupElements?.[groupElements.length - 1]?.name);
+								console.log("Last Group Element Index: " + rigObject.elements.findIndex(e => e.name === groupElements?.[groupElements.length - 1]?.name));
+								if (!lastElementofGroupIndex && lastElementofGroupIndex != 0) return;
+								console.log('test');
+								rigObject.elements.splice(lastElementofGroupIndex + 1, 0, newElement);
+							}
+						}, 
+						{
+							label: (group.expanded ? 'Collapse Node' : 'Expand Node'),
+							action: () => {group.expanded = !group.expanded}
+						},
+						{
+							label: (group.visible ? 'Hide Group' : 'Render Group'),
+							action: () => {group.visible = !group.visible}
+						},
+						{
+							label: 'Delete Group',
+							action: () => {
+								if (!rigObject) return;
+								rigObject.groups.splice(rigObject.groups.findIndex(g => g.id === group.id), 1);
 							}
 						}
 					]
@@ -203,13 +251,6 @@
 							action: () => AddPointToElement(element.name)
 						},
 						{
-							label: element.expanded ? 'Collapse Node' : 'Expand Node',
-							action: () => {
-								if (!rigObject) return;
-								element.expanded = !element.expanded;
-							}
-						},
-						{
 							label: 'Duplicate Element',
 							action: () => {
 								if (!rigObject) return;
@@ -217,6 +258,14 @@
 								clone.name = clone.name + '_Clone';
 								rigObject.elements.push(clone);
 							}
+						},
+						{
+							label: (element.expanded ? 'Collapse Node' : 'Expand Node'),
+							action: () => {element.expanded = !element.expanded;}
+						},
+						{
+							label: (element.visible ? 'Hide Element' : 'Render Element'),
+							action: () => {element.visible = !element.visible}
 						},
 						{
 							label: 'Delete Element',
@@ -318,12 +367,13 @@
 			<!--Loop through each group first, and then through all elements and check if they have the same group_id-->
 			{#each rigObject.groups as group, groupIndex (group.id)}
 				<div
-					class="rig-node first-node context-target {selectedNode?.type ===
+					class="rig-node first-node group-node context-target {selectedNode?.type ===
 						DNARig.SelectedNodeType.Group &&
 					selectedNode?.name === group.id &&
 					selectedNode?.index === groupIndex
 						? 'selected'
 						: ''}"
+					id={group.id}
 				>
 					<!--Group Element-->
 					<button
@@ -357,7 +407,7 @@
 					{#each rigObject.elements as element, elementIndex (element.name)}
 						{#if element.group_id === group.id}
 							<div
-								class="rig-node second-node context-target {selectedNode?.type ===
+								class="rig-node second-node element-node context-target {selectedNode?.type ===
 									DNARig.SelectedNodeType.Element && selectedNode.name === element.name
 									? 'selected'
 									: ''}"
@@ -407,7 +457,7 @@
 							{#if element.expanded}
 								{#each element.points as point, pointIndex}
 									<div
-										class="rig-node third-node context-target {selectedNode?.type ===
+										class="rig-node third-node point-node context-target {selectedNode?.type ===
 											DNARig.SelectedNodeType.Point &&
 										selectedNode.index === pointIndex &&
 										selectedNode.name === element.name
@@ -439,7 +489,7 @@
 			{#each rigObject.elements as element, elementIndex (element.name)}
 				{#if element.group_id === ''}
 					<div
-						class="rig-node first-node context-target {selectedNode?.type ===
+						class="rig-node first-node element-node context-target {selectedNode?.type ===
 							DNARig.SelectedNodeType.Element && selectedNode.name === element.name
 							? 'selected'
 							: ''}"
@@ -489,7 +539,7 @@
 					{#if element.expanded}
 						{#each element.points as point, pointIndex}
 							<div
-								class="rig-node second-node context-target {selectedNode?.type ===
+								class="rig-node second-node point-node context-target {selectedNode?.type ===
 									DNARig.SelectedNodeType.Point &&
 								selectedNode.index === pointIndex &&
 								selectedNode.name === element.name

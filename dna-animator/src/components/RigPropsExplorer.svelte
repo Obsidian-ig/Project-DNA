@@ -48,10 +48,17 @@
 					<EnumEditor value={rigEnum} />
 				{/each}
 			</Section>
+		{:else if selectedNode?.type === SelectedNodeType.Group} 
+			{let currentGroup = $derived((selectedNode && selectedNode.index !== undefined) ? rigObject.groups[selectedNode.index] : null)}
+			{#if currentGroup}
+				<Text label="Group ID" bind:value={currentGroup.id} />
+				<Boolean label="Node Expanded" bind:value={currentGroup.expanded} />
+				<Boolean label="Group Visible" bind:value={currentGroup.visible} />
+			{/if}
 		{:else if selectedNode?.type === SelectedNodeType.Element}
 			<!--Element/Shape Node-->
 			{let currentElement = $derived(
-				selectedNode && selectedNode.index !== undefined
+				(selectedNode && selectedNode.index !== undefined)
 					? rigObject.elements[selectedNode.index]
 					: null
 			)}
@@ -77,6 +84,7 @@
 				</Section>
 				<Boolean label="Closed Shape" bind:value={currentElement.closed} />
 				<Color label="Fill Color" bind:value={currentElement.fill_color} />
+				<Color label="Stroke Color" bind:value={currentElement.stroke_color} />
 			{/if}
 		{:else if selectedNode?.type === SelectedNodeType.Point}
 			<!--Point Node-->

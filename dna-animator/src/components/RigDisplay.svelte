@@ -112,7 +112,7 @@
 		}
 
 		function DrawElement(element: RigElement) {
-			if (!ctx || !rigObject || !element.visible || rigObject.hide_all_elements) return;
+			if (!ctx || !rigObject || !element.visible || rigObject.hide_all_elements || rigObject.groups.find(g => g.id === element.group_id)?.visible === false) return;
 			ctx.beginPath();
 			if (element.points.length <= 2) return;
 			let elementCalculatedPosition = CalculatePhysicalPositionFromRigCenter({
@@ -206,6 +206,8 @@
 			}
 			ctx.closePath();
 			ctx.fillStyle = element.fill_color;
+			ctx.strokeStyle = element.stroke_color;
+			ctx.stroke();
 			ctx.fill();
 			if (!rigObject.disable_all_debug_options) {
 				if (element.show_origin_point) {

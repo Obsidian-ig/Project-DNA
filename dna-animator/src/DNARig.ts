@@ -46,6 +46,7 @@ export interface RigElement {
 export interface RigGroup {
     id: string;
     expanded: boolean;
+    visible: boolean;
 }
 export interface RigEnum {
     id: string;

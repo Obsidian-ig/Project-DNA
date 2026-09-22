@@ -38,7 +38,7 @@
     {
       "name": "Left_Eye_Background",
       "group_id": "Left Eye",
-      "expanded": true,
+      "expanded": false,
       "visible": true,
       "show_position_point": false,
       "show_origin_point": false,
@@ -110,7 +110,7 @@
     {
       "name": "Left_Eye_Pupil",
       "group_id": "Left Eye",
-      "expanded": true,
+      "expanded": false,
       "visible": true,
       "show_position_point": false,
       "show_origin_point": false,
@@ -182,7 +182,7 @@
     {
       "name": "Right_Eye_Background",
       "group_id": "Right Eye",
-      "expanded": true,
+      "expanded": false,
       "visible": true,
       "show_position_point": false,
       "show_origin_point": false,
@@ -387,7 +387,7 @@
         }
       ],
       "fill_color": "#3d008c",
-      "stroke_color": "#FFFFFF",
+      "stroke_color": "#3d008c",
       "closed": true,
       "filled": true
     },
@@ -467,15 +467,18 @@
   "groups": [
     {
       "id": "Left Eye",
-      "expanded": false
+      "expanded": true,
+      "visible": true
     },
     {
       "id": "Right Eye",
-      "expanded": false
+      "expanded": true,
+      "visible": true
     },
     {
       "id": "Top Eye",
-      "expanded": false
+      "expanded": true,
+      "visible": true
     }
   ],
   "enums": [
