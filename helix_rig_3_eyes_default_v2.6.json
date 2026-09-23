@@ -566,10 +566,12 @@
                     true
                 ]
             ],
-            "do": {
-                "mode": "play_anim_random",
-                "anims_group_id": "charging_started_animations"
-            }
+            "do": [
+                {
+                    "mode": "play_anim_random",
+                    "anims_group_id": "charging_started_animations"
+                }
+            ]
         }
     ],
     "default_state": {
