@@ -467,11 +467,12 @@
     "state_rules": [
         {
             "when": [
-                [
-                    "device.battery.percentage",
-                    "<=",
-                    "20"
-                ]
+                {
+                    "property": "device.battery.percentage",
+                    "comparison": "<=",
+                    "value": 20,
+                    "required": true
+                }
             ],
             "state": {
                 "id": "eye_state",
@@ -481,11 +482,12 @@
         },
         {
             "when": [
-                [
-                    "device.battery.percentage",
-                    ">",
-                    "20"
-                ]
+                {
+                    "property": "device.battery.percentage",
+                    "comparison": ">",
+                    "value": 20,
+                    "required": true
+                }
             ],
             "state": {
                 "id": "eye_state",
