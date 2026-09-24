@@ -4,11 +4,10 @@
     "rig_structure_version": 2.6,
     "author": "ObsidianDev",
     "author_link": "https://github.com/Obsidian-ig",
-    "last_updated_utc": "9/23/2026 10:46:00 PM",
-    "expanded": true,
+    "last_updated_utc": "9/24/2026 09:03:00 PM",
     "disable_all_debug_options": false,
     "hide_all_elements": false,
-    "base": {
+    "offsets": {
         "starting_position": {
             "x": 0,
             "y": 0
@@ -24,35 +23,24 @@
             "y": 0
         }
     },
-    "position": {
-        "x": 0,
-        "y": 2
-    },
-    "rotation": 0,
-    "scale": {
-        "x": 0,
-        "y": 0
-    },
-    "rotation_two": 0,
     "layering_order": [
         {
             "type": "group",
-            "id": "Left Eye"
+            "id": "Left_Eye"
         },
         {
             "type": "group",
-            "id": "Right Eye"
+            "id": "Right_Eye"
         },
         {
             "type": "group",
-            "id": "Top Eye"
+            "id": "Top_Eye"
         }
     ],
     "elements": [
         {
             "name": "Left_Eye_Background",
-            "group_id": "Left Eye",
-            "expanded": false,
+            "group_id": "Left_Eye",
             "visible": true,
             "show_position_point": false,
             "show_origin_point": false,
@@ -66,21 +54,11 @@
                     "x": 0,
                     "y": 0
                 },
-                "rotation_two": 0
-            },
-            "position": {
-                "x": 0,
-                "y": 0
-            },
-            "rotation": 0,
-            "scale": {
-                "x": 0,
-                "y": 0
-            },
-            "rotation_two": 0,
-            "transform_origin": {
-                "x": -14,
-                "y": 0
+                "rotation_two": 0,
+                "transform_origin": {
+                    "x": -14,
+                    "y": 0
+                }
             },
             "points": [
                 {
@@ -123,8 +101,7 @@
         },
         {
             "name": "Left_Eye_Pupil",
-            "group_id": "Left Eye",
-            "expanded": false,
+            "group_id": "Left_Eye",
             "visible": true,
             "show_position_point": false,
             "show_origin_point": false,
@@ -138,21 +115,11 @@
                     "x": 0,
                     "y": 0
                 },
-                "rotation_two": 0
-            },
-            "position": {
-                "x": 0,
-                "y": 0
-            },
-            "rotation": 0,
-            "scale": {
-                "x": 0,
-                "y": 0
-            },
-            "rotation_two": 0,
-            "transform_origin": {
-                "x": 0,
-                "y": 0
+                "rotation_two": 0,
+                "transform_origin": {
+                    "x": 0,
+                    "y": 0
+                }
             },
             "points": [
                 {
@@ -195,8 +162,7 @@
         },
         {
             "name": "Right_Eye_Background",
-            "group_id": "Right Eye",
-            "expanded": false,
+            "group_id": "Right_Eye",
             "visible": true,
             "show_position_point": false,
             "show_origin_point": false,
@@ -210,21 +176,11 @@
                     "x": 0,
                     "y": 0
                 },
-                "rotation_two": 0
-            },
-            "position": {
-                "x": 0,
-                "y": 0
-            },
-            "rotation": 0,
-            "scale": {
-                "x": 0,
-                "y": 0
-            },
-            "rotation_two": 0,
-            "transform_origin": {
-                "x": 14,
-                "y": 0
+                "rotation_two": 0,
+                "transform_origin": {
+                    "x": 14,
+                    "y": 0
+                }
             },
             "points": [
                 {
@@ -267,8 +223,7 @@
         },
         {
             "name": "Right_Eye_Pupil",
-            "group_id": "Right Eye",
-            "expanded": false,
+            "group_id": "Right_Eye",
             "visible": true,
             "show_position_point": false,
             "show_origin_point": false,
@@ -282,21 +237,11 @@
                     "x": 0,
                     "y": 0
                 },
-                "rotation_two": 0
-            },
-            "position": {
-                "x": 0,
-                "y": 0
-            },
-            "rotation": 0,
-            "scale": {
-                "x": 0,
-                "y": 0
-            },
-            "rotation_two": 0,
-            "transform_origin": {
-                "x": 0,
-                "y": 0
+                "rotation_two": 0,
+                "transform_origin": {
+                    "x": 0,
+                    "y": 0
+                }
             },
             "points": [
                 {
@@ -339,8 +284,7 @@
         },
         {
             "name": "Top_Eye_Background",
-            "group_id": "Top Eye",
-            "expanded": false,
+            "group_id": "Top_Eye",
             "visible": true,
             "show_position_point": false,
             "show_origin_point": false,
@@ -354,21 +298,11 @@
                     "x": 0,
                     "y": 0
                 },
-                "rotation_two": 0
-            },
-            "position": {
-                "x": 0,
-                "y": 0
-            },
-            "rotation": 0,
-            "scale": {
-                "x": 0,
-                "y": 0
-            },
-            "rotation_two": 0,
-            "transform_origin": {
-                "x": 0,
-                "y": -8
+                "rotation_two": 0,
+                "transform_origin": {
+                    "x": 0,
+                    "y": -8
+                }
             },
             "points": [
                 {
@@ -407,8 +341,7 @@
         },
         {
             "name": "Top_Eye_Pupil",
-            "group_id": "Top Eye",
-            "expanded": false,
+            "group_id": "Top_Eye",
             "visible": true,
             "show_position_point": false,
             "show_origin_point": false,
@@ -422,21 +355,11 @@
                     "x": 0,
                     "y": 0
                 },
-                "rotation_two": 0
-            },
-            "position": {
-                "x": 0,
-                "y": 0
-            },
-            "rotation": 0,
-            "scale": {
-                "x": 0,
-                "y": 0
-            },
-            "rotation_two": 0,
-            "transform_origin": {
-                "x": 0,
-                "y": 0
+                "rotation_two": 0,
+                "transform_origin": {
+                    "x": 0,
+                    "y": 0
+                }
             },
             "points": [
                 {
@@ -480,53 +403,55 @@
     ],
     "groups": [
         {
-            "id": "Left Eye",
-            "expanded": true,
-            "visible": true
+            "id": "Left_Eye",
+            "visible": true,
+            "offsets": {
+                "position": {
+                    "x": 0,
+                    "y": 0
+                },
+                "rotation": 0,
+                "scale": {
+                    "x": 0,
+                    "y": 0
+                },
+                "rotation_two": 0
+            }
         },
         {
-            "id": "Right Eye",
-            "expanded": true,
-            "visible": true
+            "id": "Right_Eye",
+            "visible": true,
+            "offsets": {
+                "position": {
+                    "x": 0,
+                    "y": 0
+                },
+                "rotation": 0,
+                "scale": {
+                    "x": 0,
+                    "y": 0
+                },
+                "rotation_two": 0
+            }
         },
         {
-            "id": "Top Eye",
-            "expanded": true,
-            "visible": true
+            "id": "Top_Eye",
+            "visible": true,
+            "offsets": {
+                "position": {
+                    "x": 0,
+                    "y": 0
+                },
+                "rotation": 0,
+                "scale": {
+                    "x": 0,
+                    "y": 0
+                },
+                "rotation_two": 0
+            }
         }
     ],
     "enums": [
-        {
-            "id": "interpolation_type",
-            "allowed_values": [
-                "Linear",
-                "Cubic",
-                "Quadratic"
-            ]
-        },
-        {
-            "id": "layering_order_item_type",
-            "allowed_values": [
-                "group",
-                "element"
-            ]
-        },
-        {
-            "id": "rule_mode",
-            "allowed_values": [
-                "default",
-                "forced"
-            ]
-        },
-        {
-            "id": "modifier_action_mode",
-            "allowed_values": [
-                "set",
-                "add",
-                "play_anim",
-                "play_anim_random"
-            ]
-        },
         {
             "id": "eye_state",
             "allowed_values": [
@@ -535,50 +460,54 @@
             ]
         }
     ],
-    "rules": [
+    "default_state": {
+        "id": "eye_state",
+        "state": "Default"
+    },
+    "state_rules": [
         {
-            "mode": "default",
             "when": [
                 [
-                    "battery.percentage",
+                    "device.battery.percentage",
                     "<=",
-                    "10"
+                    "20"
                 ]
             ],
-            "do": [
-                {
-                    "mode": "set",
-                    "parameter": "default_state",
-                    "value": {
-                        "id": "eye_state",
-                        "state": "Sleepy",
-                        "mode": "overridable"
-                    }
-                }
-            ]
+            "state": {
+                "id": "eye_state",
+                "state": "Sleepy"
+            },
+            "priority": 1
         },
         {
-            "mode": "forced",
             "when": [
                 [
-                    "device.chargingStarted",
-                    "==",
-                    true
+                    "device.battery.percentage",
+                    ">",
+                    "20"
                 ]
+            ],
+            "state": {
+                "id": "eye_state",
+                "state": "Default"
+            },
+            "priority": 2
+        }
+    ],
+    "events": [
+        {
+            "on": [
+                "device.chargingStarted"
             ],
             "do": [
                 {
                     "mode": "play_anim_random",
                     "anims_group_id": "charging_started_animations"
                 }
-            ]
+            ],
+            "if_busy": "interrupt"
         }
     ],
-    "default_state": {
-        "id": "eye_state",
-        "state": "Sleepy",
-        "mode": "overridable"
-    },
     "poses": [
         {
             "id": "eye_state",
@@ -683,6 +612,39 @@
                     "time_ms": 1000,
                     "modifiers": []
                 }
+            ]
+        }
+    ],
+    "editor_enums": [
+        {
+            "id": "interpolation_type",
+            "allowed_values": [
+                "Linear",
+                "Cubic",
+                "Quadratic"
+            ]
+        },
+        {
+            "id": "layering_order_item_type",
+            "allowed_values": [
+                "group",
+                "element"
+            ]
+        },
+        {
+            "id": "rule_mode",
+            "allowed_values": [
+                "default",
+                "forced"
+            ]
+        },
+        {
+            "id": "modifier_action_mode",
+            "allowed_values": [
+                "set",
+                "add",
+                "play_anim",
+                "play_anim_random"
             ]
         }
     ]
