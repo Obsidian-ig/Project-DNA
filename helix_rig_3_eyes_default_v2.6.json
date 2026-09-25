@@ -1,7 +1,7 @@
 {
     "name": "Default Rig",
-    "rig_version": 0.2,
-    "rig_structure_version": 2.6,
+    "rig_version": "0.2",
+    "rig_structure_version": "2.6",
     "author": "ObsidianDev",
     "author_link": "https://github.com/Obsidian-ig",
     "last_updated_utc": "9/24/2026 09:03:00 PM",

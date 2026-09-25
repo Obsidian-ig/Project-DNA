@@ -47,6 +47,10 @@ export interface RigPlaygroundState {
     loadedRig: RigObject | null;
     loadedRigFilePath: string | null | undefined;
     selectedNode: SelectedNode | null;
+    expandedNodes: SelectedNode[] | null;
+    hideAllGroups: boolean;
+    hideAllElements: boolean;
+    disabledAllDebugOptions: boolean;
 }
 
 
@@ -55,7 +59,7 @@ class AppState {
     config = $state(this.constAppConfig); //whatever should/needs to be persistant between sessions.
     loading = $state(true);
     loadingErrorMessage: string | null = $state(null);
-    rigPlaygroundState: RigPlaygroundState = $state({ loadedRig: null, loadedRigFilePath: null, selectedNode: null });
+    rigPlaygroundState: RigPlaygroundState = $state({ loadedRig: null, loadedRigFilePath: null, selectedNode: null, expandedNodes: null, hideAllGroups: false, hideAllElements: false, disabledAllDebugOptions: false });
     currentPageConfig: PageConfig | null = $state(null);
 
     constructor() {
