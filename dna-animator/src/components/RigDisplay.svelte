@@ -1,7 +1,7 @@
 <script lang="ts">
 	import gridPattern from '$lib/assets/grid-pattern.jpg';
 	import { appState } from '../AppState.svelte';
-	import type { RigElement, RigPathPoint, RigVector2 } from '../DNARig';
+	import type { RigElement, RigVector2 } from '../DNARig';
 
 	let canvas: HTMLCanvasElement;
 	let displayWidth = $state(0);
@@ -21,8 +21,8 @@
 		const scaleUnit = displayShortestSide / 200; //fixed "grid" of 200x200 "pixels" -100 <-> +100
 
 		let virtualRigCenter: RigVector2 = {
-			x: rigObject.base.starting_position.x + rigObject.position.x,
-			y: rigObject.base.starting_position.y + rigObject.position.y
+			x: rigObject.offsets.position.x + rigObject.transforms.position.x,
+			y: rigObject.offsets.position.y + rigObject.transforms.position.y
 		};
 		let physicalRigCenter: RigVector2 = {
 			x: displayOrigin.x + virtualRigCenter.x * scaleUnit,
@@ -60,17 +60,17 @@
 			if (!rigObject) return null;
 			return {
 				x:
-					(rigObject.base.starting_position.x +
-						rigObject.position.x +
+					(rigObject.offsets.position.x +
+						rigObject.transforms.position.x +
 						element.offsets.position.x +
-						element.position.x +
+						element.transforms.position.x +
 						pointPosition.x) *
 					scaleUnit,
 				y:
-					(rigObject.base.starting_position.y +
-						rigObject.position.y +
+					(rigObject.offsets.position.y +
+						rigObject.transforms.position.y +
 						element.offsets.position.y +
-						element.position.y +
+						element.transforms.position.y +
 						pointPosition.y) *
 					scaleUnit
 			};
@@ -112,22 +112,22 @@
 		}
 
 		function DrawElement(element: RigElement) {
-			if (!ctx || !rigObject || !element.visible || rigObject.hide_all_elements || rigObject.groups.find(g => g.id === element.group_id)?.visible === false) return;
+			if (!ctx || !rigObject || !element.visible || appState.rigPlaygroundState.hideAllElements || rigObject.groups.find(g => g.id === element.group_id)?.visible === false) return;
 			ctx.beginPath();
 			if (element.points.length <= 2) return;
 			let elementCalculatedPosition = CalculatePhysicalPositionFromRigCenter({
 				x:
-					rigObject.base.starting_position.x +
-					rigObject.position.x +
-					element.position.x +
+					rigObject.offsets.position.x +
+					rigObject.transforms.position.x +
+					element.transforms.position.x +
 					element.offsets.position.x,
 				y:
-					rigObject.base.starting_position.y +
-					rigObject.position.y +
-					element.position.y +
+					rigObject.offsets.position.y +
+					rigObject.transforms.position.y +
+					element.transforms.position.y +
 					element.offsets.position.y
 			});
-			let totalElementPositionRotation = rigObject.base.starting_rotation + rigObject.rotation;
+			let totalElementPositionRotation = rigObject.offsets.rotation + rigObject.transforms.rotation;
 			//subtract the pivot
 			elementCalculatedPosition.x -= physicalRigCenter.x;
 			elementCalculatedPosition.y -= physicalRigCenter.y;
@@ -149,7 +149,7 @@
 
 			let calculatedOrigin = CalculatePhysicalPositionFromPhysicalPosition(
 				elementCalculatedPosition,
-				element.transform_origin,
+				element.offsets.transform_origin,
 				elementCalculatedPosition,
 				positionRHat,
 				positionUHat
@@ -165,18 +165,18 @@
 
 			let scaleMultiplier = {
 				x:
-					rigObject.base.starting_scale.x +
-					rigObject.scale.x +
-					element.offsets.scale.x +
-					element.scale.x,
+					rigObject.offsets.scale.x *
+					rigObject.transforms.scale.x *
+					element.offsets.scale.x *
+					element.transforms.scale.x,
 				y:
-					rigObject.base.starting_scale.y +
-					rigObject.scale.y +
-					element.offsets.scale.y +
-					element.scale.y
+					rigObject.offsets.scale.y *
+					rigObject.transforms.scale.y *
+					element.offsets.scale.y *
+					element.transforms.scale.y
 			};
-			let totalRotation = element.offsets.rotation + element.rotation;
-			let totalRotationTwo = element.offsets.rotation_two + element.rotation_two;
+			let totalRotation = element.offsets.rotation + element.transforms.rotation;
+			let totalRotationTwo = element.offsets.rotation_two + element.transforms.rotation_two;
 
 			calculatedPosition = CalculatePointPositionWithParams(
 				elementCalculatedPosition,
@@ -209,7 +209,7 @@
 			ctx.strokeStyle = element.stroke_color;
 			ctx.stroke();
 			ctx.fill();
-			if (!rigObject.disable_all_debug_options) {
+			if (!appState.rigPlaygroundState.disabledAllDebugOptions) {
 				if (element.show_origin_point) {
 					ctx.beginPath();
 					ctx.moveTo(calculatedOrigin.x, calculatedOrigin.y);

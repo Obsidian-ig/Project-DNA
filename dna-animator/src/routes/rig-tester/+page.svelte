@@ -13,7 +13,12 @@ Ideas/Plans:
 
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { appState, HeaderPanelOptionType, HeaderType, type PageConfig } from '../../AppState.svelte.ts';
+	import {
+		appState,
+		HeaderPanelOptionType,
+		HeaderType,
+		type PageConfig
+	} from '../../AppState.svelte.ts';
 	import {
 		Colors,
 		Copy,
@@ -31,7 +36,6 @@ Ideas/Plans:
 	import RigPropsExplorer from '../../components/RigPropsExplorer.svelte';
 	import RigDisplay from '../../components/RigDisplay.svelte';
 	import type { RigObject } from '../../DNARig.ts';
-	import Header from '../header.svelte';
 
 	registerHeaderActions({
 		file: [
@@ -67,6 +71,51 @@ Ideas/Plans:
 					}
 					let fileData = await window.electronAPI.readFile(rigFilePath);
 					let rigObject: RigObject | null = JSON.parse(fileData) as RigObject;
+					if (rigObject) {
+						//create the runtime transforms in the object.
+						rigObject.transforms = {
+							position: {
+								x: 0,
+								y: 0
+							},
+							rotation: 0,
+							scale: {
+								x: 1,
+								y: 1
+							},
+							rotation_two: 0
+						};
+
+						rigObject.groups.forEach((group) => {
+							group.transforms = {
+								position: {
+									x: 0,
+									y: 0
+								},
+								rotation: 0,
+								scale: {
+									x: 1,
+									y: 1
+								},
+								rotation_two: 0
+							};
+						});
+
+						rigObject.elements.forEach((element) => {
+							element.transforms = {
+								position: {
+									x: 0,
+									y: 0
+								},
+								rotation: 0,
+								scale: {
+									x: 1,
+									y: 1
+								},
+								rotation_two: 0
+							};
+						});
+					}
 					appState.UpdateRigPlaygroundStateLoadedRig(rigObject);
 					appState.UpdateRigPlaygroundStateRigFilePath(rigFilePath);
 				}
@@ -81,13 +130,19 @@ Ideas/Plans:
 				id: 'saveRig',
 				action: async () => {
 					console.log('Save Rig!');
+					if (!appState.rigPlaygroundState.loadedRig) {
+						console.log('Failed to save rig as it is null in the appstate!');
+						return;
+					}
 					if (!appState.rigPlaygroundState.loadedRigFilePath) {
 						console.log('Unable to save rig as the file path is invalid!');
 						return;
 					}
+					//cut the runtime properties out of the rig object.
+					const { transforms, ...cleanRigObject } = appState.rigPlaygroundState.loadedRig;
 					let result = await window.electronAPI.saveOrCreateFile(
 						appState.rigPlaygroundState.loadedRigFilePath,
-						JSON.stringify(appState.rigPlaygroundState.loadedRig, null, 2)
+						JSON.stringify(cleanRigObject, null, 2)
 					);
 					console.log(result ? 'Saved Rig Successfully!' : 'Failed to save rig :(');
 					savedChanges = true;
@@ -97,11 +152,17 @@ Ideas/Plans:
 				id: 'saveRigAs',
 				action: async () => {
 					console.log('Save Rig As!');
+					if (!appState.rigPlaygroundState.loadedRig) {
+						console.log('Failed to save rig as it is null in the appstate!');
+						return;
+					}
+					//cut the runtime properties out of the rig object.
+					const { transforms, ...cleanRigObject } = appState.rigPlaygroundState.loadedRig;
 					let result = await window.electronAPI.saveNewFile(
 						'Save New Rig',
 						'DNA Rig Files',
 						['dnar', 'json'],
-						JSON.stringify(appState.rigPlaygroundState.loadedRig, null, 2)
+						JSON.stringify(cleanRigObject, null, 2)
 					);
 					if (result.success) {
 						console.log('Successfully saved new rig!');
@@ -116,6 +177,15 @@ Ideas/Plans:
 				id: 'openInFileExplorer',
 				action: () => {
 					console.log('Open File Explorer!');
+					if (!appState.rigPlaygroundState.loadedRigFilePath) {
+						console.log('Failed to get rig file path from appstate!');
+						return;
+					}
+					let splicedPath = appState.rigPlaygroundState.loadedRigFilePath.split('\\');
+					let splicedFolderPath = splicedPath.splice(splicedPath.length - 2, 1);
+					let joinedFolderPath = splicedFolderPath.join('');
+					console.log(joinedFolderPath);
+					window.electronAPI.openFileExplorer(joinedFolderPath);
 				}
 			}
 		],
@@ -298,7 +368,7 @@ Ideas/Plans:
 				}
 			}
 		};
-		config.title = config.title + (savedChanges ? "" : " *");
+		config.title = config.title + (savedChanges ? '' : ' *');
 		appState.UpdatePageConfig(config);
 	});
 
@@ -306,21 +376,21 @@ Ideas/Plans:
 		if (rigObject) {
 			savedChanges = false;
 		}
-	})
+	});
 
 	$effect(() => {
 		if (appState.currentPageConfig) {
 			if (savedChanges) {
-				appState.currentPageConfig.title = "Rig Playground";
+				appState.currentPageConfig.title = 'Rig Playground';
 			} else {
-				appState.currentPageConfig.title = "Rig Playground *";
+				appState.currentPageConfig.title = 'Rig Playground *';
 			}
 		}
 	});
 </script>
 
 <svelte:head>
-	<title>{appState.currentPageConfig?.title}{savedChanges ? "" : " *"}</title>
+	<title>{appState.currentPageConfig?.title}{savedChanges ? '' : ' *'}</title>
 </svelte:head>
 
 <div class="app" id="app">

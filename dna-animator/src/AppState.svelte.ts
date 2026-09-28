@@ -59,7 +59,7 @@ class AppState {
     config = $state(this.constAppConfig); //whatever should/needs to be persistant between sessions.
     loading = $state(true);
     loadingErrorMessage: string | null = $state(null);
-    rigPlaygroundState: RigPlaygroundState = $state({ loadedRig: null, loadedRigFilePath: null, selectedNode: null, expandedNodes: null, hideAllGroups: false, hideAllElements: false, disabledAllDebugOptions: false });
+    rigPlaygroundState: RigPlaygroundState = $state({ loadedRig: null, loadedRigFilePath: null, selectedNode: null, expandedNodes: [], hideAllGroups: false, hideAllElements: false, disabledAllDebugOptions: false });
     currentPageConfig: PageConfig | null = $state(null);
 
     constructor() {

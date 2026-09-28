@@ -15,6 +15,7 @@
 	let selectedNode = $derived(appState.rigPlaygroundState.selectedNode);
 	let showContextMenu = $state(false);
 	let currentContextMenuOptions: ContextMenuOptions | null = $state(null);
+	let expandedNodes = $derived(appState.rigPlaygroundState.expandedNodes);
 
 	$effect(() => {
 		if (rigFile) {
@@ -25,25 +26,34 @@
 				function ConvertRigDataIntoObject<T extends object>(data: T): DNARig.RigObject & T {
 					let finishedObject: DNARig.RigObject = {
 						name: (data as any)?.name ?? 'null',
-						expanded: (data as any)?.expanded,
-						disable_all_debug_options: false,
-						hide_all_elements: false,
 						rig_version: (data as any)?.rig_version ?? 0,
 						rig_structure_version: (data as any)?.rig_structure_version ?? 0,
 						author: (data as any)?.author,
 						author_link: (data as any)?.author_link,
 						last_updated_utc: (data as any)?.last_updated_utc,
-						base: (data as any)?.base ?? {
-							starting_position: { x: 0.0, y: 0.0 },
-							starting_rotation: { x: 0.0, y: 0.0 },
-							starting_scale: { x: 0.0, y: 0.0 }
+						offsets: (data as any)?.offsets ?? {
+							position: (data as any)?.offsets.position ?? { x: 0.0, y: 0.0 },
+							rotation: (data as any)?.offsets.rotation ?? 0,
+							scale: (data as any)?.offsets.scale ?? { x: 0.0, y: 0.0 },
+							rotation_two: (data as any)?.offsets.rotation_two ?? 0
 						},
-						position: (data as any)?.position ?? { x: 0.0, y: 0.0 },
-						rotation: (data as any)?.rotation ?? { x: 0.0, y: 0.0 },
-						scale: (data as any)?.scale ?? { x: 0.0, y: 0.0 },
+						transforms: {
+							position: { x: 0.0, y: 0.0 },
+							rotation: 0,
+							scale: { x: 0.0, y: 0.0 },
+							rotation_two: 0
+						},
 						elements: (data as any)?.elements ?? [],
 						groups: (data as any)?.groups ?? [],
-						enums: (data as any)?.enums ?? []
+						layering_order: (data as any)?.layering_order ?? [],
+						default_state: (data as any)?.default_state ?? null,
+						state_enum: (data as any)?.state_enum ?? null,
+						state_rules: (data as any)?.state_rules ?? null,
+						events: (data as any)?.events ?? null,
+						poses: (data as any)?.poses ?? null,
+						animations: (data as any)?.animations ?? null,
+						sensors: (data as any)?.sensors ?? null,
+						bindings: (data as any)?.bindings ?? null
 					};
 					return {
 						...data,
@@ -83,9 +93,11 @@
 			if (nextSiblingElementIndex === undefined || nextSiblingElementIndex === -1) return;
 			if (draggedElementIndex < nextSiblingElementIndex) nextSiblingElementIndex--;
 			rigObject?.elements.splice(nextSiblingElementIndex, 0, draggedElement[0]);
-			let draggedElementObject = rigObject?.elements.find(e => e.name === draggedElement[0]?.name);
+			let draggedElementObject = rigObject?.elements.find(
+				(e) => e.name === draggedElement[0]?.name
+			);
 			if (!draggedElementObject) return;
-			let siblingElementObject = rigObject?.elements.find(e => e.name === nextSibling.id);
+			let siblingElementObject = rigObject?.elements.find((e) => e.name === nextSibling.id);
 			if (!siblingElementObject) return;
 			draggedElementObject.group_id = siblingElementObject.group_id;
 		};
@@ -137,21 +149,23 @@
 							x: 0,
 							y: 0
 						},
+						rotation_two: 0,
+						transform_origin: {
+							x: 0,
+							y: 0
+						}
+					},
+					transforms: {
+						position: {
+							x: 0,
+							y: 0
+						},
+						rotation: 0,
+						scale: {
+							x: 0,
+							y: 0
+						},
 						rotation_two: 0
-					},
-					position: {
-						x: 0,
-						y: 0
-					},
-					rotation: 0,
-					scale: {
-						x: 0,
-						y: 0
-					},
-					rotation_two: 0,
-					transform_origin: {
-						x: 0,
-						y: 0
 					},
 					points: [
 						{
@@ -159,7 +173,7 @@
 								x: 0,
 								y: 0
 							},
-							interpolation_type: DNARig.RigPath2InterpolationType.Linear
+							interpolation_type: DNARig.RigPointInterpolationType.Linear
 						}
 					],
 					fill_color: '#FFFFFF',
@@ -190,22 +204,36 @@
 						{
 							label: 'Create New Element',
 							action: () => {
-								let element = CreateNewElement("");
+								let element = CreateNewElement('');
 								if (!rigObject || !element) return;
 								rigObject.elements.push(element);
 							}
 						},
 						{
-							label: rigObject.expanded ? 'Collapse Node' : 'Expand Node',
+							label: expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Root)
+								? 'Collapse Node'
+								: 'Expand Node',
 							action: () => {
 								if (!rigObject) return;
-								rigObject.expanded = !rigObject.expanded;
+								let exists = expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Root);
+								if (exists)
+									expandedNodes?.splice(
+										expandedNodes.findIndex((n) => n === exists),
+										1
+									);
+								if (!exists) {
+									expandedNodes?.push({
+										name: rigObject?.name,
+										type: DNARig.SelectedNodeType.Root,
+										index: 0
+									});
+								}
 							}
 						}
 					]
 				};
 			} else if (target.classList.contains('group-node')) {
-				let group = rigObject.groups.find(g => g.id === target.id);
+				let group = rigObject.groups.find((g) => g.id === target.id);
 				if (!group || !rigObject) return;
 				currentContextMenuOptions = {
 					options: [
@@ -215,28 +243,60 @@
 								if (!rigObject) return;
 								let newElement = CreateNewElement(group.id);
 								if (!newElement) return;
-								let groupElements =rigObject.elements.filter(e => e.group_id === group.id);
+								let groupElements = rigObject.elements.filter((e) => e.group_id === group.id);
 								if (!groupElements) return;
-								let lastElementofGroupIndex = rigObject.elements.findIndex(e => e.name === groupElements?.[groupElements.length - 1]?.name);
-								console.log("Last Group Element Index: " + rigObject.elements.findIndex(e => e.name === groupElements?.[groupElements.length - 1]?.name));
+								let lastElementofGroupIndex = rigObject.elements.findIndex(
+									(e) => e.name === groupElements?.[groupElements.length - 1]?.name
+								);
+								console.log(
+									'Last Group Element Index: ' +
+										rigObject.elements.findIndex(
+											(e) => e.name === groupElements?.[groupElements.length - 1]?.name
+										)
+								);
 								if (!lastElementofGroupIndex && lastElementofGroupIndex != 0) return;
 								console.log('test');
 								rigObject.elements.splice(lastElementofGroupIndex + 1, 0, newElement);
 							}
-						}, 
-						{
-							label: (group.expanded ? 'Collapse Node' : 'Expand Node'),
-							action: () => {group.expanded = !group.expanded}
 						},
 						{
-							label: (group.visible ? 'Hide Group' : 'Render Group'),
-							action: () => {group.visible = !group.visible}
+							label: expandedNodes?.find(
+								(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
+							)
+								? 'Collapse Node'
+								: 'Expand Node',
+							action: () => {
+								let exists = expandedNodes?.find(
+									(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
+								);
+								if (exists)
+									expandedNodes?.splice(
+										expandedNodes.findIndex((n) => n === exists),
+										1
+									);
+								if (!exists) {
+									expandedNodes?.push({
+										name: group.id,
+										type: DNARig.SelectedNodeType.Group,
+										index: rigObject?.groups.findIndex((g) => g.id === group.id) ?? 0
+									});
+								}
+							}
+						},
+						{
+							label: group.visible ? 'Hide Group' : 'Render Group',
+							action: () => {
+								group.visible = !group.visible;
+							}
 						},
 						{
 							label: 'Delete Group',
 							action: () => {
 								if (!rigObject) return;
-								rigObject.groups.splice(rigObject.groups.findIndex(g => g.id === group.id), 1);
+								rigObject.groups.splice(
+									rigObject.groups.findIndex((g) => g.id === group.id),
+									1
+								);
 							}
 						}
 					]
@@ -260,12 +320,34 @@
 							}
 						},
 						{
-							label: (element.expanded ? 'Collapse Node' : 'Expand Node'),
-							action: () => {element.expanded = !element.expanded;}
+							label: expandedNodes?.find(
+								(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+							)
+								? 'Collapse Node'
+								: 'Expand Node',
+							action: () => {
+								let exists = expandedNodes?.find(
+									(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+								);
+								if (exists)
+									expandedNodes?.splice(
+										expandedNodes.findIndex((n) => n === exists),
+										1
+									);
+								if (!exists) {
+									expandedNodes?.push({
+										name: element.name,
+										type: DNARig.SelectedNodeType.Element,
+										index: rigObject?.groups.findIndex((g) => g.id === element.name) ?? 0
+									});
+								}
+							}
 						},
 						{
-							label: (element.visible ? 'Hide Element' : 'Render Element'),
-							action: () => {element.visible = !element.visible}
+							label: element.visible ? 'Hide Element' : 'Render Element',
+							action: () => {
+								element.visible = !element.visible;
+							}
 						},
 						{
 							label: 'Delete Element',
@@ -344,11 +426,26 @@
 				class="expand-button"
 				onclick={(e) => {
 					e.stopPropagation();
-					if (rigObject) rigObject.expanded = !rigObject.expanded;
+					if (expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Root && n.name === rigObject?.name)) {
+						expandedNodes.splice(
+							expandedNodes.findIndex((n) => n.type === DNARig.SelectedNodeType.Root && n.name === rigObject?.name),
+							1
+						);
+					} else {
+						expandedNodes?.push({
+							name: 'Root',
+							type: DNARig.SelectedNodeType.Root,
+							index: 0
+						});
+					}
 				}}
 			>
 				<img
-					class="expand-arrow-icon {rigObject.expanded ? 'expanded' : ''}"
+					class="expand-arrow-icon {expandedNodes?.find(
+						(n) => n.type === DNARig.SelectedNodeType.Root && n.name === rigObject?.name
+					)
+						? 'expanded'
+						: ''}"
 					src={downArrowIcon}
 					alt="Expand/Collapse Arrow"
 				/>
@@ -363,7 +460,7 @@
 			>
 		</div>
 		<!--foreach loop here for all of the rig elements -> forloop in each of the elements for each of their paths-->
-		{#if rigObject.expanded}
+		{#if expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Root)}
 			<!--Loop through each group first, and then through all elements and check if they have the same group_id-->
 			{#each rigObject.groups as group, groupIndex (group.id)}
 				<div
@@ -380,11 +477,34 @@
 						class="expand-button"
 						onclick={(e) => {
 							e.stopPropagation();
-							group.expanded = !group.expanded;
+							if (
+								expandedNodes?.find(
+									(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
+								)
+							) {
+								expandedNodes.splice(
+									expandedNodes.findIndex(
+										(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
+									),
+									1
+								);
+							} else {
+								expandedNodes?.push({
+									name: group.id,
+									type: DNARig.SelectedNodeType.Group,
+									index: expandedNodes.findIndex(
+										(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
+									)
+								});
+							}
 						}}
 					>
 						<img
-							class="expand-arrow-icon {group.expanded ? 'expanded' : ''}"
+							class="expand-arrow-icon {expandedNodes?.find(
+								(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
+							)
+								? 'expanded'
+								: ''}"
 							src={downArrowIcon}
 							alt="Expand/Collapse Arrow"
 						/>
@@ -403,7 +523,7 @@
 					>
 				</div>
 
-				{#if group.expanded}
+				{#if expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id)}
 					{#each rigObject.elements as element, elementIndex (element.name)}
 						{#if element.group_id === group.id}
 							<div
@@ -432,11 +552,36 @@
 									class="expand-button"
 									onclick={(e) => {
 										e.stopPropagation();
-										if (rigObject) element.expanded = !element.expanded;
+										if (
+											expandedNodes?.find(
+												(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+											)
+										) {
+											expandedNodes.splice(
+												expandedNodes.findIndex(
+													(n) =>
+														n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+												),
+												1
+											);
+										} else {
+											expandedNodes?.push({
+												name: element.name,
+												type: DNARig.SelectedNodeType.Element,
+												index: expandedNodes.findIndex(
+													(n) =>
+														n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+												)
+											});
+										}
 									}}
 								>
 									<img
-										class="expand-arrow-icon {element.expanded ? 'expanded' : ''}"
+										class="expand-arrow-icon {expandedNodes.find(
+											(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+										)
+											? 'expanded'
+											: ''}"
 										src={downArrowIcon}
 										alt="Expand/Collapse Arrow"
 									/>
@@ -454,7 +599,7 @@
 									}}>{element.name}</button
 								>
 							</div>
-							{#if element.expanded}
+							{#if expandedNodes.find((n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name)}
 								{#each element.points as point, pointIndex}
 									<div
 										class="rig-node third-node point-node context-target {selectedNode?.type ===
@@ -514,11 +659,32 @@
 							class="expand-button"
 							onclick={(e) => {
 								e.stopPropagation();
-								if (rigObject) element.expanded = !element.expanded;
+								if (
+									expandedNodes?.find(
+										(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+									)
+								) {
+									expandedNodes.splice(
+										expandedNodes.findIndex(
+											(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+										),
+										1
+									);
+								} else {
+									expandedNodes?.push({
+										name: element.name,
+										type: DNARig.SelectedNodeType.Element,
+										index: expandedNodes.findIndex(
+											(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+										)
+									});
+								}
 							}}
 						>
 							<img
-								class="expand-arrow-icon {element.expanded ? 'expanded' : ''}"
+								class="expand-arrow-icon {expandedNodes?.find(
+										(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+									) ? 'expanded' : ''}"
 								src={downArrowIcon}
 								alt="Expand/Collapse Arrow"
 							/>
@@ -536,7 +702,9 @@
 							}}>{element.name}</button
 						>
 					</div>
-					{#if element.expanded}
+					{#if expandedNodes?.find(
+										(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+									)}
 						{#each element.points as point, pointIndex}
 							<div
 								class="rig-node second-node point-node context-target {selectedNode?.type ===
