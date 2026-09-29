@@ -1,7 +1,7 @@
 <script lang="ts">
 	import gridPattern from '$lib/assets/grid-pattern.jpg';
 	import { appState } from '../AppState.svelte';
-	import type { RigElement, RigVector2 } from '../DNARig';
+	import { RigLayeringOrderNodeType, type RigElement, type RigVector2 } from '../DNARig';
 
 	let canvas: HTMLCanvasElement;
 	let displayWidth = $state(0);
@@ -112,32 +112,48 @@
 		}
 
 		function DrawElement(element: RigElement) {
-			if (!ctx || !rigObject || !element.visible || appState.rigPlaygroundState.hideAllElements || rigObject.groups.find(g => g.id === element.group_id)?.visible === false) return;
+			if (
+				!ctx ||
+				!rigObject ||
+				!element.visible ||
+				appState.rigPlaygroundState.hideAllElements ||
+				rigObject.groups.find((g) => g.id === element.group_id)?.visible === false
+			)
+				return;
 			ctx.beginPath();
 			if (element.points.length <= 2) return;
+			let elementGroup = rigObject.groups.find((g) => g.id === element.group_id);
+
 			let elementCalculatedPosition = CalculatePhysicalPositionFromRigCenter({
 				x:
 					rigObject.offsets.position.x +
 					rigObject.transforms.position.x +
+					(elementGroup ? elementGroup.offsets.position.x : 0) +
+					(elementGroup ? elementGroup.transforms.position.x : 0) +
 					element.transforms.position.x +
 					element.offsets.position.x,
 				y:
 					rigObject.offsets.position.y +
 					rigObject.transforms.position.y +
+					(elementGroup ? elementGroup.offsets.position.y : 0) +
+					(elementGroup ? elementGroup.transforms.position.y : 0) +
 					element.transforms.position.y +
 					element.offsets.position.y
 			});
-			let totalElementPositionRotation = rigObject.offsets.rotation + rigObject.transforms.rotation;
+			let totalElementPositionRotation =
+				rigObject.offsets.rotation +
+				rigObject.transforms.rotation +
+				(elementGroup ? elementGroup.offsets.rotation + elementGroup.transforms.rotation : 0);
 			//subtract the pivot
-			elementCalculatedPosition.x -= physicalRigCenter.x;
-			elementCalculatedPosition.y -= physicalRigCenter.y;
+			elementCalculatedPosition.x -= physicalRigCenter.x + (elementGroup ? elementGroup.transforms.position.x * scaleUnit : 0);
+			elementCalculatedPosition.y -= physicalRigCenter.y + (elementGroup ? elementGroup.transforms.position.y * scaleUnit : 0);
 			elementCalculatedPosition = RotatePhysicalPoint(
 				elementCalculatedPosition,
 				totalElementPositionRotation
 			);
 			//add the pivot back
-			elementCalculatedPosition.x += physicalRigCenter.x;
-			elementCalculatedPosition.y += physicalRigCenter.y;
+			elementCalculatedPosition.x += physicalRigCenter.x + (elementGroup ? elementGroup.transforms.position.x * scaleUnit : 0);
+			elementCalculatedPosition.y += physicalRigCenter.y + (elementGroup ? elementGroup.transforms.position.y * scaleUnit : 0);
 			let positionUHat = {
 				x: -Math.sin(totalElementPositionRotation * (Math.PI / 180)), //+ when +Y = up
 				y: Math.cos(totalElementPositionRotation * (Math.PI / 180))
@@ -167,11 +183,15 @@
 				x:
 					rigObject.offsets.scale.x *
 					rigObject.transforms.scale.x *
+					(elementGroup ? elementGroup.offsets.scale.x : 1) *
+					(elementGroup ? elementGroup.transforms.scale.x : 1) *
 					element.offsets.scale.x *
 					element.transforms.scale.x,
 				y:
 					rigObject.offsets.scale.y *
 					rigObject.transforms.scale.y *
+					(elementGroup ? elementGroup.offsets.scale.y : 1) *
+					(elementGroup ? elementGroup.transforms.scale.y : 1) *
 					element.offsets.scale.y *
 					element.transforms.scale.y
 			};
@@ -238,6 +258,20 @@
 				}
 			}
 		}
+
+		function Draw() {
+			if (!rigObject) return;
+			rigObject.layering_order.slice().forEach((item) => {
+				if (item.type === RigLayeringOrderNodeType.Group) {
+					
+				} else if (item.type === RigLayeringOrderNodeType.Element) {
+
+				} else {
+					return;
+				}
+			});
+		}
+
 		rigObject?.elements.forEach((element) => {
 			DrawElement(element);
 		});

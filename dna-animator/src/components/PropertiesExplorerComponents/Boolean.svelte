@@ -36,6 +36,7 @@
 		background-color: var(--bg-dark);
 		width: 50px;
 		height: 95%;
+		max-height: 25px;
 		border-radius: 5px;
 		position: relative;
 

@@ -16,6 +16,7 @@
 	let showContextMenu = $state(false);
 	let currentContextMenuOptions: ContextMenuOptions | null = $state(null);
 	let expandedNodes = $derived(appState.rigPlaygroundState.expandedNodes);
+	let lastDraggingElementId = $state("");
 
 	$effect(() => {
 		if (rigFile) {
@@ -84,13 +85,16 @@
 
 			let draggedElementIndex = rigObject?.elements.findIndex((el) => el.name === draggingItem.id);
 			if (draggedElementIndex === undefined || draggedElementIndex === -1) return;
+
 			let draggedElement = rigObject?.elements.splice(draggedElementIndex, 1);
 			if (!draggedElement) return;
+
 			let nextSiblingElementIndex = rigObject?.elements.findIndex(
 				(el) => el.name === nextSibling.id
 			);
 			if (nextSiblingElementIndex === undefined || nextSiblingElementIndex === -1) return;
 			if (draggedElementIndex < nextSiblingElementIndex) nextSiblingElementIndex--;
+
 			rigObject?.elements.splice(nextSiblingElementIndex, 0, draggedElement[0]);
 			let draggedElementObject = rigObject?.elements.find(
 				(e) => e.name === draggedElement[0]?.name
@@ -99,6 +103,7 @@
 			let siblingElementObject = rigObject?.elements.find((e) => e.name === nextSibling.id);
 			if (!siblingElementObject) return;
 			draggedElementObject.group_id = siblingElementObject.group_id;
+			lastDraggingElementId = draggedElementObject.name;
 		};
 		nodesContainer?.addEventListener('dragover', initSortableList);
 		nodesContainer?.addEventListener('dragenter', (e) => e.preventDefault());
@@ -527,7 +532,7 @@
 								class="rig-node second-node element-node context-target {selectedNode?.type ===
 									DNARig.SelectedNodeType.Element && selectedNode.name === element.name
 									? 'selected'
-									: ''}"
+									: ''} {element.name === lastDraggingElementId ? "dragging" : ""}"
 								id={element.name}
 								draggable="true"
 								ondragstart={(e) => {
@@ -541,7 +546,9 @@
 								ondragend={(e) => {
 									let target = e.currentTarget;
 									if (target instanceof HTMLElement) {
+										console.log("dragended");
 										target.classList.remove('dragging');
+										lastDraggingElementId = "";
 									}
 								}}
 							>
@@ -628,7 +635,7 @@
 						class="rig-node first-node element-node context-target {selectedNode?.type ===
 							DNARig.SelectedNodeType.Element && selectedNode.name === element.name
 							? 'selected'
-							: ''}"
+							: ''} {element.name === lastDraggingElementId ? "dragging" : ""}"
 						id={element.name}
 						draggable="true"
 						ondragstart={(e) => {
@@ -643,6 +650,7 @@
 							let target = e.currentTarget;
 							if (target instanceof HTMLElement) {
 								target.classList.remove('dragging');
+								lastDraggingElementId = "";
 							}
 						}}
 					>
