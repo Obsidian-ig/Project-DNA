@@ -18,18 +18,21 @@
 	let nodeExpanded = $state(false);
 
 	$effect(() => {
-		nodeExpanded = expandedNodes?.find((n) => n === selectedNode) != null
+		nodeExpanded = expandedNodes?.find((n) => n.type === selectedNode?.type && n.name === selectedNode?.name && n.index === selectedNode?.index) != null;
 	});
 
 	$effect(() => {
-		let expandedNodeExists = expandedNodes?.find(
-			(n) => n === selectedNode
-		);
+		console.log(nodeExpanded);
+		let expandedNodeExists = expandedNodes?.find((n) => n.type === selectedNode?.type && n.name === selectedNode?.name && n.index === selectedNode?.index);
 		if (!nodeExpanded && expandedNodeExists) {
-			expandedNodes?.splice(
-				expandedNodes.findIndex((n) => n === expandedNodeExists),
-				1
-			);
+			expandedNodes?.slice().forEach((n, index) => {
+				if (n.type === selectedNode?.type && n.name === selectedNode?.name && n.index === selectedNode?.index) {
+					expandedNodes?.splice(
+						index,
+						1
+					);
+				}
+			});
 		}
 		if (nodeExpanded && !expandedNodeExists && selectedNode) {
 			expandedNodes?.push(selectedNode);

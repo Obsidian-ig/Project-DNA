@@ -426,6 +426,7 @@
 				class="expand-button"
 				onclick={(e) => {
 					e.stopPropagation();
+					if (!rigObject) return;
 					if (expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Root && n.name === rigObject?.name)) {
 						expandedNodes.splice(
 							expandedNodes.findIndex((n) => n.type === DNARig.SelectedNodeType.Root && n.name === rigObject?.name),
@@ -433,7 +434,7 @@
 						);
 					} else {
 						expandedNodes?.push({
-							name: 'Root',
+							name: rigObject.name,
 							type: DNARig.SelectedNodeType.Root,
 							index: 0
 						});
