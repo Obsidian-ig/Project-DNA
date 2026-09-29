@@ -29,7 +29,6 @@
 		selectedOption = null;
 	});
 	$effect(() => {
-		console.log($state.snapshot(pageConfig?.title));
 		if (pageConfig) pageConfig.title = pageConfig.title;
 	})
 </script>

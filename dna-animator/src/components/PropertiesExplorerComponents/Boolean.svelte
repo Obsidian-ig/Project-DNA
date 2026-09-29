@@ -2,7 +2,7 @@
 	let { label, value = $bindable() }: { label: string; value: boolean } = $props();
 
 	$effect(() => {
-		console.log('Changed Value: ' + value);
+		//console.log('Changed Value: ' + value);
 	});
 </script>
 

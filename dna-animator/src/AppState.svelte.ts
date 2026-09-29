@@ -65,7 +65,7 @@ class AppState {
     constructor() {
         $effect.root(() => {
             $effect(() => {
-                console.log("Page Title Changed: " + this.currentPageConfig?.title);
+                //console.log("Page Title Changed: " + this.currentPageConfig?.title);
             });
         });
     }
@@ -92,12 +92,12 @@ class AppState {
     UpdateRigPlaygroundStateInLocalStorage() {
         if (browser) {
             localStorage.setItem("rigPlaygroundState", JSON.stringify(this.rigPlaygroundState));
-            console.log("Updated rig playground state in local storage.");
+            //console.log("Updated rig playground state in local storage.");
         }
     }
     private UpdateAppState() {
         localStorage.setItem("appConfig", JSON.stringify(this.config));
-        console.log("Saved changes to appConfig to local storage!");
+        //console.log("Saved changes to appConfig to local storage!");
         this.UpdateTheme();
     }
     MarkAsDoneLoading() {

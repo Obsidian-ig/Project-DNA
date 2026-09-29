@@ -20,9 +20,7 @@
 	$effect(() => {
 		nodeExpanded = expandedNodes?.find((n) => n.type === selectedNode?.type && n.name === selectedNode?.name && n.index === selectedNode?.index) != null;
 	});
-
 	$effect(() => {
-		console.log(nodeExpanded);
 		let expandedNodeExists = expandedNodes?.find((n) => n.type === selectedNode?.type && n.name === selectedNode?.name && n.index === selectedNode?.index);
 		if (!nodeExpanded && expandedNodeExists) {
 			expandedNodes?.slice().forEach((n, index) => {
