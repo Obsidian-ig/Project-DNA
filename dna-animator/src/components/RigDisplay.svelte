@@ -1,6 +1,5 @@
 <script lang="ts">
 	import gridPattern from '$lib/assets/grid-pattern.jpg';
-	import { groupCollapsed } from 'node:console';
 	import { appState } from '../AppState.svelte';
 	import { RigLayeringOrderNodeType, type RigElement, type RigVector2 } from '../DNARig';
 
@@ -12,7 +11,6 @@
 		if (!canvas || !rigObject) return;
 		const ctx = canvas.getContext('2d');
 		if (!ctx) return;
-		ctx.clearRect(0, 0, displayWidth, displayHeight);
 
 		let displayOrigin: RigVector2 = {
 			x: displayWidth / 2,
@@ -111,174 +109,110 @@
 			return physicalPoint;
 		}
 
-		function DrawElement(element: RigElement) {
-			if (
-				!ctx ||
-				!rigObject ||
-				!element.visible ||
-				appState.rigPlaygroundState.hideAllElements ||
-				rigObject.groups.find((g) => g.id === element.group_id)?.visible === false
-			)
-				return;
-			ctx.beginPath();
-			if (element.points.length <= 2) return;
-			let elementGroup = rigObject.groups.find((g) => g.id === element.group_id);
+		function DrawElement(element: RigElement, xAxis: RigVector2, yAxis: RigVector2) {
+			if (!rigObject || !ctx) return;
 
-			let elementCalculatedPosition = CalculatePhysicalPositionFromRigCenter({
-				x:
-					rigObject.offsets.position.x +
-					rigObject.transforms.position.x +
-					(elementGroup ? elementGroup.offsets.position.x : 0) +
-					(elementGroup ? elementGroup.transforms.position.x : 0) +
-					element.transforms.position.x +
-					element.offsets.position.x,
-				y:
-					rigObject.offsets.position.y +
-					rigObject.transforms.position.y +
-					(elementGroup ? elementGroup.offsets.position.y : 0) +
-					(elementGroup ? elementGroup.transforms.position.y : 0) +
-					element.transforms.position.y +
-					element.offsets.position.y
+			if (!element || !ctx) return;
+			let elementVirtualTotalPosition: RigVector2 = {
+				x: element.offsets.position.x + element.transforms.position.x,
+				y: element.offsets.position.y + element.transforms.position.y
+			};
+			let elementVirtualOrigin: RigVector2 = {
+				x: elementVirtualTotalPosition.x + element.offsets.transform_origin.x,
+				y: elementVirtualTotalPosition.y + element.offsets.transform_origin.y
+			};
+			let elementRotation = element.offsets.rotation + element.transforms.rotation;
+			let elementScale: RigVector2 = {
+				x: element.offsets.scale.x * element.transforms.scale.x,
+				y: element.offsets.scale.y * element.transforms.scale.y
+			};
+			let elementRotationTwo = element.offsets.rotation_two + element.transforms.rotation_two;
+
+			//calculate the elements position from the group's position and apply the groups rotation/direction with its axies
+			let elementCalculatedPosition = CalculatePhysicalPositionFromPhysicalPosition(
+				elementVirtualTotalPosition,
+				physicalRigCenter,
+				xAxis,
+				yAxis
+			);
+			let elementCalculatedOrigin = CalculatePhysicalPositionFromPhysicalPosition(
+				elementVirtualOrigin,
+				physicalRigCenter,
+				xAxis,
+				yAxis
+			);
+
+			let elementXAxis = { x: 1, y: 0 };
+			let elementYAxis = { x: 0, y: 1 };
+
+			elementXAxis = RotatePhysicalPoint(elementXAxis, elementRotation);
+			elementYAxis = RotatePhysicalPoint(elementYAxis, elementRotation);
+			elementXAxis = ScalePhysicalPoint(elementXAxis, elementScale);
+			elementYAxis = ScalePhysicalPoint(elementYAxis, elementScale);
+			elementXAxis = RotatePhysicalPoint(elementXAxis, elementRotationTwo);
+			elementYAxis = RotatePhysicalPoint(elementYAxis, elementRotationTwo);
+			const elementWorldX = {
+				x: xAxis.x * elementXAxis.x + yAxis.x * elementXAxis.y,
+				y:xAxis.y * elementXAxis.x + yAxis.y * elementXAxis.y
+			};
+			const elementWorldY = {
+				x: xAxis.x * elementYAxis.x + yAxis.x * elementYAxis.y,
+				y: xAxis.y * elementYAxis.x + yAxis.y * elementYAxis.y
+			};
+			const o = element.offsets.transform_origin;
+			elementCalculatedPosition = {
+				x: elementCalculatedOrigin.x - elementWorldX.x * o.x - elementWorldY.x * o.y,
+				y: elementCalculatedOrigin.y - elementWorldX.y * o.x - elementWorldY.y * o.y
+			};
+
+			let calculatedPointsPositions: RigVector2[] = [];
+			element.points.slice().forEach((point, index) => {
+				let calculatedPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
+					point.point,
+					elementCalculatedPosition,
+					elementWorldX,
+					elementWorldY
+				);
+				calculatedPointsPositions.push(calculatedPointPosition);
 			});
-			let totalElementPositionRotation =
-				rigObject.offsets.rotation +
-				rigObject.transforms.rotation +
-				(elementGroup ? elementGroup.offsets.rotation + elementGroup.transforms.rotation : 0);
-			//subtract the pivot
-			elementCalculatedPosition.x -=
-				physicalRigCenter.x + (elementGroup ? elementGroup.transforms.position.x * scaleUnit : 0);
-			elementCalculatedPosition.y -=
-				physicalRigCenter.y + (elementGroup ? elementGroup.transforms.position.y * scaleUnit : 0);
-			elementCalculatedPosition = RotatePhysicalPoint(
-				elementCalculatedPosition,
-				totalElementPositionRotation
-			);
-			//add the pivot back
-			elementCalculatedPosition.x +=
-				physicalRigCenter.x + (elementGroup ? elementGroup.transforms.position.x * scaleUnit : 0);
-			elementCalculatedPosition.y +=
-				physicalRigCenter.y + (elementGroup ? elementGroup.transforms.position.y * scaleUnit : 0);
-			let positionUHat = {
-				x: -Math.sin(totalElementPositionRotation * (Math.PI / 180)), //+ when +Y = up
-				y: Math.cos(totalElementPositionRotation * (Math.PI / 180))
-			};
-			let positionRHat = {
-				x: Math.cos(totalElementPositionRotation * (Math.PI / 180)),
-				y: Math.sin(totalElementPositionRotation * (Math.PI / 180)) //- when +Y = up
-			};
-
-			let calculatedOrigin = CalculatePhysicalPositionFromPhysicalPosition(
-				element.offsets.transform_origin,
-				elementCalculatedPosition,
-				positionRHat,
-				positionUHat
-			);
-
-			let calculatedPosition = CalculatePhysicalPositionFromPhysicalPosition(
-				element.points[0].point,
-				elementCalculatedPosition,
-				positionRHat,
-				positionUHat
-			);
-
-			let scaleMultiplier = {
-				x:
-					rigObject.offsets.scale.x *
-					rigObject.transforms.scale.x *
-					(elementGroup ? elementGroup.offsets.scale.x : 1) *
-					(elementGroup ? elementGroup.transforms.scale.x : 1) *
-					element.offsets.scale.x *
-					element.transforms.scale.x,
-				y:
-					rigObject.offsets.scale.y *
-					rigObject.transforms.scale.y *
-					(elementGroup ? elementGroup.offsets.scale.y : 1) *
-					(elementGroup ? elementGroup.transforms.scale.y : 1) *
-					element.offsets.scale.y *
-					element.transforms.scale.y
-			};
-			let totalRotation = element.offsets.rotation + element.transforms.rotation;
-			let totalRotationTwo = element.offsets.rotation_two + element.transforms.rotation_two;
-
-			calculatedPosition = CalculatePointPositionWithParams(
-				elementCalculatedPosition,
-				calculatedPosition,
-				totalRotation,
-				scaleMultiplier,
-				totalRotationTwo
-			);
-
-			ctx.moveTo(calculatedPosition.x, calculatedPosition.y);
-			for (let i = 1; i < element.points.length; i++) {
-				calculatedPosition = CalculatePhysicalPositionFromPhysicalPosition(
-					element.points[i].point,
-					elementCalculatedPosition,
-					positionRHat,
-					positionUHat
-				);
-				calculatedPosition = CalculatePointPositionWithParams(
-					elementCalculatedPosition,
-					calculatedPosition,
-					totalRotation,
-					scaleMultiplier,
-					totalRotationTwo
-				);
-				ctx.lineTo(calculatedPosition.x, calculatedPosition.y);
+			ctx.beginPath();
+			ctx.moveTo(calculatedPointsPositions?.[0].x, calculatedPointsPositions?.[0].y);
+			for (let i = 1; i < calculatedPointsPositions.length; i++) {
+				ctx?.lineTo(calculatedPointsPositions[i].x, calculatedPointsPositions[i].y);
 			}
 			ctx.closePath();
 			ctx.fillStyle = element.fill_color;
 			ctx.strokeStyle = element.stroke_color;
-			ctx.stroke();
 			ctx.fill();
-			if (!appState.rigPlaygroundState.disabledAllDebugOptions) {
-				if (element.show_origin_point) {
-					ctx.beginPath();
-					ctx.moveTo(calculatedOrigin.x, calculatedOrigin.y);
-					ctx.arc(calculatedOrigin.x, calculatedOrigin.y, 1 * scaleUnit, 0, 2 * Math.PI);
-					ctx.closePath();
-					ctx.fillStyle = '#de5100';
-					ctx.strokeStyle = '#de5100';
-					ctx.fill();
-					ctx.stroke();
-				}
-				if (element.show_position_point) {
-					ctx.beginPath();
-					ctx.moveTo(elementCalculatedPosition.x, elementCalculatedPosition.y);
-					ctx.arc(
-						elementCalculatedPosition.x,
-						elementCalculatedPosition.y,
-						1 * scaleUnit,
-						0,
-						2 * Math.PI
-					);
-					ctx.closePath();
-					ctx.fillStyle = '#03ff1c';
-					ctx.strokeStyle = '#03ff1c';
-					ctx.fill();
-					ctx.stroke();
-				}
-			}
+			ctx.stroke();
 		}
-
 		function Draw() {
-			if (!rigObject) return;
+			if (!rigObject || !ctx) return;
+			ctx.clearRect(0, 0, displayWidth, displayHeight);
 			let totalRigRotation = rigObject.offsets.rotation + rigObject.transforms.rotation;
 			let rigScale: RigVector2 = {
 				x: rigObject.offsets.scale.x * rigObject.transforms.scale.x,
 				y: rigObject.offsets.scale.y * rigObject.transforms.scale.y
 			};
 			let totalRigRotationTwo = rigObject.offsets.rotation_two + rigObject.transforms.rotation_two;
+			let rigXAxis: RigVector2 = { x: 1, y: 0 };
+			let rigYAxis: RigVector2 = { x: 0, y: 1 };
+			rigXAxis = RotatePhysicalPoint(rigXAxis, totalRigRotation);
+			rigYAxis = RotatePhysicalPoint(rigYAxis, totalRigRotation);
+			rigXAxis = ScalePhysicalPoint(rigXAxis, rigScale);
+			rigYAxis = ScalePhysicalPoint(rigYAxis, rigScale);
+			rigXAxis = RotatePhysicalPoint(rigXAxis, totalRigRotationTwo);
+			rigYAxis = RotatePhysicalPoint(rigYAxis, totalRigRotationTwo);
+
 			rigObject.layering_order.slice().forEach((item) => {
 				if (item.type === RigLayeringOrderNodeType.Group) {
-					//calculate the physical position of the group from the rig origin
-					//subtract the rig origin/pivot
-					//rotate the group physical position
-					//scale the group physical position
-					//rotate the group physical position again
-					//add the rig origin/pivot back
-					//calculate the group origin physical position from the group physical position
 					let group = rigObject.groups.find((g) => g.id === item.id);
 					if (!group) return;
+					if (
+						!group.visible ||
+						appState.rigPlaygroundState.hideAllGroups ||
+						appState.rigPlaygroundState.hideAllElements
+					) return;
 
 					let groupRotation = group.offsets.rotation + group.transforms.rotation;
 					let groupScale: RigVector2 = {
@@ -294,7 +228,6 @@
 
 					let groupXAxis = { x: 1, y: 0 };
 					let groupYAxis = { x: 0, y: 1 };
-
 					groupXAxis = RotatePhysicalPoint(groupXAxis, groupRotation);
 					groupYAxis = RotatePhysicalPoint(groupYAxis, groupRotation);
 					groupXAxis = ScalePhysicalPoint(groupXAxis, groupScale);
@@ -354,79 +287,23 @@
 					groupXAxis = RotatePhysicalPoint(groupXAxis, totalRigRotationTwo);
 					groupYAxis = RotatePhysicalPoint(groupYAxis, totalRigRotationTwo);
 
-					//loop through each element in the group
-					//calculate the physical element position from the physical group position
-					//rotate the element physical position
-					//scale the element physical position
-					//rotate the element physical position again
-					//calculate the physical element transform_origin from the physical element position
-					//calculate the element's uhat and rhat to rotate the points correctly.
 					rigObject.elements
 						.filter((e) => e.group_id === group.id)
 						.slice()
 						.forEach((element) => {
-							let elementVirtualTotalPosition: RigVector2 = {
-								x: element.offsets.position.x + element.transforms.position.x,
-								y: element.offsets.position.y + element.transforms.position.y
-							};
-							let elementVirtualOrigin: RigVector2 = {
-								x: elementVirtualTotalPosition.x + element.offsets.transform_origin.x,
-								y: elementVirtualTotalPosition.y + element.offsets.transform_origin.y
-							};
-							let elementRotation = element.offsets.rotation + element.transforms.rotation;
-							let elementScale: RigVector2 = {
-								x: element.offsets.scale.x * element.transforms.scale.x,
-								y: element.offsets.scale.y * element.transforms.scale.y
-							};
-							let elementRotationTwo =
-								element.offsets.rotation_two + element.transforms.rotation_two;
-							//calculate the elements position from the group's position and apply the groups rotation/direction with its axies
-							let elementCalculatedPosition = CalculatePhysicalPositionFromPhysicalPosition(
-								elementVirtualTotalPosition,
-								groupCalculatedPosition,
-								groupXAxis,
-								groupYAxis
-							);
-							let elementCalculatedOrigin = CalculatePhysicalPositionFromPhysicalPosition(
-								elementVirtualOrigin,
-								groupCalculatedPosition,
-								groupXAxis,
-								groupYAxis
-							);
-
-							let elementXAxis = { x: 1, y: 0 };
-							let elementYAxis = { x: 0, y: 1 };
-
-							elementXAxis = RotatePhysicalPoint(elementXAxis, elementRotation);
-							elementYAxis = RotatePhysicalPoint(elementYAxis, elementRotation);
-							elementXAxis = ScalePhysicalPoint(elementXAxis, elementScale);
-							elementYAxis = ScalePhysicalPoint(elementYAxis, elementScale);
-							elementXAxis = RotatePhysicalPoint(elementXAxis, elementRotationTwo);
-							elementYAxis = RotatePhysicalPoint(elementYAxis, elementRotationTwo);
-							const elementWorldX = {
-								x: groupXAxis.x * elementXAxis.x + groupYAxis.x * elementXAxis.y,
-								y: groupXAxis.y * elementXAxis.x + groupYAxis.y * elementXAxis.y
-							};
-							const elementWorldY = {
-								x: groupXAxis.x * elementYAxis.x + groupYAxis.x * elementYAxis.y,
-								y: groupXAxis.y * elementYAxis.x + groupYAxis.y * elementYAxis.y
-							};
-							const o = element.offsets.transform_origin;
-							elementCalculatedPosition = {
-								x: elementCalculatedOrigin.x - elementWorldX.x * o.x - elementWorldY.x * o.y,
-								y: elementCalculatedOrigin.y - elementWorldX.y * o.x - elementWorldY.y * o.y
-							};
+							DrawElement(element, groupXAxis, groupYAxis);
 						});
 				} else if (item.type === RigLayeringOrderNodeType.Element) {
+					let element = rigObject.elements.find((e) => e.name === item.id);
+					if (!element) return;
+					DrawElement(element, rigXAxis, rigYAxis);
 				} else {
 					return;
 				}
 			});
 		}
 
-		rigObject?.elements.forEach((element) => {
-			DrawElement(element);
-		});
+		Draw();
 	});
 </script>
 

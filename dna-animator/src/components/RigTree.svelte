@@ -10,13 +10,20 @@
 		}[];
 	}
 
+	interface RigTreeNode {
+		type: DNARig.RigLayeringOrderNodeType;
+		id: string;
+		elements: (DNARig.RigElement | null | undefined)[];
+	}
+
 	let { rigFile }: { rigFile: File | null } = $props();
 	let rigObject = $derived(appState.rigPlaygroundState.loadedRig);
 	let selectedNode = $derived(appState.rigPlaygroundState.selectedNode);
 	let showContextMenu = $state(false);
 	let currentContextMenuOptions: ContextMenuOptions | null = $state(null);
 	let expandedNodes = $derived(appState.rigPlaygroundState.expandedNodes);
-	let lastDraggingElementId = $state("");
+	let lastDraggingElementId = $state('');
+	let rigTreeNodes: (RigTreeNode | undefined)[] | undefined = $state([]);
 
 	$effect(() => {
 		if (rigFile) {
@@ -399,6 +406,28 @@
 			contextMenu.style.left = e.x + 'px';
 			contextMenu.style.top = e.y + 'px';
 		});
+
+		function FormatLayeringOrder(element: {
+			type: DNARig.RigLayeringOrderNodeType;
+			id: string;
+		}): RigTreeNode | undefined {
+			if (!rigObject) return;
+			if (element.type === DNARig.RigLayeringOrderNodeType.Group) {
+				return {
+					type: DNARig.RigLayeringOrderNodeType.Group,
+					id: element.id,
+					elements: rigObject.elements.filter((e) => e.group_id === element.id)
+				};
+			} else if (element.type === DNARig.RigLayeringOrderNodeType.Element) {
+				return {
+					type: DNARig.RigLayeringOrderNodeType.Element,
+					id: element.id,
+					elements: [rigObject.elements.find((e) => e.name === element.id)]
+				};
+			}
+		}
+
+		rigTreeNodes = rigObject?.layering_order.map(FormatLayeringOrder);
 	});
 
 	$effect(() => {
@@ -465,118 +494,50 @@
 				}}>{rigObject?.name}</button
 			>
 		</div>
-		<!--foreach loop here for all of the rig elements -> forloop in each of the elements for each of their paths-->
-		{#if expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Root)}
-			<!--Loop through each group first, and then through all elements and check if they have the same group_id-->
-			{#each rigObject.groups as group, groupIndex (group.id)}
-				<div
-					class="rig-node first-node group-node context-target {selectedNode?.type ===
-						DNARig.SelectedNodeType.Group &&
-					selectedNode?.name === group.id &&
-					selectedNode?.index === groupIndex
-						? 'selected'
-						: ''}"
-					id={group.id}
-				>
-					<!--Group Element-->
-					<button
-						class="expand-button"
-						onclick={(e) => {
-							e.stopPropagation();
-							let exists = expandedNodes?.find(
-								(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
-							);
-							if (exists) {
-								expandedNodes?.slice().forEach((n, index) => {
-									if (n.type === DNARig.SelectedNodeType.Group && n.name === group.id) {
-										expandedNodes?.splice(index, 1);
-									}
-								});
-							} else {
-								expandedNodes?.push({
-									name: group.id,
-									type: DNARig.SelectedNodeType.Group,
-									index: groupIndex
-								});
-							}
-						}}
-					>
-						<img
-							class="expand-arrow-icon {expandedNodes?.find(
-								(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
-							)
-								? 'expanded'
-								: ''}"
-							src={downArrowIcon}
-							alt="Expand/Collapse Arrow"
-						/>
-					</button>
-					<button
-						class="rig-node-select-button"
-						onclick={(e) => {
-							e.stopPropagation();
-							if (rigObject)
-								selectedNode = {
-									name: group.id,
-									type: DNARig.SelectedNodeType.Group,
-									index: groupIndex
-								};
-						}}>{group.id}</button
-					>
-				</div>
 
-				{#if expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id)}
-					{#each rigObject.elements as element, elementIndex (element.name)}
-						{#if element.group_id === group.id}
+		{#if expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Root)}
+			<!--Root Node is Expanded-->
+			{#each rigTreeNodes as node, nodeIndex (node?.id)}
+				{#if node}
+					{#if node.type === DNARig.RigLayeringOrderNodeType.Group}
+						{let group = rigObject.groups.find((g) => g.id === node.id)}
+						{let groupIndex = rigObject.groups.findIndex((g) => g.id === group?.id)}
+						{#if group && groupIndex != null && groupIndex != undefined}
 							<div
-								class="rig-node second-node element-node context-target {selectedNode?.type ===
-									DNARig.SelectedNodeType.Element && selectedNode.name === element.name
+								class="rig-node first-node group-node context-target {selectedNode?.type ===
+									DNARig.SelectedNodeType.Group &&
+								selectedNode?.name === group.id &&
+								selectedNode?.index === groupIndex
 									? 'selected'
-									: ''} {element.name === lastDraggingElementId ? "dragging" : ""}"
-								id={element.name}
-								draggable="true"
-								ondragstart={(e) => {
-									let target = e.currentTarget;
-									setTimeout(() => {
-										if (target instanceof HTMLElement) {
-											target.classList.add('dragging');
-										}
-									}, 0);
-								}}
-								ondragend={(e) => {
-									let target = e.currentTarget;
-									if (target instanceof HTMLElement) {
-										console.log("dragended");
-										target.classList.remove('dragging');
-										lastDraggingElementId = "";
-									}
-								}}
+									: ''}"
+								id={group.id}
 							>
+								<!--Group Element-->
 								<button
 									class="expand-button"
 									onclick={(e) => {
 										e.stopPropagation();
 										let exists = expandedNodes?.find(
-											(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+											(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
 										);
 										if (exists) {
 											expandedNodes?.slice().forEach((n, index) => {
-												if (n.type === DNARig.SelectedNodeType.Element && n.name === element.name) {
+												if (n.type === DNARig.SelectedNodeType.Group && n.name === group.id) {
 													expandedNodes?.splice(index, 1);
 												}
 											});
 										} else {
 											expandedNodes?.push({
-												name: element.name,
-												type: DNARig.SelectedNodeType.Element,
-												index: elementIndex
+												name: group.id,
+												type: DNARig.SelectedNodeType.Group,
+												index: groupIndex
 											});
 										}
 									}}
 								>
 									<img
-										class="expand-arrow-icon {expandedNodes.find(
-											(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+										class="expand-arrow-icon {expandedNodes?.find(
+											(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
 										)
 											? 'expanded'
 											: ''}"
@@ -590,151 +551,137 @@
 										e.stopPropagation();
 										if (rigObject)
 											selectedNode = {
-												name: element.name,
-												type: DNARig.SelectedNodeType.Element,
-												index: elementIndex
+												name: group.id,
+												type: DNARig.SelectedNodeType.Group,
+												index: groupIndex
 											};
-									}}>{element.name}</button
+									}}>{group.id}</button
 								>
 							</div>
-							{#if expandedNodes.find((n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name)}
-								{#each element.points as point, pointIndex}
-									<div
-										class="rig-node third-node point-node context-target {selectedNode?.type ===
-											DNARig.SelectedNodeType.Point &&
-										selectedNode.index === pointIndex &&
-										selectedNode.name === element.name
-											? 'selected'
-											: ''}"
-										id={pointIndex.toString()}
-										data-element-name={element.name}
-									>
-										<button
-											class="rig-node-select-button"
-											onclick={(e) => {
-												e.stopPropagation();
-												if (rigObject)
-													selectedNode = {
-														name: element.name,
-														type: DNARig.SelectedNodeType.Point,
-														index: pointIndex
-													};
-											}}>Point: {pointIndex}</button
-										>
-									</div>
-								{/each}
-							{/if}
 						{/if}
-					{/each}
-				{/if}
-			{/each}
-			<!--Elements not part of a group-->
-			{#each rigObject.elements as element, elementIndex (element.name)}
-				{#if element.group_id === ''}
-					<div
-						class="rig-node first-node element-node context-target {selectedNode?.type ===
-							DNARig.SelectedNodeType.Element && selectedNode.name === element.name
-							? 'selected'
-							: ''} {element.name === lastDraggingElementId ? "dragging" : ""}"
-						id={element.name}
-						draggable="true"
-						ondragstart={(e) => {
-							let target = e.currentTarget;
-							setTimeout(() => {
-								if (target instanceof HTMLElement) {
-									target.classList.add('dragging');
-								}
-							}, 0);
-						}}
-						ondragend={(e) => {
-							let target = e.currentTarget;
-							if (target instanceof HTMLElement) {
-								target.classList.remove('dragging');
-								lastDraggingElementId = "";
-							}
-						}}
-					>
-						<button
-							class="expand-button"
-							onclick={(e) => {
-								e.stopPropagation();
-								if (
-									expandedNodes?.find(
-										(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
-									)
-								) {
-									expandedNodes.splice(
-										expandedNodes.findIndex(
-											(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
-										),
-										1
-									);
-								} else {
-									expandedNodes?.push({
-										name: element.name,
-										type: DNARig.SelectedNodeType.Element,
-										index: expandedNodes.findIndex(
-											(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
-										)
-									});
-								}
-							}}
-						>
-							<img
-								class="expand-arrow-icon {expandedNodes?.find(
-									(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
-								)
-									? 'expanded'
-									: ''}"
-								src={downArrowIcon}
-								alt="Expand/Collapse Arrow"
-							/>
-						</button>
-						<button
-							class="rig-node-select-button"
-							onclick={(e) => {
-								e.stopPropagation();
-								if (rigObject)
-									selectedNode = {
-										name: element.name,
-										type: DNARig.SelectedNodeType.Element,
-										index: elementIndex
-									};
-							}}>{element.name}</button
-						>
-					</div>
-					{#if expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name)}
-						{#each element.points as point, pointIndex}
-							<div
-								class="rig-node second-node point-node context-target {selectedNode?.type ===
-									DNARig.SelectedNodeType.Point &&
-								selectedNode.index === pointIndex &&
-								selectedNode.name === element.name
-									? 'selected'
-									: ''}"
-								id={pointIndex.toString()}
-								data-element-name={element.name}
-							>
-								<button
-									class="rig-node-select-button"
-									onclick={(e) => {
-										e.stopPropagation();
-										if (rigObject)
-											selectedNode = {
-												name: element.name,
-												type: DNARig.SelectedNodeType.Point,
-												index: pointIndex
-											};
-									}}>Point: {pointIndex}</button
-								>
-							</div>
-						{/each}
+						{#if expandedNodes.find((n) => n.name === group?.id && n.type === DNARig.SelectedNodeType.Group)}
+							<!--group is expanded, should loop through its elements-->
+							{#each node.elements as element (element?.name)}
+								{#if element}
+									{@render ElementNode(true, element, rigObject.elements.findIndex(e => e.name === element.name))}
+								{/if}
+							{/each}
+						{/if}
+					{:else if node.type === DNARig.RigLayeringOrderNodeType.Element}
+						{let element = node.elements?.[0]}
+						{#if element}
+							{@render ElementNode(true, element, rigObject.elements.findIndex(e => e.name === element.name))}
+						{/if}
 					{/if}
 				{/if}
 			{/each}
 		{/if}
 	</div>
 {/if}
+
+{#snippet ElementNode(inGroup: boolean, element: DNARig.RigElement, elementIndex: number)}
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		class="rig-node {inGroup
+			? 'second-node'
+			: 'first-node'} element-node context-target {selectedNode?.type ===
+			DNARig.SelectedNodeType.Element && selectedNode.name === element.name
+			? 'selected'
+			: ''} {element.name === lastDraggingElementId ? 'dragging' : ''}"
+		id={element.name}
+		draggable="true"
+		ondragstart={(e) => {
+			let target = e.currentTarget;
+			setTimeout(() => {
+				if (target instanceof HTMLElement) {
+					target.classList.add('dragging');
+				}
+			}, 0);
+		}}
+		ondragend={(e) => {
+			let target = e.currentTarget;
+			if (target instanceof HTMLElement) {
+				console.log('dragended');
+				target.classList.remove('dragging');
+				lastDraggingElementId = '';
+			}
+		}}
+	>
+		<button
+			class="expand-button"
+			onclick={(e) => {
+				e.stopPropagation();
+				let exists = expandedNodes?.find(
+					(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+				);
+				if (exists) {
+					expandedNodes?.slice().forEach((n, index) => {
+						if (n.type === DNARig.SelectedNodeType.Element && n.name === element.name) {
+							expandedNodes?.splice(index, 1);
+						}
+					});
+				} else {
+					expandedNodes?.push({
+						name: element.name,
+						type: DNARig.SelectedNodeType.Element,
+						index: elementIndex
+					});
+				}
+			}}
+		>
+			<img
+				class="expand-arrow-icon {expandedNodes?.find(
+					(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+				)
+					? 'expanded'
+					: ''}"
+				src={downArrowIcon}
+				alt="Expand/Collapse Arrow"
+			/>
+		</button>
+		<button
+			class="rig-node-select-button"
+			onclick={(e) => {
+				e.stopPropagation();
+				if (rigObject)
+					selectedNode = {
+						name: element.name,
+						type: DNARig.SelectedNodeType.Element,
+						index: elementIndex
+					};
+			}}>{element.name}</button
+		>
+	</div>
+	{#if expandedNodes?.find((n) => n.name === element.name && n.type === DNARig.SelectedNodeType.Element)}
+		{#each element.points as point, pointIndex (point.point)}
+			<div
+				class="rig-node {inGroup
+					? 'third-node'
+					: 'second-node'} point-node context-target {selectedNode?.type ===
+					DNARig.SelectedNodeType.Point &&
+				selectedNode.index === pointIndex &&
+				selectedNode.name === element.name
+					? 'selected'
+					: ''}"
+				id={pointIndex.toString()}
+				data-element-name={element.name}
+			>
+				<button
+					class="rig-node-select-button"
+					onclick={(e) => {
+						e.stopPropagation();
+						if (rigObject)
+							selectedNode = {
+								name: element.name,
+								type: DNARig.SelectedNodeType.Point,
+								index: pointIndex
+							};
+					}}>Point: {pointIndex}</button
+				>
+			</div>
+		{/each}
+	{/if}
+{/snippet}
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->

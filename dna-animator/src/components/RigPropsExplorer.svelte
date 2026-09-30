@@ -54,6 +54,7 @@
 				bind:value={appState.rigPlaygroundState.disabledAllDebugOptions}
 			/>
 			<Boolean label="Hide All Elements" bind:value={appState.rigPlaygroundState.hideAllElements} />
+			<Boolean label="Hide All Groups" bind:value={appState.rigPlaygroundState.hideAllGroups} />
 			<Section label="Base Offsets">
 				<VectorTwo label="Starting Position" bind:value={rigObject.offsets.position} />
 				<Number label="Starting Rotation" bind:value={rigObject.offsets.rotation} />
