@@ -269,7 +269,8 @@ export interface RigEvent {
 
 export const RigLayeringOrderNodeType = {
     Group: 'group',
-    Element: 'element'
+    Element: 'element',
+    GroupDivider: 'group_divider'
 } as const;
 export type RigLayeringOrderNodeType = (typeof RigLayeringOrderNodeType)[keyof typeof RigLayeringOrderNodeType];
 

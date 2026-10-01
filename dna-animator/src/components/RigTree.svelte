@@ -2,6 +2,7 @@
 	import downArrowIcon from '$lib/assets/down-arrow-icon-white.png';
 	import * as DNARig from '../DNARig';
 	import { appState } from '../AppState.svelte';
+	import { updated } from '$app/state';
 
 	interface ContextMenuOptions {
 		options: {
@@ -82,34 +83,80 @@
 			e.preventDefault();
 			if (!rigObject || !rigTreeNodes) return;
 			const draggingItem: HTMLElement = document.querySelector('.dragging') as HTMLElement;
+			let isGroup = draggingItem.classList.contains('group-node');
 			//console.log(draggingItem);
-			let siblings = [
-				...document.querySelectorAll('.element-node:not(.dragging), .group-node:not(.dragging)')
-			] as HTMLElement[];
+			let siblings = isGroup
+				? ([...document.querySelectorAll('.group-node:not(.dragging)')] as HTMLElement[])
+				: draggingItem.classList.contains('element-node')
+					? ([
+							...document.querySelectorAll(
+								'.element-node:not(.dragging), .group-node:not(.dragging)'
+							)
+						] as HTMLElement[])
+					: [];
+			if (siblings.length <= 0) return;
 
 			let draggedIndex: number = -1;
-			let isGroup = draggingItem.classList.contains("group-node");
+			if (isGroup)
+				draggedIndex = rigTreeNodes.findIndex(
+					(n) => n?.id === draggingItem.id && n.type === DNARig.RigLayeringOrderNodeType.Group
+				);
+			if (!isGroup)
+			//this doesn't currently work because the rigTreeNodes doesn't contain all individual elements; so, it doesn't find the element that is inside a group.
+				draggedIndex = rigTreeNodes.findIndex(
+					(n) => n?.id === draggingItem.id && n.type === DNARig.RigLayeringOrderNodeType.Element
+				);
+			console.log(draggedIndex);
+			if (draggedIndex === -1) return;
+			
 
-			if (isGroup) draggedIndex = rigTreeNodes.findIndex(n => n?.id === draggingItem.id && n.type === DNARig.RigLayeringOrderNodeType.Group);
-			if (!isGroup) draggedIndex = rigTreeNodes.findIndex(n => n?.id === draggingItem.id && n.type === DNARig.RigLayeringOrderNodeType.Element);
-			if (!draggedIndex && draggedIndex != 0) return;
-			let draggedRigObject = rigTreeNodes?.splice(draggedIndex, 1)?.[0];
-			if (!draggedRigObject) return;
+			let draggedRigObjectIndex = rigTreeNodes.findIndex(
+				(n) =>
+					n?.id === draggingItem.id &&
+					n.type ===
+						(isGroup
+							? DNARig.RigLayeringOrderNodeType.Group
+							: DNARig.RigLayeringOrderNodeType.Element)
+			);
+			if (draggedRigObjectIndex === -1) return;
 
 			let nextTreeNode = siblings.find((sibling) => {
-				return e.clientY <= sibling.offsetTop + sibling.offsetHeight / 2;
+				const box = sibling.getBoundingClientRect();
+				return e.clientY <= box.top + box.height / 2;
 			});
-
+			//console.log(nextTreeNode);
+			let targetIndex = -1;
 			if (!nextTreeNode) {
-				//put node at the end of the tree
-				rigTreeNodes.push(draggedRigObject);
+				targetIndex = rigTreeNodes.length;
 			} else {
-				let nextNodeIndex = nextTreeNode?.classList.contains("group-node") ?
-					rigTreeNodes.findIndex(n => n?.id === nextTreeNode.id && n.type === DNARig.RigLayeringOrderNodeType.Group) :
-					rigTreeNodes.findIndex(n => n?.id === nextTreeNode.id && n.type === DNARig.RigLayeringOrderNodeType.Element);
-				if (!nextNodeIndex && nextNodeIndex != 0) return;
-				rigTreeNodes.splice(nextNodeIndex, 0, draggedRigObject);
+				let nextNodeIndex = nextTreeNode.classList.contains('group-node')
+					? rigTreeNodes.findIndex(
+							(n) => n?.id === nextTreeNode.id && n.type === DNARig.RigLayeringOrderNodeType.Group
+						)
+					: rigTreeNodes.findIndex(
+							(n) => n?.id === nextTreeNode.id && n.type === DNARig.RigLayeringOrderNodeType.Element
+						);
+				if (nextNodeIndex === -1) {
+					targetIndex = draggedRigObjectIndex;
+					return;
+				}
+				//console.log(nextNodeIndex);
+				targetIndex = nextNodeIndex;
 			}
+			if (
+				targetIndex === draggedRigObjectIndex ||
+				targetIndex < 0 ||
+				targetIndex === draggedRigObjectIndex + 1
+			)
+				return;
+			let updatedTreeNodes = [...rigTreeNodes];
+			let draggedItem = updatedTreeNodes.splice(draggedRigObjectIndex, 1)[0];
+			if (!draggedItem) return;
+			console.log(targetIndex);
+			const finalInsertIndex = draggedRigObjectIndex < targetIndex ? targetIndex - 1 : targetIndex;
+			console.log(finalInsertIndex);
+			updatedTreeNodes.splice(finalInsertIndex, 0, draggedItem);
+			rigTreeNodes = updatedTreeNodes;
 		};
 		nodesContainer?.addEventListener('dragover', initSortableList);
 		nodesContainer?.addEventListener('dragenter', (e) => e.preventDefault());

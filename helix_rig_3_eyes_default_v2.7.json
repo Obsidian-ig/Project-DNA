@@ -4,13 +4,13 @@
   "rig_structure_version": "2.7",
   "author": "ObsidianDev",
   "author_link": "https://github.com/Obsidian-ig",
-  "last_updated_utc": "9/28/2026 10:13:00 PM",
+  "last_updated_utc": "10/01/2026 10:54:00 PM",
   "disable_all_debug_options": false,
   "hide_all_elements": false,
   "offsets": {
     "position": {
       "x": 0,
-      "y": 3
+      "y": 4
     },
     "rotation": 0,
     "scale": {
@@ -112,79 +112,6 @@
       }
     },
     {
-      "name": "Left_Eye_Pupil",
-      "group_id": "Left_Eye",
-      "visible": true,
-      "show_position_point": false,
-      "show_origin_point": false,
-      "offsets": {
-        "position": {
-          "x": -30,
-          "y": 5
-        },
-        "rotation": 0,
-        "scale": {
-          "x": 1,
-          "y": 1
-        },
-        "rotation_two": 0,
-        "transform_origin": {
-          "x": 0,
-          "y": 0
-        }
-      },
-      "points": [
-        {
-          "point": {
-            "x": -6,
-            "y": -6
-          },
-          "interpolation_type": "Linear",
-          "controls": []
-        },
-        {
-          "point": {
-            "x": -3,
-            "y": 6
-          },
-          "interpolation_type": "Linear",
-          "controls": []
-        },
-        {
-          "point": {
-            "x": 3,
-            "y": 6
-          },
-          "interpolation_type": "Linear",
-          "controls": []
-        },
-        {
-          "point": {
-            "x": 3,
-            "y": -6
-          },
-          "interpolation_type": "Linear",
-          "controls": []
-        }
-      ],
-      "closed": true,
-      "filled": true,
-      "fill_color": "#065b9c",
-      "stroke_color": "#065b9c",
-      "transforms": {
-        "position": {
-          "x": 0,
-          "y": 0
-        },
-        "rotation": 0,
-        "scale": {
-          "x": 1,
-          "y": 1
-        },
-        "rotation_two": 0
-      }
-    },
-    {
       "name": "Right_Eye_Background",
       "group_id": "Right_Eye",
       "visible": true,
@@ -258,56 +185,56 @@
       }
     },
     {
-      "name": "Right_Eye_Pupil",
-      "group_id": "Right_Eye",
+      "name": "Left_Eye_Background_Clone",
+      "group_id": "",
       "visible": true,
       "show_position_point": false,
       "show_origin_point": false,
       "offsets": {
         "position": {
-          "x": 25,
-          "y": 5
+          "x": -11,
+          "y": 10
         },
         "rotation": 0,
         "scale": {
-          "x": 1,
-          "y": 1
+          "x": 0.5,
+          "y": 0.5
         },
         "rotation_two": 0,
         "transform_origin": {
-          "x": 0,
+          "x": -14,
           "y": 0
         }
       },
       "points": [
         {
           "point": {
-            "x": 6,
-            "y": -6
+            "x": -60,
+            "y": -40
           },
           "interpolation_type": "Linear",
           "controls": []
         },
         {
           "point": {
-            "x": 3,
-            "y": 6
+            "x": -40,
+            "y": 40
           },
           "interpolation_type": "Linear",
           "controls": []
         },
         {
           "point": {
-            "x": -3,
-            "y": 6
+            "x": 20,
+            "y": 10
           },
           "interpolation_type": "Linear",
           "controls": []
         },
         {
           "point": {
-            "x": -3,
-            "y": -6
+            "x": 20,
+            "y": -10
           },
           "interpolation_type": "Linear",
           "controls": []
@@ -315,8 +242,8 @@
       ],
       "closed": true,
       "filled": true,
-      "fill_color": "#065b9c",
-      "stroke_color": "#065b9c",
+      "fill_color": "#3d008c",
+      "stroke_color": "#3d008c",
       "transforms": {
         "position": {
           "x": 0,
@@ -408,7 +335,7 @@
       "offsets": {
         "position": {
           "x": 0,
-          "y": -36
+          "y": -40
         },
         "rotation": 0,
         "scale": {
@@ -449,6 +376,152 @@
         {
           "point": {
             "x": -3,
+            "y": -6
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        }
+      ],
+      "closed": true,
+      "filled": true,
+      "fill_color": "#065b9c",
+      "stroke_color": "#065b9c",
+      "transforms": {
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0
+      }
+    },
+    {
+      "name": "Right_Eye_Pupil",
+      "group_id": "Right_Eye",
+      "visible": true,
+      "show_position_point": false,
+      "show_origin_point": false,
+      "offsets": {
+        "position": {
+          "x": 25,
+          "y": 5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": 6,
+            "y": -6
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        },
+        {
+          "point": {
+            "x": 3,
+            "y": 6
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        },
+        {
+          "point": {
+            "x": -3,
+            "y": 6
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        },
+        {
+          "point": {
+            "x": -3,
+            "y": -6
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        }
+      ],
+      "closed": true,
+      "filled": true,
+      "fill_color": "#065b9c",
+      "stroke_color": "#065b9c",
+      "transforms": {
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0
+      }
+    },
+    {
+      "name": "Left_Eye_Pupil",
+      "group_id": "Left_Eye",
+      "visible": true,
+      "show_position_point": false,
+      "show_origin_point": false,
+      "offsets": {
+        "position": {
+          "x": -30,
+          "y": 5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -6,
+            "y": -6
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        },
+        {
+          "point": {
+            "x": -3,
+            "y": 6
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        },
+        {
+          "point": {
+            "x": 3,
+            "y": 6
+          },
+          "interpolation_type": "Linear",
+          "controls": []
+        },
+        {
+          "point": {
+            "x": 3,
             "y": -6
           },
           "interpolation_type": "Linear",
