@@ -80,37 +80,36 @@
 
 		const initSortableList = (e: any) => {
 			e.preventDefault();
+			if (!rigObject || !rigTreeNodes) return;
 			const draggingItem: HTMLElement = document.querySelector('.dragging') as HTMLElement;
 			//console.log(draggingItem);
 			let siblings = [
-				...document.querySelectorAll('.element-node:not(.dragging)')
+				...document.querySelectorAll('.element-node:not(.dragging), .group-node:not(.dragging)')
 			] as HTMLElement[];
-			let nextSibling = siblings.find((sibling) => {
+
+			let draggedIndex: number = -1;
+			let isGroup = draggingItem.classList.contains("group-node");
+
+			if (isGroup) draggedIndex = rigTreeNodes.findIndex(n => n?.id === draggingItem.id && n.type === DNARig.RigLayeringOrderNodeType.Group);
+			if (!isGroup) draggedIndex = rigTreeNodes.findIndex(n => n?.id === draggingItem.id && n.type === DNARig.RigLayeringOrderNodeType.Element);
+			if (!draggedIndex && draggedIndex != 0) return;
+			let draggedRigObject = rigTreeNodes?.splice(draggedIndex, 1)?.[0];
+			if (!draggedRigObject) return;
+
+			let nextTreeNode = siblings.find((sibling) => {
 				return e.clientY <= sibling.offsetTop + sibling.offsetHeight / 2;
 			});
-			if (!nextSibling) return;
 
-			let draggedElementIndex = rigObject?.elements.findIndex((el) => el.name === draggingItem.id);
-			if (draggedElementIndex === undefined || draggedElementIndex === -1) return;
-
-			let draggedElement = rigObject?.elements.splice(draggedElementIndex, 1);
-			if (!draggedElement) return;
-
-			let nextSiblingElementIndex = rigObject?.elements.findIndex(
-				(el) => el.name === nextSibling.id
-			);
-			if (nextSiblingElementIndex === undefined || nextSiblingElementIndex === -1) return;
-			if (draggedElementIndex < nextSiblingElementIndex) nextSiblingElementIndex--;
-
-			rigObject?.elements.splice(nextSiblingElementIndex, 0, draggedElement[0]);
-			let draggedElementObject = rigObject?.elements.find(
-				(e) => e.name === draggedElement[0]?.name
-			);
-			if (!draggedElementObject) return;
-			let siblingElementObject = rigObject?.elements.find((e) => e.name === nextSibling.id);
-			if (!siblingElementObject) return;
-			draggedElementObject.group_id = siblingElementObject.group_id;
-			lastDraggingElementId = draggedElementObject.name;
+			if (!nextTreeNode) {
+				//put node at the end of the tree
+				rigTreeNodes.push(draggedRigObject);
+			} else {
+				let nextNodeIndex = nextTreeNode?.classList.contains("group-node") ?
+					rigTreeNodes.findIndex(n => n?.id === nextTreeNode.id && n.type === DNARig.RigLayeringOrderNodeType.Group) :
+					rigTreeNodes.findIndex(n => n?.id === nextTreeNode.id && n.type === DNARig.RigLayeringOrderNodeType.Element);
+				if (!nextNodeIndex && nextNodeIndex != 0) return;
+				rigTreeNodes.splice(nextNodeIndex, 0, draggedRigObject);
+			}
 		};
 		nodesContainer?.addEventListener('dragover', initSortableList);
 		nodesContainer?.addEventListener('dragenter', (e) => e.preventDefault());
@@ -509,8 +508,25 @@
 								selectedNode?.name === group.id &&
 								selectedNode?.index === groupIndex
 									? 'selected'
-									: ''}"
+									: ''} {group.id === lastDraggingElementId ? 'dragging' : ''}"
 								id={group.id}
+								draggable="true"
+								ondragstart={(e) => {
+									let target = e.currentTarget;
+									setTimeout(() => {
+										if (target instanceof HTMLElement) {
+											target.classList.add('dragging');
+										}
+									}, 0);
+								}}
+								ondragend={(e) => {
+									let target = e.currentTarget;
+									if (target instanceof HTMLElement) {
+										console.log('dragended');
+										target.classList.remove('dragging');
+										lastDraggingElementId = '';
+									}
+								}}
 							>
 								<!--Group Element-->
 								<button
@@ -563,14 +579,22 @@
 							<!--group is expanded, should loop through its elements-->
 							{#each node.elements as element (element?.name)}
 								{#if element}
-									{@render ElementNode(true, element, rigObject.elements.findIndex(e => e.name === element.name))}
+									{@render ElementNode(
+										true,
+										element,
+										rigObject.elements.findIndex((e) => e.name === element.name)
+									)}
 								{/if}
 							{/each}
 						{/if}
 					{:else if node.type === DNARig.RigLayeringOrderNodeType.Element}
 						{let element = node.elements?.[0]}
 						{#if element}
-							{@render ElementNode(true, element, rigObject.elements.findIndex(e => e.name === element.name))}
+							{@render ElementNode(
+								true,
+								element,
+								rigObject.elements.findIndex((e) => e.name === element.name)
+							)}
 						{/if}
 					{/if}
 				{/if}
