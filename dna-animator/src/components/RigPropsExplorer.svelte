@@ -98,8 +98,8 @@
 		{:else if selectedNode?.type === SelectedNodeType.Element}
 			<!--Element/Shape Node-->
 			{let currentElement = $derived(
-				selectedNode && selectedNode.index !== undefined
-					? rigObject.elements[selectedNode.index]
+				selectedNode
+					? rigObject.elements.find(e => e.name === selectedNode.name)
 					: null
 			)}
 			{#if currentElement}

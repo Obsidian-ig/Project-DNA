@@ -115,9 +115,7 @@
 			xAxis: RigVector2,
 			yAxis: RigVector2
 		) {
-			if (!rigObject || !ctx) return;
-
-			if (!element || !ctx) return;
+			if (!rigObject || !ctx || !element.visible) return;
 			let elementVirtualTotalPosition: RigVector2 = {
 				x: element.offsets.position.x + element.transforms.position.x,
 				y: element.offsets.position.y + element.transforms.position.y
