@@ -4,6 +4,7 @@ export default {
     kit: {
         adapter: adapter({
             fallback: 'index.html'
-        })
+        }),
+        router: { type: 'hash' }
     }
 };

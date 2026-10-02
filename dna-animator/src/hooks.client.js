@@ -12,16 +12,18 @@ if (configObject) {
         let stateObject = pulledRigPlaygroundState ? JSON.parse(pulledRigPlaygroundState) : undefined;
         appState.ImportRigPlaygroundStateFromLocalStorage(stateObject);
     }
-    appState.UpdateTheme();
-    appState.MarkAsDoneLoading();
-    window.electronAPI.showWindow();
 } else {
     console.log("Error when retrieving appConfig from local storage! Pulled Config: ", pulledConfig);
     console.log("Attempting to create new appConfig in local storage.");
     localStorage.setItem("appConfig", JSON.stringify(appState.constAppConfig));
-}
 
-export function handleError({error, event}) {
+}
+appState.UpdateTheme();
+appState.MarkAsDoneLoading();
+window.electronAPI.showWindow();
+window.electronAPI.showWindow();
+
+export function handleError({ error, event }) {
     appState.SetLoadingErrorMessage("An unexcpected error occurred during initialization. Check the console for more details.");
     console.error('An unexpected client-side error occurred:', error);
 }

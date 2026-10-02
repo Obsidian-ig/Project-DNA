@@ -17,4 +17,4 @@
     }
     appState.ChangeTheme(themeToChangeTo);
 }}>Change Theme</button>
-<a href="/rig-tester">Go To Rig Tester</a>
+<a href="#/rig-tester">Go To Rig Tester</a>

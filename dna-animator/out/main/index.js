@@ -4,10 +4,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { ipcMain } from "electron/main";
 import * as fs from "fs/promises";
+import serve from "electron-serve";
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = path.dirname(__filename);
 var win = null;
 var iconPath = app.isPackaged ? path.join(__dirname, "favicon.png") : path.join(__dirname, "../../src/main/favicon.png");
+var loadApp = serve({
+  directory: path.join(__dirname, "../../build")
+});
 function createWindow() {
   win = new BrowserWindow({
     width: 1200,
@@ -33,11 +37,27 @@ function createWindow() {
   if (!app.isPackaged) {
     LoadUrl();
   } else {
-    win.loadFile(path.join(__dirname, "../../build/index.html"));
+    loadApp(win);
   }
   win.on("closed", () => {
     win = null;
   });
+  let wc = win.webContents;
+  wc.on("did-fail-load", (_e, code, desc, url) => {
+    console.error("Failed to load!", code, desc, url);
+    win?.show();
+    win?.webContents.openDevTools();
+  });
+  wc.on("did-finish-load", () => console.log("[main] page loaded: ", wc.getURL()));
+  wc.on("render-process-gone", (_e, details) => console.log("[main] renderer crashed :(", details));
+  wc.on("console-message", (e, ...args) => console.log("[renderer]", e.message ?? args[1]));
+  setTimeout(() => {
+    if (win && !win.isVisible) {
+      console.log("[main] window-show never arrived, forcing it to open");
+      win.show();
+      wc.openDevTools({ mode: "detach" });
+    }
+  }, 8e3);
 }
 ipcMain.once("window-show", () => {
   win?.show();
@@ -126,6 +146,7 @@ app.whenReady().then(() => {
   if (process.platform === "win32") {
     app.setAppUserModelId("com.obsidiansoftware.dna-animator");
   }
+  if (!app.requestSingleInstanceLock()) app.quit();
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
