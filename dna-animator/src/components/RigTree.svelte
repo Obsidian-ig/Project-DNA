@@ -2,8 +2,6 @@
 	import downArrowIcon from '$lib/assets/down-arrow-icon-white.png';
 	import * as DNARig from '../DNARig';
 	import { appState } from '../AppState.svelte';
-	import { updated } from '$app/state';
-	import { getgroups } from 'node:process';
 
 	interface ContextMenuOptions {
 		options: {
@@ -475,6 +473,7 @@
 					updatedTreeNodes.push(newElementTreeNode);
 					draggingItem.dataset.group = '';
 					element.group_id = '';
+					console.log(element.group_id);
 				} else {
 					//the element is not in a group and should be moved to the bottom of the rig tree nodes array
 					if (elementIndex === rigTreeNodes.length - 1) return; //element is already at the bottom of the array
