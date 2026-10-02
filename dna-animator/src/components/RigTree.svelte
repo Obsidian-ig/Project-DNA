@@ -3,6 +3,7 @@
 	import * as DNARig from '../DNARig';
 	import { appState } from '../AppState.svelte';
 	import { updated } from '$app/state';
+	import { getgroups } from 'node:process';
 
 	interface ContextMenuOptions {
 		options: {
@@ -17,13 +18,18 @@
 		elements: (DNARig.RigElement | null | undefined)[];
 	}
 
+	interface DraggedElement {
+		type: 'element' | 'group';
+		id: string;
+	}
+
 	let { rigFile }: { rigFile: File | null } = $props();
 	let rigObject = $derived(appState.rigPlaygroundState.loadedRig);
 	let selectedNode = $derived(appState.rigPlaygroundState.selectedNode);
 	let showContextMenu = $state(false);
 	let currentContextMenuOptions: ContextMenuOptions | null = $state(null);
 	let expandedNodes = $derived(appState.rigPlaygroundState.expandedNodes);
-	let lastDraggingElementId = $state('');
+	let dragged: DraggedElement | null = $state(null);
 	let rigTreeNodes: (RigTreeNode | undefined)[] | undefined = $state([]);
 
 	$effect(() => {
@@ -31,311 +37,6 @@
 	});
 
 	$effect(() => {
-		if (rigFile) {
-			//console.log('Rig Tree => Received new rig!');
-			async function GetFileTextAndUpdateRigObject() {
-				const rigFileContent = await rigFile?.text();
-				if (!rigFileContent) return;
-				function ConvertRigDataIntoObject<T extends object>(data: T): DNARig.RigObject & T {
-					let finishedObject: DNARig.RigObject = {
-						name: (data as any)?.name ?? 'null',
-						rig_version: (data as any)?.rig_version ?? 0,
-						rig_structure_version: (data as any)?.rig_structure_version ?? 0,
-						author: (data as any)?.author,
-						author_link: (data as any)?.author_link,
-						last_updated_utc: (data as any)?.last_updated_utc,
-						offsets: (data as any)?.offsets ?? {
-							position: (data as any)?.offsets.position ?? { x: 0.0, y: 0.0 },
-							rotation: (data as any)?.offsets.rotation ?? 0,
-							scale: (data as any)?.offsets.scale ?? { x: 0.0, y: 0.0 },
-							rotation_two: (data as any)?.offsets.rotation_two ?? 0
-						},
-						transforms: {
-							position: { x: 0.0, y: 0.0 },
-							rotation: 0,
-							scale: { x: 0.0, y: 0.0 },
-							rotation_two: 0
-						},
-						elements: (data as any)?.elements ?? [],
-						groups: (data as any)?.groups ?? [],
-						layering_order: (data as any)?.layering_order ?? [],
-						default_state: (data as any)?.default_state ?? null,
-						state_enum: (data as any)?.state_enum ?? null,
-						state_rules: (data as any)?.state_rules ?? null,
-						events: (data as any)?.events ?? null,
-						poses: (data as any)?.poses ?? null,
-						animations: (data as any)?.animations ?? null,
-						sensors: (data as any)?.sensors ?? null,
-						bindings: (data as any)?.bindings ?? null
-					};
-					return {
-						...data,
-						...finishedObject
-					};
-				}
-				const rawData = JSON.parse(rigFileContent);
-				rigObject = ConvertRigDataIntoObject(rawData);
-				appState.UpdateRigPlaygroundStateLoadedRig(rigObject);
-			}
-			GetFileTextAndUpdateRigObject();
-		}
-
-		/*Dragging Element Nodes Logic*/
-		let nodesContainer = document.querySelector('.rig-tree-container');
-
-		const initSortableList = (e: any) => {
-			e.preventDefault();
-			if (!rigObject || !rigTreeNodes) return;
-			const draggingItem: HTMLElement = document.querySelector('.dragging') as HTMLElement;
-			let isGroup = draggingItem.classList.contains('group-node');
-			//console.log(draggingItem);
-			let siblings = isGroup
-				? ([...document.querySelectorAll('.group-node:not(.dragging)')] as HTMLElement[])
-				: draggingItem.classList.contains('element-node')
-					? ([
-							...document.querySelectorAll(
-								'.element-node:not(.dragging), .group-node:not(.dragging), .group-divider-node'
-							)
-						] as HTMLElement[])
-					: [];
-			if (siblings.length <= 0) return;
-
-			let nextTreeNode = siblings.find((sibling) => {
-				const box = sibling.getBoundingClientRect();
-				return e.clientY <= box.top + box.height / 2;
-			});
-
-			let draggedIndex: number = -1;
-			if (isGroup)
-				draggedIndex = rigTreeNodes.findIndex(
-					(n) => n?.id === draggingItem.id && n.type === DNARig.RigLayeringOrderNodeType.Group
-				);
-			if (!isGroup) {
-				let updatedTreeNodes = [...rigTreeNodes];
-				let elementGroup = updatedTreeNodes.find(
-					(n) =>
-						n?.type === DNARig.RigLayeringOrderNodeType.Group && n.id === draggingItem.dataset.group
-				);
-				let elementIndex = elementGroup
-					? elementGroup.elements.findIndex((e) => e?.name === draggingItem.id)
-					: updatedTreeNodes.findIndex(
-							(n) => n?.type === DNARig.RigLayeringOrderNodeType.Element && n.id === draggingItem.id
-						);
-
-				if (!nextTreeNode) {
-					//done?
-					//element should be made an orphan and put at the bottom of the layering order
-					if (elementGroup) {
-						let element = elementGroup.elements.splice(elementIndex, 1)[0];
-						if (!element) {
-							console.error(
-								'Failed to retrieve element from its specified group! ' + elementGroup.id
-							);
-							return;
-						}
-						let newElementTreeNode: RigTreeNode = {
-							type: DNARig.RigLayeringOrderNodeType.Element,
-							id: element.name,
-							elements: [element]
-						};
-						updatedTreeNodes.push(newElementTreeNode);
-						draggingItem.dataset.group = '';
-					} else {
-						//the element is not in a group and should be moved to the bottom of the rig tree nodes array
-						if (elementIndex === rigTreeNodes.length - 1) return; //element is already at the bottom of the array
-						let elementNode = updatedTreeNodes.splice(elementIndex, 1)[0];
-						if (elementNode) updatedTreeNodes.push(elementNode);
-						if (!elementNode)
-							console.error('Unable to find element orphan node in updatedTreeNodes!');
-					}
-					rigTreeNodes = updatedTreeNodes;
-					return;
-				}
-				if (nextTreeNode?.classList.contains('group-divider-node')) {
-					//done?
-					//go into the group above the divider at the bottom
-					let group_id = nextTreeNode.id.split('_')[2];
-					let group = updatedTreeNodes.find(
-						(n) => n?.type === DNARig.RigLayeringOrderNodeType.Group && n.id === group_id
-					);
-					//find where the element is actually located (orphan or in a group node)
-					if (elementGroup) {
-						//element is in a group
-						let element = elementGroup.elements.splice(elementIndex, 1)[0];
-						if (element) group?.elements.push(element);
-						draggingItem.dataset.group = group?.id;
-					} else {
-						//element is not a group and needs to be unorphaned
-						let element = updatedTreeNodes.splice(elementIndex, 1)[0]?.elements[0];
-						if (!element) {
-							console.error('Failed To Find Orphaned Element in updatedTreeNodes!');
-							return;
-						}
-						group?.elements.push(element);
-						draggingItem.dataset.group = group?.id;
-					}
-					rigTreeNodes = updatedTreeNodes;
-					return;
-				}
-				if (nextTreeNode?.classList.contains('group-node')) {
-					//done?
-					if (elementGroup) {
-						let element = elementGroup.elements.splice(elementIndex, 1)[0];
-						if (!element) {
-							console.error('Failed to retrieve element from its specified group! : group-node');
-							return;
-						}
-						let newElementTreeNode: RigTreeNode = {
-							type: DNARig.RigLayeringOrderNodeType.Element,
-							id: element.name,
-							elements: [element]
-						};
-						updatedTreeNodes.splice(
-							updatedTreeNodes.findIndex(
-								(n) => n?.type === DNARig.RigLayeringOrderNodeType.Group && n.id === nextTreeNode.id
-							),
-							0,
-							newElementTreeNode
-						);
-						draggingItem.dataset.group = '';
-					} else {
-						if (elementIndex === updatedTreeNodes.length - 1) return; //element is already at the bottom of the array
-						let elementNode = updatedTreeNodes.splice(elementIndex, 1)[0];
-						if (elementNode)
-							updatedTreeNodes.splice(
-								updatedTreeNodes.findIndex(
-									(n) =>
-										n?.type === DNARig.RigLayeringOrderNodeType.Group && n.id === nextTreeNode.id
-								),
-								0,
-								elementNode
-							);
-							draggingItem.dataset.group = '';
-						if (!elementNode) console.error('Unable to find element orphan node in rigTreeNodes!');
-					}
-					rigTreeNodes = updatedTreeNodes;
-					return;
-				}
-				if (nextTreeNode?.classList.contains('element-node')) {
-					//done?
-					//could be an orphaned element or it could be an element in a group
-					let nextTreeNodeGroup = updatedTreeNodes.find(
-						(n) =>
-							n?.type === DNARig.RigLayeringOrderNodeType.Group &&
-							n.id === nextTreeNode.dataset.group
-					);
-					let nextTreeNodeIndex = nextTreeNodeGroup
-						? nextTreeNodeGroup.elements.findIndex((e) => e?.name === nextTreeNode.id)
-						: updatedTreeNodes.findIndex(
-								(n) =>
-									n?.type === DNARig.RigLayeringOrderNodeType.Element && n.id === nextTreeNode.id
-							);
-
-					if (elementGroup) {
-						let element = elementGroup.elements.splice(elementIndex, 1)[0];
-						if (!element) {
-							console.error('Unable to get element from element group! : element-node');
-							return;
-						}
-						if (nextTreeNodeGroup) {
-							if (elementGroup.id === nextTreeNodeGroup.id && elementIndex < nextTreeNodeIndex) {
-								nextTreeNodeIndex--;
-							}
-							nextTreeNodeGroup.elements.splice(nextTreeNodeIndex, 0, element);
-							draggingItem.dataset.group = nextTreeNodeGroup.id;
-						} else {
-							let newElementTreeNode: RigTreeNode = {
-								type: DNARig.RigLayeringOrderNodeType.Element,
-								id: element.name,
-								elements: [element]
-							};
-							updatedTreeNodes.splice(nextTreeNodeIndex, 0, newElementTreeNode);
-							draggingItem.dataset.group = '';
-						}
-					} else {
-						let element = updatedTreeNodes.splice(elementIndex, 1)[0];
-						if (!element) {
-							console.error('Unable to get element from element group! : element-node 2');
-							return;
-						}
-						if (!element.elements || !element.elements[0]) {
-							console.error(
-								'Failed to get element from element node in updatedTreeNodes! : element-node 2'
-							);
-							return;
-						}
-						if (nextTreeNodeGroup) {
-							nextTreeNodeGroup.elements.splice(nextTreeNodeIndex, 0, element.elements[0]);
-							draggingItem.dataset.group = nextTreeNodeGroup.id;
-						} else {
-							let newElementTreeNode: RigTreeNode = {
-								type: DNARig.RigLayeringOrderNodeType.Element,
-								id: element.elements[0]!.name,
-								elements: [element.elements[0]]
-							};
-							updatedTreeNodes.splice(nextTreeNodeIndex, 0, newElementTreeNode);
-							draggingItem.dataset.group = '';
-						}
-					}
-					rigTreeNodes = updatedTreeNodes;
-					return;
-				}
-				rigTreeNodes = updatedTreeNodes;
-				return;
-			}
-
-			console.log(draggedIndex);
-			if (draggedIndex === -1) return;
-
-			let draggedRigObjectIndex = rigTreeNodes.findIndex(
-				(n) =>
-					n?.id === draggingItem.id &&
-					n.type ===
-						(isGroup
-							? DNARig.RigLayeringOrderNodeType.Group
-							: DNARig.RigLayeringOrderNodeType.Element)
-			);
-			if (draggedRigObjectIndex === -1) return;
-
-			//console.log(nextTreeNode);
-			let targetIndex = -1;
-			if (!nextTreeNode) {
-				targetIndex = rigTreeNodes.length;
-			} else {
-				let nextNodeIndex = nextTreeNode.classList.contains('group-node')
-					? rigTreeNodes.findIndex(
-							(n) => n?.id === nextTreeNode.id && n.type === DNARig.RigLayeringOrderNodeType.Group
-						)
-					: rigTreeNodes.findIndex(
-							(n) => n?.id === nextTreeNode.id && n.type === DNARig.RigLayeringOrderNodeType.Element
-						);
-				if (nextNodeIndex === -1) {
-					targetIndex = draggedRigObjectIndex;
-					return;
-				}
-				//console.log(nextNodeIndex);
-				targetIndex = nextNodeIndex;
-			}
-			if (
-				targetIndex === draggedRigObjectIndex ||
-				targetIndex < 0 ||
-				targetIndex === draggedRigObjectIndex + 1
-			)
-				return;
-			let updatedTreeNodes = [...rigTreeNodes];
-			let draggedItem = updatedTreeNodes.splice(draggedRigObjectIndex, 1)[0];
-			if (!draggedItem) return;
-			console.log(targetIndex);
-			const finalInsertIndex = draggedRigObjectIndex < targetIndex ? targetIndex - 1 : targetIndex;
-			console.log(finalInsertIndex);
-			updatedTreeNodes.splice(finalInsertIndex, 0, draggedItem);
-			rigTreeNodes = updatedTreeNodes;
-		};
-		nodesContainer?.addEventListener('dragover', initSortableList);
-		nodesContainer?.addEventListener('dragenter', (e) => e.preventDefault());
-		/*End Dragging Element Nodes Logic*/
-
-		/*Context Menu Logic*/
 		const contextMenu = document.getElementById('rig-tree-context-menu');
 		document.addEventListener('contextmenu', (e: MouseEvent) => {
 			if (!rigObject) return;
@@ -625,6 +326,57 @@
 			contextMenu.style.left = e.x + 'px';
 			contextMenu.style.top = e.y + 'px';
 		});
+	});
+
+	$effect(() => {
+		if (rigFile) {
+			//console.log('Rig Tree => Received new rig!');
+			async function GetFileTextAndUpdateRigObject() {
+				const rigFileContent = await rigFile?.text();
+				if (!rigFileContent) return;
+				function ConvertRigDataIntoObject<T extends object>(data: T): DNARig.RigObject & T {
+					let finishedObject: DNARig.RigObject = {
+						name: (data as any)?.name ?? 'null',
+						rig_version: (data as any)?.rig_version ?? 0,
+						rig_structure_version: (data as any)?.rig_structure_version ?? 0,
+						author: (data as any)?.author,
+						author_link: (data as any)?.author_link,
+						last_updated_utc: (data as any)?.last_updated_utc,
+						offsets: (data as any)?.offsets ?? {
+							position: (data as any)?.offsets.position ?? { x: 0.0, y: 0.0 },
+							rotation: (data as any)?.offsets.rotation ?? 0,
+							scale: (data as any)?.offsets.scale ?? { x: 0.0, y: 0.0 },
+							rotation_two: (data as any)?.offsets.rotation_two ?? 0
+						},
+						transforms: {
+							position: { x: 0.0, y: 0.0 },
+							rotation: 0,
+							scale: { x: 0.0, y: 0.0 },
+							rotation_two: 0
+						},
+						elements: (data as any)?.elements ?? [],
+						groups: (data as any)?.groups ?? [],
+						layering_order: (data as any)?.layering_order ?? [],
+						default_state: (data as any)?.default_state ?? null,
+						state_enum: (data as any)?.state_enum ?? null,
+						state_rules: (data as any)?.state_rules ?? null,
+						events: (data as any)?.events ?? null,
+						poses: (data as any)?.poses ?? null,
+						animations: (data as any)?.animations ?? null,
+						sensors: (data as any)?.sensors ?? null,
+						bindings: (data as any)?.bindings ?? null
+					};
+					return {
+						...data,
+						...finishedObject
+					};
+				}
+				const rawData = JSON.parse(rigFileContent);
+				rigObject = ConvertRigDataIntoObject(rawData);
+				appState.UpdateRigPlaygroundStateLoadedRig(rigObject);
+			}
+			GetFileTextAndUpdateRigObject();
+		}
 
 		function FormatLayeringOrder(element: {
 			type: DNARig.RigLayeringOrderNodeType;
@@ -645,13 +397,282 @@
 				};
 			}
 		}
-
 		rigTreeNodes = rigObject?.layering_order.map(FormatLayeringOrder);
 	});
 
 	$effect(() => {
 		appState.UpdateRigPlaygroundStateSelectedNode(selectedNode);
 	});
+
+	function SaveLayerOrder() {
+		let updatedLayeringOrder = [];
+		rigTreeNodes?.slice().forEach((node) => {
+			if (!node) return;
+			updatedLayeringOrder.push({
+				type: node.type,
+				id: node.id
+			});
+		});
+	}
+
+	const initSortableList = (e: any) => {
+		e.preventDefault();
+		if (!rigObject || !rigTreeNodes || !dragged) return;
+		const draggingItem: HTMLElement = document.getElementById(dragged.id) as HTMLElement;
+		let isGroup = dragged.type === 'group';
+		//console.log(draggingItem);
+		let siblings = isGroup
+			? ([...document.querySelectorAll('.group-node:not(.dragging)')] as HTMLElement[])
+			: draggingItem.classList.contains('element-node')
+				? ([
+						...document.querySelectorAll(
+							'.element-node:not(.dragging), .group-node:not(.dragging), .group-divider-node'
+						)
+					] as HTMLElement[])
+				: [];
+		if (siblings.length <= 0) return;
+
+		let nextTreeNode = siblings.find((sibling) => {
+			const box = sibling.getBoundingClientRect();
+			return e.clientY <= box.top + box.height / 2;
+		});
+
+		let draggedIndex: number = -1;
+		if (isGroup)
+			draggedIndex = rigTreeNodes.findIndex(
+				(n) => n?.id === draggingItem.id && n.type === DNARig.RigLayeringOrderNodeType.Group
+			);
+
+		/*THIS HANDLES THE ELEMENTS*/
+		if (!isGroup) {
+			let updatedTreeNodes = [...rigTreeNodes];
+			let elementGroup = updatedTreeNodes.find(
+				(n) =>
+					n?.type === DNARig.RigLayeringOrderNodeType.Group && n.id === draggingItem.dataset.group
+			);
+			let elementIndex = elementGroup
+				? elementGroup.elements.findIndex((e) => e?.name === draggingItem.id)
+				: updatedTreeNodes.findIndex(
+						(n) => n?.type === DNARig.RigLayeringOrderNodeType.Element && n.id === draggingItem.id
+					);
+
+			if (!nextTreeNode) {
+				//done?
+				//element should be made an orphan and put at the bottom of the layering order
+				if (elementGroup) {
+					let element = elementGroup.elements.splice(elementIndex, 1)[0];
+					if (!element) {
+						console.error(
+							'Failed to retrieve element from its specified group! ' + elementGroup.id
+						);
+						return;
+					}
+					let newElementTreeNode: RigTreeNode = {
+						type: DNARig.RigLayeringOrderNodeType.Element,
+						id: element.name,
+						elements: [element]
+					};
+					updatedTreeNodes.push(newElementTreeNode);
+					draggingItem.dataset.group = '';
+					element.group_id = '';
+				} else {
+					//the element is not in a group and should be moved to the bottom of the rig tree nodes array
+					if (elementIndex === rigTreeNodes.length - 1) return; //element is already at the bottom of the array
+					let elementNode = updatedTreeNodes.splice(elementIndex, 1)[0];
+					if (elementNode) updatedTreeNodes.push(elementNode);
+					draggingItem.dataset.group = '';
+					if (elementNode?.elements[0]?.group_id) elementNode!.elements[0]!.group_id = '';
+					if (!elementNode)
+						console.error('Unable to find element orphan node in updatedTreeNodes!');
+				}
+				rigTreeNodes = updatedTreeNodes;
+				return;
+			}
+			if (nextTreeNode?.classList.contains('group-divider-node')) {
+				//done?
+				//go into the group above the divider at the bottom
+				let group_id = nextTreeNode.id.split('_')[2];
+				let group = updatedTreeNodes.find(
+					(n) => n?.type === DNARig.RigLayeringOrderNodeType.Group && n.id === group_id
+				);
+				//find where the element is actually located (orphan or in a group node)
+				if (elementGroup) {
+					//element is in a group
+					let element = elementGroup.elements.splice(elementIndex, 1)[0];
+					if (element) {
+						group?.elements.push(element);
+						draggingItem.dataset.group = group?.id;
+						element.group_id = group?.id;
+					}
+				} else {
+					//element is not a group and needs to be unorphaned
+					let element = updatedTreeNodes.splice(elementIndex, 1)[0]?.elements[0];
+					if (!element) {
+						console.error('Failed To Find Orphaned Element in updatedTreeNodes!');
+						return;
+					}
+					group?.elements.push(element);
+					draggingItem.dataset.group = group?.id;
+					element.group_id = group?.id;
+				}
+				rigTreeNodes = updatedTreeNodes;
+				return;
+			}
+			if (nextTreeNode?.classList.contains('group-node')) {
+				//done?
+				if (elementGroup) {
+					let element = elementGroup.elements.splice(elementIndex, 1)[0];
+					if (!element) {
+						console.error('Failed to retrieve element from its specified group! : group-node');
+						return;
+					}
+					let newElementTreeNode: RigTreeNode = {
+						type: DNARig.RigLayeringOrderNodeType.Element,
+						id: element.name,
+						elements: [element]
+					};
+					updatedTreeNodes.splice(
+						updatedTreeNodes.findIndex(
+							(n) => n?.type === DNARig.RigLayeringOrderNodeType.Group && n.id === nextTreeNode.id
+						),
+						0,
+						newElementTreeNode
+					);
+					draggingItem.dataset.group = '';
+					element.group_id = '';
+				} else {
+					if (elementIndex === updatedTreeNodes.length - 1) return; //element is already at the bottom of the array
+					let elementNode = updatedTreeNodes.splice(elementIndex, 1)[0];
+					if (elementNode) {
+						updatedTreeNodes.splice(
+							updatedTreeNodes.findIndex(
+								(n) => n?.type === DNARig.RigLayeringOrderNodeType.Group && n.id === nextTreeNode.id
+							),
+							0,
+							elementNode
+						);
+						draggingItem.dataset.group = '';
+						elementNode.elements[0]!.group_id = ""; //idc, im using the !
+					}
+
+					if (!elementNode) console.error('Unable to find element orphan node in rigTreeNodes!');
+				}
+				rigTreeNodes = updatedTreeNodes;
+				return;
+			}
+			if (nextTreeNode?.classList.contains('element-node')) {
+				//done?
+				//could be an orphaned element or it could be an element in a group
+				let nextTreeNodeGroup = updatedTreeNodes.find(
+					(n) =>
+						n?.type === DNARig.RigLayeringOrderNodeType.Group && n.id === nextTreeNode.dataset.group
+				);
+				let nextTreeNodeIndex = nextTreeNodeGroup
+					? nextTreeNodeGroup.elements.findIndex((e) => e?.name === nextTreeNode.id)
+					: updatedTreeNodes.findIndex(
+							(n) => n?.type === DNARig.RigLayeringOrderNodeType.Element && n.id === nextTreeNode.id
+						);
+
+				if (elementGroup) {
+					let element = elementGroup.elements.splice(elementIndex, 1)[0];
+					if (!element) {
+						console.error('Unable to get element from element group! : element-node');
+						return;
+					}
+					if (nextTreeNodeGroup) {
+						if (elementGroup.id === nextTreeNodeGroup.id && elementIndex < nextTreeNodeIndex) {
+							nextTreeNodeIndex--;
+						}
+						nextTreeNodeGroup.elements.splice(nextTreeNodeIndex, 0, element);
+						draggingItem.dataset.group = nextTreeNodeGroup.id;
+					} else {
+						let newElementTreeNode: RigTreeNode = {
+							type: DNARig.RigLayeringOrderNodeType.Element,
+							id: element.name,
+							elements: [element]
+						};
+						updatedTreeNodes.splice(nextTreeNodeIndex, 0, newElementTreeNode);
+						draggingItem.dataset.group = '';
+					}
+				} else {
+					let element = updatedTreeNodes.splice(elementIndex, 1)[0];
+					if (!element) {
+						console.error('Unable to get element from element group! : element-node 2');
+						return;
+					}
+					if (!element.elements || !element.elements[0]) {
+						console.error(
+							'Failed to get element from element node in updatedTreeNodes! : element-node 2'
+						);
+						return;
+					}
+					if (nextTreeNodeGroup) {
+						nextTreeNodeGroup.elements.splice(nextTreeNodeIndex, 0, element.elements[0]);
+						draggingItem.dataset.group = nextTreeNodeGroup.id;
+					} else {
+						let newElementTreeNode: RigTreeNode = {
+							type: DNARig.RigLayeringOrderNodeType.Element,
+							id: element.elements[0]!.name,
+							elements: [element.elements[0]]
+						};
+						updatedTreeNodes.splice(nextTreeNodeIndex, 0, newElementTreeNode);
+						draggingItem.dataset.group = '';
+					}
+				}
+				rigTreeNodes = updatedTreeNodes;
+				return;
+			}
+			rigTreeNodes = updatedTreeNodes;
+			return;
+		}
+
+		console.log(draggedIndex);
+		if (draggedIndex === -1) return;
+
+		let draggedRigObjectIndex = rigTreeNodes.findIndex(
+			(n) =>
+				n?.id === draggingItem.id &&
+				n.type ===
+					(isGroup
+						? DNARig.RigLayeringOrderNodeType.Group
+						: DNARig.RigLayeringOrderNodeType.Element)
+		);
+		if (draggedRigObjectIndex === -1) return;
+
+		//console.log(nextTreeNode);
+		let targetIndex = -1;
+		if (!nextTreeNode) {
+			targetIndex = rigTreeNodes.length;
+		} else {
+			let nextNodeIndex = nextTreeNode.classList.contains('group-node')
+				? rigTreeNodes.findIndex(
+						(n) => n?.id === nextTreeNode.id && n.type === DNARig.RigLayeringOrderNodeType.Group
+					)
+				: rigTreeNodes.findIndex(
+						(n) => n?.id === nextTreeNode.id && n.type === DNARig.RigLayeringOrderNodeType.Element
+					);
+			if (nextNodeIndex === -1) {
+				targetIndex = draggedRigObjectIndex;
+				return;
+			}
+			//console.log(nextNodeIndex);
+			targetIndex = nextNodeIndex;
+		}
+		if (
+			targetIndex === draggedRigObjectIndex ||
+			targetIndex < 0 ||
+			targetIndex === draggedRigObjectIndex + 1
+		)
+			return;
+		let updatedTreeNodes = [...rigTreeNodes];
+		let draggedItem = updatedTreeNodes.splice(draggedRigObjectIndex, 1)[0];
+		if (!draggedItem) return;
+		console.log(targetIndex);
+		const finalInsertIndex = draggedRigObjectIndex < targetIndex ? targetIndex - 1 : targetIndex;
+		console.log(finalInsertIndex);
+		updatedTreeNodes.splice(finalInsertIndex, 0, draggedItem);
+		rigTreeNodes = updatedTreeNodes;
+	};
 </script>
 
 <div class="header">
@@ -664,6 +685,14 @@
 		class="rig-tree-container"
 		onclick={() => {
 			selectedNode = null;
+		}}
+		ondragover={(e) => e.preventDefault()}
+		ondragenter={(e) => {
+			e.preventDefault();
+		}}
+		ondrop={(e) => {
+			initSortableList(e);
+			SaveLayerOrder();
 		}}
 	>
 		<div
@@ -728,7 +757,7 @@
 								selectedNode?.name === group.id &&
 								selectedNode?.index === groupIndex
 									? 'selected'
-									: ''} {group.id === lastDraggingElementId ? 'dragging' : ''}"
+									: ''} {group.id === dragged?.id ? 'dragging' : ''}"
 								id={group.id}
 								draggable="true"
 								ondragstart={(e) => {
@@ -738,13 +767,17 @@
 											target.classList.add('dragging');
 										}
 									}, 0);
+									dragged = {
+										type: 'group',
+										id: group.id
+									};
 								}}
 								ondragend={(e) => {
 									let target = e.currentTarget;
 									if (target instanceof HTMLElement) {
 										console.log('dragended');
 										target.classList.remove('dragging');
-										lastDraggingElementId = '';
+										dragged = null;
 									}
 								}}
 							>
@@ -842,7 +875,7 @@
 			: 'first-node'} element-node context-target {selectedNode?.type ===
 			DNARig.SelectedNodeType.Element && selectedNode.name === element.name
 			? 'selected'
-			: ''} {element.name === lastDraggingElementId ? 'dragging' : ''}"
+			: ''} {element.name === dragged?.id ? 'dragging' : ''}"
 		id={element.name}
 		data-group={group_id}
 		draggable="true"
@@ -853,13 +886,17 @@
 					target.classList.add('dragging');
 				}
 			}, 0);
+			dragged = {
+				type: 'element',
+				id: element.name
+			};
 		}}
 		ondragend={(e) => {
 			let target = e.currentTarget;
 			if (target instanceof HTMLElement) {
 				console.log('dragended');
 				target.classList.remove('dragging');
-				lastDraggingElementId = '';
+				dragged = null;
 			}
 		}}
 	>
