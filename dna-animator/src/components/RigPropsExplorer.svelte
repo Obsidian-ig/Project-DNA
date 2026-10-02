@@ -46,8 +46,8 @@
 		{#if selectedNode?.type === SelectedNodeType.Root}
 			<!--Root Node-->
 			<Text label="Rig Name" bind:value={rigObject.name} />
-			<Number label="Rig Version" bind:value={rigObject.rig_version} />
-			<Number label="Rig Structure Version" bind:value={rigObject.rig_structure_version} />
+			<Text label="Rig Version" bind:value={rigObject.rig_version} />
+			<Text label="Rig Structure Version" bind:value={rigObject.rig_structure_version} />
 			<Boolean label="Node Expanded" bind:value={nodeExpanded} />
 			<Boolean
 				label="Disable All Debug Options"

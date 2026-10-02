@@ -37,7 +37,35 @@
 			});
 			value.push({
 				id: ('Group ' + numberToUse.toString()),
-				expanded: false
+				visible: true,
+				offsets: {
+					position: {
+						x: 0,
+						y: 0
+					},
+					rotation: 0,
+					scale: {
+						x: 1,
+						y: 1
+					},
+					rotation_two: 0,
+					transform_origin: {
+						x: 0,
+						y: 0
+					}
+				},
+				transforms: {
+					position: {
+						x: 0,
+						y: 0
+					},
+					rotation: 0,
+					scale: {
+						x: 1,
+						y: 1
+					},
+					rotation_two: 0
+				}
 			});
 		}}>+</button
 	>

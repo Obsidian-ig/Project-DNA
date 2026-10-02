@@ -30,13 +30,33 @@
 	let dragged: DraggedElement | null = $state(null);
 	let rigTreeNodes = $derived(rigObject ? BuildTree(rigObject) : []);
 
-	$effect(() => {
-		window.rigTreeNodes = rigTreeNodes;
-	});
+	function RepairRigLayeringOrder() {
+		if (!rigObject) return;
+		for (const group of rigObject.groups) {
+			let existsInLayeringOrder = rigObject.layering_order.find(n => n.type === DNARig.RigLayeringOrderNodeType.Group && n.id === group.id);
+			if (!existsInLayeringOrder) {
+				rigObject.layering_order.push({
+					type: DNARig.RigLayeringOrderNodeType.Group,
+					id: group.id
+				});
+			}
+		}
+		for (const element of rigObject.elements) {
+			if (element.group_id) continue;
+			let existsInLayeringOrder = rigObject.layering_order.find(n => n.type === DNARig.RigLayeringOrderNodeType.Element && n.id === element.name);
+			if (!existsInLayeringOrder) {
+				rigObject.layering_order.push({
+					type: DNARig.RigLayeringOrderNodeType.Element,
+					id: element.name
+				});
+			}
+		}
+	}
 
 	function BuildTree(rig: DNARig.RigObject): RigTreeNode[] {
 		const nodes: RigTreeNode[] = [];
 		const placed = new Set<string>();
+
 		for (const item of rig.layering_order) {
 			if (item.type === DNARig.RigLayeringOrderNodeType.Group) {
 				if (!rig.groups.some((g) => g.id === item.id)) continue;
@@ -71,54 +91,8 @@
 	}
 
 	$effect(() => {
-		if (rigFile) {
-			//console.log('Rig Tree => Received new rig!');
-			async function GetFileTextAndUpdateRigObject() {
-				const rigFileContent = await rigFile?.text();
-				if (!rigFileContent) return;
-				function ConvertRigDataIntoObject<T extends object>(data: T): DNARig.RigObject & T {
-					let finishedObject: DNARig.RigObject = {
-						name: (data as any)?.name ?? 'null',
-						rig_version: (data as any)?.rig_version ?? 0,
-						rig_structure_version: (data as any)?.rig_structure_version ?? 0,
-						author: (data as any)?.author,
-						author_link: (data as any)?.author_link,
-						last_updated_utc: (data as any)?.last_updated_utc,
-						offsets: (data as any)?.offsets ?? {
-							position: (data as any)?.offsets.position ?? { x: 0.0, y: 0.0 },
-							rotation: (data as any)?.offsets.rotation ?? 0,
-							scale: (data as any)?.offsets.scale ?? { x: 0.0, y: 0.0 },
-							rotation_two: (data as any)?.offsets.rotation_two ?? 0
-						},
-						transforms: {
-							position: { x: 0.0, y: 0.0 },
-							rotation: 0,
-							scale: { x: 0.0, y: 0.0 },
-							rotation_two: 0
-						},
-						elements: (data as any)?.elements ?? [],
-						groups: (data as any)?.groups ?? [],
-						layering_order: (data as any)?.layering_order ?? [],
-						default_state: (data as any)?.default_state ?? null,
-						state_enum: (data as any)?.state_enum ?? null,
-						state_rules: (data as any)?.state_rules ?? null,
-						events: (data as any)?.events ?? null,
-						poses: (data as any)?.poses ?? null,
-						animations: (data as any)?.animations ?? null,
-						sensors: (data as any)?.sensors ?? null,
-						bindings: (data as any)?.bindings ?? null
-					};
-					return {
-						...data,
-						...finishedObject
-					};
-				}
-				const rawData = JSON.parse(rigFileContent);
-				rigObject = ConvertRigDataIntoObject(rawData);
-				appState.UpdateRigPlaygroundStateLoadedRig(rigObject);
-			}
-			GetFileTextAndUpdateRigObject();
-		}
+		if (!rigObject) return;
+		RepairRigLayeringOrder();
 	});
 
 	$effect(() => {
@@ -414,18 +388,66 @@
 				return;
 			}
 
+			function CreateNewGroup() {
+				let newGroups = rigObject?.groups.filter((g) => g.id.includes('New_Group_'));
+				let numberToUse = 0;
+				let highestNumberUsed = -1;
+				newGroups?.forEach((group) => {
+					let groupNumber = Number.parseInt(group.id.split('_')[2]);
+					if (groupNumber > highestNumberUsed) highestNumberUsed = groupNumber;
+				});
+				if (highestNumberUsed) numberToUse = highestNumberUsed + 1;
+				let newGroup = {
+					id: 'New_Group_' + numberToUse.toString(),
+					visible: true,
+					offsets: {
+						position: {
+							x: 0,
+							y: 0
+						},
+						rotation: 0,
+						scale: {
+							x: 1,
+							y: 1
+						},
+						rotation_two: 0,
+						transform_origin: {
+							x: 0,
+							y: 0
+						}
+					},
+					transforms: {
+						position: {
+							x: 0,
+							y: 0
+						},
+						rotation: 0,
+						scale: {
+							x: 1,
+							y: 1
+						},
+						rotation_two: 0
+					}
+				};
+				
+				rigObject?.layering_order.push({
+					type: DNARig.RigLayeringOrderNodeType.Group,
+					id: newGroup.id
+				});
+				return newGroup;
+			}
+
 			function CreateNewElement(groupId: string) {
 				if (!rigObject) return;
 				let newElements = rigObject.elements.filter((el) => el.name.includes('New_Element_'));
 				let numberToUse = 0;
-				if (newElements) {
-					let lastElementNumber = Number.parseInt(
-						newElements?.[newElements.length - 1]?.name.split('_')?.[2]
-					);
-					console.log('Last Element Number: ' + lastElementNumber);
-					if (lastElementNumber >= 0) {
-						numberToUse = lastElementNumber + 1;
-					}
+				let highestNumberUsed = -1;
+				if (newElements && newElements.length > 0) {
+					newElements.forEach((element) => {
+						let elementNumber = Number.parseInt(element.name.split('_')[2]);
+						if (elementNumber > highestNumberUsed) highestNumberUsed = elementNumber;
+					});
+					numberToUse = highestNumberUsed + 1;
 				}
 				let newElement = {
 					name: 'New_Element_' + numberToUse.toString(),
@@ -441,8 +463,8 @@
 						},
 						rotation: 0,
 						scale: {
-							x: 0,
-							y: 0
+							x: 1,
+							y: 1
 						},
 						rotation_two: 0,
 						transform_origin: {
@@ -457,8 +479,8 @@
 						},
 						rotation: 0,
 						scale: {
-							x: 0,
-							y: 0
+							x: 1,
+							y: 1
 						},
 						rotation_two: 0
 					},
@@ -476,6 +498,10 @@
 					closed: true,
 					filled: true
 				};
+				rigObject.layering_order.push({
+					type: DNARig.RigLayeringOrderNodeType.Element,
+					id: newElement.name
+				});
 				return newElement;
 			}
 
@@ -495,6 +521,13 @@
 			if (target.classList.contains('root-node')) {
 				currentContextMenuOptions = {
 					options: [
+						{
+							label: 'Create New Group',
+							action: () => {
+								let newGroup = CreateNewGroup();
+								rigObject?.groups.push(newGroup);
+							}
+						},
 						{
 							label: 'Create New Element',
 							action: () => {
@@ -540,13 +573,7 @@
 								if (!rigObject) return;
 								let newElement = CreateNewElement(group.id);
 								if (!newElement) return;
-								let groupElements = rigObject.elements.filter((e) => e.group_id === group.id);
-								if (!groupElements) return;
-								let lastElementofGroupIndex = rigObject.elements.findIndex(
-									(e) => e.name === groupElements?.[groupElements.length - 1]?.name
-								);
-								if (!lastElementofGroupIndex && lastElementofGroupIndex != 0) return;
-								rigObject.elements.splice(lastElementofGroupIndex + 1, 0, newElement);
+								rigObject.elements.push(newElement);
 							}
 						},
 						{
@@ -588,6 +615,12 @@
 									rigObject.groups.findIndex((g) => g.id === group.id),
 									1
 								);
+								let layerIndex = rigObject.layering_order.findIndex(n => n.type === DNARig.RigLayeringOrderNodeType.Group && n.id === group.id);
+								rigObject.layering_order.splice(layerIndex, 1);
+								let expandedIndex = appState.rigPlaygroundState.expandedNodes?.findIndex(n => n.type === DNARig.SelectedNodeType.Group && n.name === group.id);
+								if (expandedIndex) {
+									appState.rigPlaygroundState.expandedNodes?.splice(expandedIndex, 1);
+								}
 							}
 						}
 					]
@@ -649,6 +682,19 @@
 									rigObject.elements.findIndex((el) => el.name === element.name),
 									1
 								);
+								if (element.group_id === "") {
+									rigObject.layering_order.splice(
+										rigObject.layering_order.findIndex(n => n.type === DNARig.RigLayeringOrderNodeType.Element && n.id === element.name),
+										1
+									);
+								} else {
+									let group = rigTreeNodes.find(n => n.type === DNARig.RigLayeringOrderNodeType.Group && n.id === element.group_id);
+									group?.elements.splice(group.elements.findIndex(e => e?.name === element.name), 1);
+								}
+								let expandedIndex = appState.rigPlaygroundState.expandedNodes?.findIndex(n => n.type === DNARig.SelectedNodeType.Element && n.name === element.name);
+								if (expandedIndex) {
+									appState.rigPlaygroundState.expandedNodes?.splice(expandedIndex, 1);
+								}
 							}
 						}
 					]

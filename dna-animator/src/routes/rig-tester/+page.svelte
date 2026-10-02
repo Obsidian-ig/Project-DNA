@@ -36,6 +36,7 @@ Ideas/Plans:
 	import RigPropsExplorer from '../../components/RigPropsExplorer.svelte';
 	import RigDisplay from '../../components/RigDisplay.svelte';
 	import type { RigObject } from '../../DNARig.ts';
+	import { createDefaultRigObject } from '../../DNARig.ts';
 
 	registerHeaderActions({
 		file: [
@@ -123,6 +124,9 @@ Ideas/Plans:
 			{
 				id: 'newRig',
 				action: () => {
+					appState.UpdateRigPlaygroundStateLoadedRig(createDefaultRigObject());
+					appState.UpdateRigPlaygroundStateRigFilePath(null);
+					appState.UpdateRigPlaygroundStateSelectedNode(null);
 					console.log('New Rig!');
 				}
 			},
@@ -136,6 +140,26 @@ Ideas/Plans:
 					}
 					if (!appState.rigPlaygroundState.loadedRigFilePath) {
 						console.log('Unable to save rig as the file path is invalid!');
+						console.log('Save Rig As!');
+						if (!appState.rigPlaygroundState.loadedRig) {
+							console.log('Failed to save rig as it is null in the appstate!');
+							return;
+						}
+						//cut the runtime properties out of the rig object.
+						const { transforms, ...cleanRigObject } = appState.rigPlaygroundState.loadedRig;
+						let result = await window.electronAPI.saveNewFile(
+							'Save New Rig',
+							'DNA Rig Files',
+							['dnar', 'json'],
+							JSON.stringify(cleanRigObject, null, 2)
+						);
+						if (result.success) {
+							console.log('Successfully saved new rig!');
+							appState.UpdateRigPlaygroundStateRigFilePath(result.filePath);
+						} else {
+							console.log('Failed to save new rig :(');
+						}
+						savedChanges = true;
 						return;
 					}
 					//cut the runtime properties out of the rig object.

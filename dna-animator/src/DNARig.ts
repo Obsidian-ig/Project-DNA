@@ -105,7 +105,7 @@ export type RigStateRuleWhenTrigger = {
     comparison: RigStateRuleComparisonType;
     value: string | number | boolean;
     required: boolean;
-} | 
+} |
 {
     target: string;
     target_type: 'device';
@@ -220,44 +220,44 @@ export const RigIfBusyActionType = {
 } as const;
 export type RigIfBusyActionType = (typeof RigIfBusyActionType)[keyof typeof RigIfBusyActionType];
 
-export type RigModifier = 
-{
-    target_type: 'root';
-    target?: never;
-    parameter: RigParameters;
-    mode: 'set' | 'add' | 'multiply';
-    value: number;
-} |
-{
-    target_type: 'group';
-    target: string;
-    parameter: RigGroupParameters;
-    mode: 'set' | 'add' | 'multiply';
-    value: number | boolean;
-} |
-{
-    target_type: 'element';
-    target: string;
-    parameter: RigElementParameters;
-    mode: 'set' | 'add' | 'multiply';
-    value: number | boolean;
-}
+export type RigModifier =
+    {
+        target_type: 'root';
+        target?: never;
+        parameter: RigParameters;
+        mode: 'set' | 'add' | 'multiply';
+        value: number;
+    } |
+    {
+        target_type: 'group';
+        target: string;
+        parameter: RigGroupParameters;
+        mode: 'set' | 'add' | 'multiply';
+        value: number | boolean;
+    } |
+    {
+        target_type: 'element';
+        target: string;
+        parameter: RigElementParameters;
+        mode: 'set' | 'add' | 'multiply';
+        value: number | boolean;
+    }
 
-export type RigAction = 
-{
-    mode: 'modify';
-    modifier: RigModifier;
-} |
-{
-    mode: 'play_animation';
-    animation_id: string;
-    if_busy: RigIfBusyActionType;
-} |
-{
-    mode: 'play_animation_random';
-    animation_group_id: string;
-    if_busy: RigIfBusyActionType;
-};
+export type RigAction =
+    {
+        mode: 'modify';
+        modifier: RigModifier;
+    } |
+    {
+        mode: 'play_animation';
+        animation_id: string;
+        if_busy: RigIfBusyActionType;
+    } |
+    {
+        mode: 'play_animation_random';
+        animation_group_id: string;
+        if_busy: RigIfBusyActionType;
+    };
 
 
 
@@ -389,34 +389,34 @@ export const DeviceParameters = {
 } as const;
 export type DeviceParameters = (typeof DeviceParameters)[keyof typeof DeviceParameters];
 
-export type RigBinding = 
-{
-    target: string;
-    target_type: 'root';
-    parameter: RigParameters;
-    input_parameter: DeviceParameters | RigParameters | RigGroupParameters | RigElementParameters;
-    factor: number;
-    min: number;
-    max: number;
-} |
-{
-    target: string;
-    target_type: 'group';
-    parameter: RigGroupParameters;
-    input_parameter: DeviceParameters | RigParameters | RigGroupParameters | RigElementParameters;
-    factor: number;
-    min: number;
-    max: number;
-} |
-{
-    target: string;
-    target_type: 'element';
-    parameter: RigElementParameters;
-    input_parameter: DeviceParameters | RigParameters | RigGroupParameters | RigElementParameters;
-    factor: number;
-    min: number;
-    max: number;
-};
+export type RigBinding =
+    {
+        target: string;
+        target_type: 'root';
+        parameter: RigParameters;
+        input_parameter: DeviceParameters | RigParameters | RigGroupParameters | RigElementParameters;
+        factor: number;
+        min: number;
+        max: number;
+    } |
+    {
+        target: string;
+        target_type: 'group';
+        parameter: RigGroupParameters;
+        input_parameter: DeviceParameters | RigParameters | RigGroupParameters | RigElementParameters;
+        factor: number;
+        min: number;
+        max: number;
+    } |
+    {
+        target: string;
+        target_type: 'element';
+        parameter: RigElementParameters;
+        input_parameter: DeviceParameters | RigParameters | RigGroupParameters | RigElementParameters;
+        factor: number;
+        min: number;
+        max: number;
+    };
 
 export const RigPointInterpolationTypeEnum: RigEnum = Object.freeze({
     id: "interpolation_type",
@@ -429,8 +429,8 @@ export const RigPointInterpolationTypeEnum: RigEnum = Object.freeze({
 
 export interface RigObject {
     name: string;
-    rig_version: number; //the version of the rig itself
-    rig_structure_version: number; //the version of the rig data structure it uses.
+    rig_version: string; //the version of the rig itself
+    rig_structure_version: string; //the version of the rig data structure it uses.
     author: string;
     author_link: string;
     last_updated_utc: string;
@@ -461,6 +461,50 @@ export interface RigObject {
     bindings: RigBinding[];
 }
 
+export const createDefaultRigObject = (overrides: Partial<RigObject> = {}): RigObject => {
+    return {
+        name: "New Rig",
+        rig_version: "1.0.0",
+        rig_structure_version: "2.7",
+        author: "Unknown",
+        author_link: "",
+        last_updated_utc: new Date().toISOString(),
+        offsets: {
+            position: { x: 0, y: 0 },
+            rotation: 0,
+            scale: { x: 1, y: 1 },
+            rotation_two: 0,
+        },
+        transforms: {
+            position: { x: 0, y: 0 },
+            rotation: 0,
+            scale: { x: 1, y: 1 },
+            rotation_two: 0,
+        },
+        layering_order: [],
+        elements: [],
+        groups: [],
+        default_state: {
+            state: "Default"
+        },
+        state_enum: {
+            id: "state_enum",
+            allowed_values: [
+                "Default"
+            ]
+        },
+        state_rules: [],
+        events: [],
+        poses: [],
+        animations: [],
+        sensors: {
+            required: [],
+            optional: []
+        },
+        bindings: [],
+        ...overrides,
+    };
+};
 
 export const SelectedNodeType = {
     Root: 'Root',
