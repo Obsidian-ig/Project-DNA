@@ -396,7 +396,7 @@
 					let groupNumber = Number.parseInt(group.id.split('_')[2]);
 					if (groupNumber > highestNumberUsed) highestNumberUsed = groupNumber;
 				});
-				if (highestNumberUsed) numberToUse = highestNumberUsed + 1;
+				if (highestNumberUsed >= 0) numberToUse = highestNumberUsed + 1;
 				let newGroup = {
 					id: 'New_Group_' + numberToUse.toString(),
 					visible: true,

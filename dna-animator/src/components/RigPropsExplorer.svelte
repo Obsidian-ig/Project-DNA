@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { appState } from '../AppState.svelte';
-	import { SelectedNodeType, RigPointInterpolationTypeEnum } from '../DNARig';
+	import { SelectedNodeType, RigPointInterpolationTypeEnum, RigLayeringOrderNodeType } from '../DNARig';
 	import GroupEditor from './PropertiesExplorerComponents/GroupEditor.svelte';
 	import Boolean from './PropertiesExplorerComponents/Boolean.svelte';
 	import Color from './PropertiesExplorerComponents/Color.svelte';
@@ -16,19 +16,34 @@
 	let selectedNode = $derived(appState.rigPlaygroundState.selectedNode);
 	let expandedNodes = $derived(appState.rigPlaygroundState.expandedNodes);
 	let nodeExpanded = $state(false);
+	let nameErrors: string[] = $state([]);
+	let versionErrors: string[] = $state([]);
+	let structureErrors: string[] = $state([]);
 
 	$effect(() => {
-		nodeExpanded = expandedNodes?.find((n) => n.type === selectedNode?.type && n.name === selectedNode?.name && n.index === selectedNode?.index) != null;
+		nodeExpanded =
+			expandedNodes?.find(
+				(n) =>
+					n.type === selectedNode?.type &&
+					n.name === selectedNode?.name &&
+					n.index === selectedNode?.index
+			) != null;
 	});
 	$effect(() => {
-		let expandedNodeExists = expandedNodes?.find((n) => n.type === selectedNode?.type && n.name === selectedNode?.name && n.index === selectedNode?.index);
+		let expandedNodeExists = expandedNodes?.find(
+			(n) =>
+				n.type === selectedNode?.type &&
+				n.name === selectedNode?.name &&
+				n.index === selectedNode?.index
+		);
 		if (!nodeExpanded && expandedNodeExists) {
 			expandedNodes?.slice().forEach((n, index) => {
-				if (n.type === selectedNode?.type && n.name === selectedNode?.name && n.index === selectedNode?.index) {
-					expandedNodes?.splice(
-						index,
-						1
-					);
+				if (
+					n.type === selectedNode?.type &&
+					n.name === selectedNode?.name &&
+					n.index === selectedNode?.index
+				) {
+					expandedNodes?.splice(index, 1);
 				}
 			});
 		}
@@ -45,9 +60,39 @@
 	{#if rigObject}
 		{#if selectedNode?.type === SelectedNodeType.Root}
 			<!--Root Node-->
-			<Text label="Rig Name" bind:value={rigObject.name} />
-			<Text label="Rig Version" bind:value={rigObject.rig_version} />
-			<Text label="Rig Structure Version" bind:value={rigObject.rig_structure_version} />
+			<Text
+				label="Rig Name"
+				valueToShow={rigObject.name}
+				onValueChanged={(value: string) => {
+					if (value.length <= 0) {
+						if (!nameErrors.includes("Rig Name Cannot Be Empty!")) nameErrors.push("Rig Name Cannot Be Empty!");
+						return;
+					}
+					if (nameErrors.includes("Rig Name Cannot Be Empty!")) nameErrors.pop();
+					let expandedRootNode = appState.rigPlaygroundState.expandedNodes?.find(n => n.type === SelectedNodeType.Root);
+					if (expandedRootNode) expandedRootNode.name = value;
+					rigObject.name = value;
+				}}
+				currentErrors={nameErrors}
+			/>
+			<Text
+				label="Rig Version"
+				valueToShow={rigObject.rig_version}
+				onValueChanged={(value: string) => {
+					if (value.length <= 0) return;
+					rigObject.rig_version = value;
+				}}
+				currentErrors={versionErrors}
+			/>
+			<Text
+				label="Rig Structure Version"
+				valueToShow={rigObject.rig_structure_version}
+				onValueChanged={(value: string) => {
+					if (value.length <= 0) return;
+					rigObject.rig_structure_version = value;
+				}}
+				currentErrors={structureErrors}
+			/>
 			<Boolean label="Node Expanded" bind:value={nodeExpanded} />
 			<Boolean
 				label="Disable All Debug Options"
@@ -78,7 +123,32 @@
 					: null
 			)}
 			{#if currentGroup}
-				<Text label="Group ID" bind:value={currentGroup.id} />
+				<Text
+					label="Group ID"
+					valueToShow={currentGroup.id}
+					onValueChanged={(value: string) => {
+						const nameAlreadyInUseErrorText = "A Group With That ID Already Exists!";
+						const nameEmpyErrorText = "Group Names Cannot Be Empty!";
+						if (!rigObject) return;
+						if (value.length <= 0) {
+							if (!nameErrors.includes(nameEmpyErrorText)) nameErrors.push(nameEmpyErrorText);
+							return;
+						}
+						if (nameErrors.includes(nameEmpyErrorText)) nameErrors.splice(nameErrors.findIndex(e => e === nameEmpyErrorText), 1);
+						if (currentGroup.id === value) return;
+						if (rigObject.groups.some(g => g.id === value)) {
+							if (!nameErrors.includes(nameAlreadyInUseErrorText)) nameErrors.push(nameAlreadyInUseErrorText);
+							return;
+						}
+						if (nameErrors.includes(nameAlreadyInUseErrorText)) nameErrors.splice(nameErrors.findIndex(e => e === nameAlreadyInUseErrorText), 1);
+						let expandedNode = appState.rigPlaygroundState.expandedNodes?.find(n => n.name === currentGroup.id && n.type === SelectedNodeType.Group);
+						if (expandedNode) expandedNode.name = value;
+						let layerNode = rigObject.layering_order.find(n => n.id === currentGroup.id && n.type === RigLayeringOrderNodeType.Group);
+						if (layerNode) layerNode.id = value;
+						currentGroup.id = value;
+					}}
+					currentErrors={nameErrors}
+				/>
 				<Boolean label="Node Expanded" bind:value={nodeExpanded} />
 				<Boolean label="Group Visible" bind:value={currentGroup.visible} />
 				<Section label="Offsets">
@@ -98,12 +168,34 @@
 		{:else if selectedNode?.type === SelectedNodeType.Element}
 			<!--Element/Shape Node-->
 			{let currentElement = $derived(
-				selectedNode
-					? rigObject.elements.find(e => e.name === selectedNode.name)
-					: null
+				selectedNode ? rigObject.elements.find((e) => e.name === selectedNode.name) : null
 			)}
 			{#if currentElement}
-				<Text label="Element Name" bind:value={currentElement.name} />
+				<Text
+					label="Element Name"
+					valueToShow={currentElement.name}
+					onValueChanged={(value: string) => {
+						const nameAlreadyInUseErrorText = "An Element With That ID Already Exists!";
+						const nameEmpyErrorText = "Element Names Cannot Be Empty!";
+						if (!rigObject) return;
+						if (value.length <= 0) {
+							if (!nameErrors.includes(nameEmpyErrorText)) nameErrors.push(nameEmpyErrorText);
+							return;
+						}
+						if (nameErrors.includes(nameEmpyErrorText)) nameErrors.splice(nameErrors.findIndex(e => e === nameEmpyErrorText), 1);
+						if (rigObject.elements.some(e => e.name === value)) {
+							if (!nameErrors.includes(nameAlreadyInUseErrorText)) nameErrors.push(nameAlreadyInUseErrorText);
+							return;
+						}
+						if (nameErrors.includes(nameAlreadyInUseErrorText)) nameErrors.splice(nameErrors.findIndex(e => e === nameAlreadyInUseErrorText), 1);
+						let expandedNode = appState.rigPlaygroundState.expandedNodes?.find(n => n.name === currentElement.name && n.type === SelectedNodeType.Element);
+						if (expandedNode) expandedNode.name = value;
+						let layerNode = rigObject.layering_order.find(n => n.id === currentElement.name && n.type === RigLayeringOrderNodeType.Element);
+						if (layerNode) layerNode.id = value;
+						currentElement.name = value;
+					}}
+					currentErrors={nameErrors}
+				/>
 				<Group
 					label="Element Group"
 					bind:value={currentElement.group_id!}

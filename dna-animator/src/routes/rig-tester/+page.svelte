@@ -36,7 +36,11 @@ Ideas/Plans:
 	import RigPropsExplorer from '../../components/RigPropsExplorer.svelte';
 	import RigDisplay from '../../components/RigDisplay.svelte';
 	import type { RigObject } from '../../DNARig.ts';
-	import { createDefaultRigObject } from '../../DNARig.ts';
+	import {
+		createDefaultRigObject,
+		RigLayeringOrderNodeType,
+		SelectedNodeType
+	} from '../../DNARig.ts';
 
 	registerHeaderActions({
 		file: [
@@ -53,6 +57,7 @@ Ideas/Plans:
 					appState.UpdateRigPlaygroundStateLoadedRig(null);
 					appState.UpdateRigPlaygroundStateRigFilePath('');
 					appState.UpdateRigPlaygroundStateSelectedNode(null);
+					appState.rigPlaygroundState.expandedNodes = [];
 				}
 			},
 			{
@@ -117,6 +122,7 @@ Ideas/Plans:
 							};
 						});
 					}
+					appState.rigPlaygroundState.expandedNodes = [];
 					appState.UpdateRigPlaygroundStateLoadedRig(rigObject);
 					appState.UpdateRigPlaygroundStateRigFilePath(rigFilePath);
 				}
@@ -124,6 +130,7 @@ Ideas/Plans:
 			{
 				id: 'newRig',
 				action: () => {
+					appState.rigPlaygroundState.expandedNodes = [];
 					appState.UpdateRigPlaygroundStateLoadedRig(createDefaultRigObject());
 					appState.UpdateRigPlaygroundStateRigFilePath(null);
 					appState.UpdateRigPlaygroundStateSelectedNode(null);
@@ -298,7 +305,9 @@ Ideas/Plans:
 
 	let currentRigFile: File | null = $state(null);
 	let savedChanges = $state(true);
-	let rigObject = $derived(JSON.parse(JSON.stringify(appState.rigPlaygroundState.loadedRig)));
+	let rigObject: RigObject = $derived(
+		JSON.parse(JSON.stringify(appState.rigPlaygroundState.loadedRig))
+	);
 
 	$effect(() => {
 		let config = {
@@ -399,9 +408,53 @@ Ideas/Plans:
 	$effect(() => {
 		if (rigObject) {
 			savedChanges = false;
+
+			//remove elements/groups inside the expanded nodes that don't exist in the rig elements/groups.
+			appState.rigPlaygroundState.expandedNodes?.slice().forEach((n) => {
+				if (n.type === SelectedNodeType.Element) {
+					let elementExists = false;
+					rigObject.elements.forEach((e) => {
+						if (e.name === n.name && n.type === SelectedNodeType.Element) elementExists = true;
+					});
+					if (!elementExists) {
+						appState.rigPlaygroundState.expandedNodes?.splice(
+							appState.rigPlaygroundState.expandedNodes.findIndex(
+								(n1) => n1.name === n.name && n1.type === n.type
+							),
+							1
+						);
+						console.log("Removed unused element node from expandedElements");
+					}
+				} else if (n.type === SelectedNodeType.Group) {
+					let groupExists = false;
+					rigObject.groups.forEach((g) => {
+						if (g.id === n.name && n.type === SelectedNodeType.Group) groupExists = true;
+					});
+					if (!groupExists) {
+						appState.rigPlaygroundState.expandedNodes?.splice(
+							appState.rigPlaygroundState.expandedNodes.findIndex(
+								n1 => n1.name === n.name && n1.type === n.type
+							),
+							1
+						);
+						console.log("Removed unused group node from expandedElements");
+					}
+				} else if (n.type === SelectedNodeType.Root) {
+					if (rigObject.name != n.name) {
+						appState.rigPlaygroundState.expandedNodes?.splice(
+							appState.rigPlaygroundState.expandedNodes.findIndex(
+								n1 => n1.type === SelectedNodeType.Root && n1.name === n.name
+							),
+							1
+						);
+						console.log("Removed unused root node from expandedElements");
+					}
+				}
+			});
 		}
 	});
 
+	/*Rig Playground page title based on saved state*/
 	$effect(() => {
 		if (appState.currentPageConfig) {
 			if (savedChanges) {

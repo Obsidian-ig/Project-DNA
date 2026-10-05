@@ -1,12 +1,32 @@
 <script lang="ts">
-	let { label, value = $bindable() }: { label: string; value: string } = $props();
+	let { label, valueToShow, onValueChanged, currentErrors }: { label: string; valueToShow: string, onValueChanged: (value: string) => void, currentErrors: string[] } = $props();
+
+	function WaitUntilUserDoneTyping<T extends (...args: any[]) => void>(func: T, delay = 500) {
+		let timer: ReturnType<typeof setTimeout>;
+		return (...args: Parameters<T>) => {
+			clearTimeout(timer);
+			timer = setTimeout(() => func(...args), delay);
+		};
+	}
+
+	const HandleTextInput = WaitUntilUserDoneTyping((e) => {
+		onValueChanged(e.target.value);
+	}, 500);
 </script>
 
 <label class="text-property">
 	<span class="header">
 		<p class="label">{label}</p>
 	</span>
-	<input type="text" class="text-input" bind:value />
+	<input type="text" class="text-input" oninput={HandleTextInput} value={valueToShow} />
+	<ul class="errors-list">
+		{#each currentErrors as error}
+			{console.log(error)}
+			<li class="error-item">
+				{error}
+			</li>
+		{/each}
+	</ul>
 </label>
 
 <style>
@@ -50,4 +70,16 @@
             border-color: var(--secondary);
         }
     }
+
+	.errors-list {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		padding-left: 40px;
+		list-style: circle;
+
+		.error-item {
+			color: red;
+		}
+	}
 </style>
