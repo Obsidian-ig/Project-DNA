@@ -1,12 +1,25 @@
 <script lang="ts">
-	import gridPattern from '$lib/assets/grid-pattern.jpg';
 	import { appState } from '../AppState.svelte';
 	import { RigLayeringOrderNodeType, type RigElement, type RigVector2 } from '../DNARig';
+	import Boolean from './PropertiesExplorerComponents/Boolean.svelte';
+	import Color from './PropertiesExplorerComponents/Color.svelte';
+	import VectorTwo from './PropertiesExplorerComponents/VectorTwo.svelte';
 
 	let canvas: HTMLCanvasElement;
 	let displayWidth = $state(0);
 	let displayHeight = $state(0);
 	let rigObject = $derived(appState.rigPlaygroundState.loadedRig);
+	let showSettingsPanel = $state(false);
+	let gridOverlay = $derived(appState.rigDisplayState.showGridOverlay);
+	let gridColumnsAndRows: RigVector2 = $derived(appState.rigDisplayState.gridColumnsAndRows);
+	let gridStrokeColor: string = $derived(appState.rigDisplayState.gridStrokeColor);
+
+	$effect(() => {
+		appState.UpdateRigDisplayStateShowGridOverlay(gridOverlay);
+		appState.UpdateRigDisplayStateGridColumnsAndRows(gridColumnsAndRows);
+		appState.UpdateRigDisplayStateGridStrokeColor(gridStrokeColor);
+	});
+
 	$effect(() => {
 		if (!canvas || !rigObject) return;
 		const ctx = canvas.getContext('2d');
@@ -162,7 +175,7 @@
 				x: xAxis.x * elementYAxis.x + yAxis.x * elementYAxis.y,
 				y: xAxis.y * elementYAxis.x + yAxis.y * elementYAxis.y
 			};
-			
+
 			const o = element.offsets.transform_origin;
 			elementCalculatedPosition = CalculatePhysicalPositionFromPhysicalPosition(
 				{ x: -o.x, y: -o.y },
@@ -308,13 +321,36 @@
 					return;
 				}
 			});
+
+			//grid overlay
+			if (gridOverlay) {
+				ctx.beginPath();
+				//columns
+				let columnCount = displayWidth / (gridColumnsAndRows.x * scaleUnit);
+				for (let i = 0; i < columnCount; i++) {
+					ctx.moveTo(i * (displayWidth / columnCount), 0);
+					ctx.lineTo(i * (displayWidth / columnCount), displayHeight);
+					ctx.moveTo(i * (displayWidth / columnCount), 0);
+				}
+				
+				//rows
+				let rowCount = displayHeight / (gridColumnsAndRows.y * scaleUnit);
+				for (let i = 0; i < rowCount; i++) {
+					ctx.moveTo(0, i * (displayHeight / rowCount));
+					ctx.lineTo(displayWidth, i * (displayHeight / rowCount));
+					ctx.moveTo(0, i * (displayHeight / rowCount));
+				}
+				ctx.closePath();
+				ctx.strokeStyle = gridStrokeColor;
+				ctx.stroke();
+			}
 		}
 
 		Draw();
 	});
 </script>
 
-<div class="display-container" style="background-image: url({gridPattern});">
+<div class="display-container">
 	<canvas
 		id="rig-display"
 		bind:this={canvas}
@@ -323,17 +359,70 @@
 		width={displayWidth}
 		height={displayHeight}
 	></canvas>
+
+	<button
+		class="display-settings-button"
+		aria-label="display preview settings"
+		onclick={() => {
+			showSettingsPanel = !showSettingsPanel;
+		}}
+	>
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="24"
+			height="24"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="#000000"
+			stroke-width="2"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			class="lucide lucide-settings preview-icon"
+			><path
+				d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"
+			/><circle cx="12" cy="12" r="3" /></svg
+		>
+	</button>
+	{#if showSettingsPanel}
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="display-settings-container"
+			onclick={() => {
+				showSettingsPanel = false;
+			}}
+		>
+			<div class="display-settings-inner-panel" onclick={(e) => e.stopPropagation()}>
+				<div class="inner-panel-header">
+					<p class="header-label">Display Settings</p>
+					<button class="settings-close-button" onclick={() => (showSettingsPanel = false)}>
+						X
+					</button>
+				</div>
+				<Boolean label="Grid Overlay" bind:value={gridOverlay} />
+				<VectorTwo label="Grid ColumnsxRows" bind:value={gridColumnsAndRows} tooltip="How much the columns or rows are repeated every X units." />
+				<Color label="Grid Stroke Color" bind:value={gridStrokeColor} />
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>
 	.display-container {
 		width: 100%;
 		height: 100%;
-		background-color: var(--bg-dark);
+		background-color: #d9d9d9;
 		background-size: cover;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		background-image:
+			linear-gradient(45deg, #9c9b9b 25%, transparent 25%),
+			linear-gradient(-45deg, #9c9b9b 25%, transparent 25%),
+			linear-gradient(45deg, transparent 75%, #9c9b9b 75%),
+			linear-gradient(-45deg, transparent 75%, #9c9b9b 75%);
+		background-size: 40px 40px;
+		position: relative;
 	}
 
 	#rig-display {
@@ -341,5 +430,43 @@
 		width: 75%;
 		aspect-ratio: 1;
 		border-radius: 50%;
+	}
+
+	.display-settings-button {
+		position: absolute;
+		left: calc(100% - 30px);
+		top: 5px;
+		cursor: pointer;
+		z-index: 3;
+	}
+	.display-settings-container {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		z-index: 2;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		.display-settings-inner-panel {
+			width: 70%;
+			height: 80%;
+			border-radius: 12px;
+			background-color: var(--bg-light);
+			z-index: 3;
+			min-width: 250px;
+
+			.inner-panel-header {
+				display: flex;
+				justify-content: center;
+				position: relative;
+
+				.settings-close-button {
+					position: absolute;
+					left: calc(100% - 2ch);
+					cursor: pointer;
+				}
+			}
+		}
 	}
 </style>

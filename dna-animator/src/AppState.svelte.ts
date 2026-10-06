@@ -1,5 +1,5 @@
 import { browser } from "$app/environment";
-import type { RigObject, SelectedNode } from "./DNARig";
+import type { RigObject, RigVector2, SelectedNode } from "./DNARig";
 
 //supported themes
 export enum Theme {
@@ -53,6 +53,12 @@ export interface RigPlaygroundState {
     disabledAllDebugOptions: boolean;
 }
 
+export interface RigDisplayState {
+    showGridOverlay: boolean;
+    gridColumnsAndRows: RigVector2;
+    gridStrokeColor: string;
+}
+
 
 class AppState {
     constAppConfig = { theme: Theme.Device };
@@ -61,11 +67,19 @@ class AppState {
     loadingErrorMessage: string | null = $state(null);
     rigPlaygroundState: RigPlaygroundState = $state({ loadedRig: null, loadedRigFilePath: null, selectedNode: null, expandedNodes: [], hideAllGroups: false, hideAllElements: false, disabledAllDebugOptions: false });
     currentPageConfig: PageConfig | null = $state(null);
+    rigDisplayState: RigDisplayState = $state({
+        showGridOverlay: false,
+        gridColumnsAndRows: {
+            x: 10,
+            y: 10
+        },
+        gridStrokeColor: "#ffffff"
+    });
 
     constructor() {
         $effect.root(() => {
             $effect(() => {
-                //console.log("Page Title Changed: " + this.currentPageConfig?.title);
+                this.UpdateAppState();
             });
         });
     }
@@ -77,6 +91,9 @@ class AppState {
     ImportRigPlaygroundStateFromLocalStorage(state: RigPlaygroundState) {
         if (state) this.rigPlaygroundState = state;
     }
+
+    
+
     UpdateRigPlaygroundStateLoadedRig(rig: RigObject | null) {
         this.rigPlaygroundState.loadedRig = rig;
         this.UpdateRigPlaygroundStateInLocalStorage();
@@ -95,8 +112,30 @@ class AppState {
             //console.log("Updated rig playground state in local storage.");
         }
     }
+
+
+    ImportRigDisplayStateFromLocalStorage(state: RigDisplayState) {
+        if (state) this.rigDisplayState = state;
+    }
+    UpdateRigDisplayStateShowGridOverlay(show: boolean) {
+        this.rigDisplayState.showGridOverlay = show;
+    }
+    UpdateRigDisplayStateGridColumnsAndRows(gridColumnsAndRows: RigVector2) {
+        this.rigDisplayState.gridColumnsAndRows = gridColumnsAndRows;
+    }
+    UpdateRigDisplayStateGridStrokeColor(color: string) {
+        this.rigDisplayState.gridStrokeColor = color;
+    }
+    UpdateRigDisplayStateInLocalStorage() {
+        localStorage.setItem("rigDisplayState", JSON.stringify(this.rigDisplayState));
+    }
+
+
+
     private UpdateAppState() {
         localStorage.setItem("appConfig", JSON.stringify(this.config));
+        localStorage.setItem("rigPlaygroundState", JSON.stringify(this.rigPlaygroundState));
+        localStorage.setItem("rigDisplayState", JSON.stringify(this.rigDisplayState));
         //console.log("Saved changes to appConfig to local storage!");
         this.UpdateTheme();
     }

@@ -3,21 +3,29 @@ import { appState, Theme } from "./AppState.svelte";
 
 console.log("App initializing...");
 let pulledConfig = localStorage.getItem("appConfig");
-let configObject = pulledConfig ? JSON.parse(pulledConfig) : undefined;
-if (configObject) {
-    console.log("Successfully retrieved appConfig from local storage!");
+if (pulledConfig) {
+    let configObject = JSON.parse(pulledConfig);
     appState.ImportConfigFromLocalStorage(configObject);
-    let pulledRigPlaygroundState = localStorage.getItem("rigPlaygroundState");
-    if (pulledRigPlaygroundState) {
-        let stateObject = pulledRigPlaygroundState ? JSON.parse(pulledRigPlaygroundState) : undefined;
-        appState.ImportRigPlaygroundStateFromLocalStorage(stateObject);
-    }
 } else {
-    console.log("Error when retrieving appConfig from local storage! Pulled Config: ", pulledConfig);
-    console.log("Attempting to create new appConfig in local storage.");
     localStorage.setItem("appConfig", JSON.stringify(appState.constAppConfig));
-
 }
+
+let pulledRigPlaygroundState = localStorage.getItem("rigPlaygroundState");
+if (pulledRigPlaygroundState) {
+    let stateObject = pulledRigPlaygroundState ? JSON.parse(pulledRigPlaygroundState) : undefined;
+    appState.ImportRigPlaygroundStateFromLocalStorage(stateObject);
+} else {
+    appState.UpdateRigPlaygroundStateInLocalStorage();
+}
+let pulledRigDisplayState = localStorage.getItem("rigDisplayState");
+if (pulledRigDisplayState) {
+    let stateObject = JSON.parse(pulledRigDisplayState);
+    appState.ImportRigDisplayStateFromLocalStorage(stateObject);
+} else {
+    appState.UpdateRigDisplayStateInLocalStorage();
+}
+
+
 appState.UpdateTheme();
 appState.MarkAsDoneLoading();
 window.electronAPI.showWindow();

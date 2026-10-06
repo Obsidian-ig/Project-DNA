@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type { RigVector2 } from "../../DNARig";
 
-	let { label, value = $bindable() }: { label: string; value: RigVector2 } = $props();
+	let { label, value = $bindable(), tooltip = null }: { label: string; value: RigVector2, tooltip?: string | null } = $props();
 </script>
 
-<div class="vectortwo-property">
+<div class="vectortwo-property" title={(tooltip ? tooltip : "")}>
 	<span class="header">
 		<p class="label">{label}</p>
 	</span>

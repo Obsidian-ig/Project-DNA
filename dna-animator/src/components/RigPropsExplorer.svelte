@@ -135,8 +135,9 @@
 							return;
 						}
 						if (nameErrors.includes(nameEmpyErrorText)) nameErrors.splice(nameErrors.findIndex(e => e === nameEmpyErrorText), 1);
-						if (currentGroup.id === value) return;
-						if (rigObject.groups.some(g => g.id === value)) {
+						//if (currentGroup.id === value) return;
+						if (rigObject.groups.some(g => g.id === value) && currentGroup.id != value) {
+							console.log("Value: " + value + ", Group: " + currentGroup.id);
 							if (!nameErrors.includes(nameAlreadyInUseErrorText)) nameErrors.push(nameAlreadyInUseErrorText);
 							return;
 						}

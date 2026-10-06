@@ -46,8 +46,8 @@
       "show_origin_point": false,
       "offsets": {
         "position": {
-          "x": -28,
-          "y": 5
+          "x": 0,
+          "y": 0
         },
         "rotation": 0,
         "scale": {
@@ -119,8 +119,8 @@
       "show_origin_point": false,
       "offsets": {
         "position": {
-          "x": 28,
-          "y": 5
+          "x": 0,
+          "y": 0
         },
         "rotation": 0,
         "scale": {
@@ -185,79 +185,6 @@
       }
     },
     {
-      "name": "Left_Eye_Background_Clone",
-      "group_id": "",
-      "visible": true,
-      "show_position_point": false,
-      "show_origin_point": false,
-      "offsets": {
-        "position": {
-          "x": -11,
-          "y": 10
-        },
-        "rotation": 0,
-        "scale": {
-          "x": 0.5,
-          "y": 0.5
-        },
-        "rotation_two": 0,
-        "transform_origin": {
-          "x": -14,
-          "y": 0
-        }
-      },
-      "points": [
-        {
-          "point": {
-            "x": -60,
-            "y": -40
-          },
-          "interpolation_type": "Linear",
-          "controls": []
-        },
-        {
-          "point": {
-            "x": -40,
-            "y": 40
-          },
-          "interpolation_type": "Linear",
-          "controls": []
-        },
-        {
-          "point": {
-            "x": 20,
-            "y": 10
-          },
-          "interpolation_type": "Linear",
-          "controls": []
-        },
-        {
-          "point": {
-            "x": 20,
-            "y": -10
-          },
-          "interpolation_type": "Linear",
-          "controls": []
-        }
-      ],
-      "closed": true,
-      "filled": true,
-      "fill_color": "#3d008c",
-      "stroke_color": "#3d008c",
-      "transforms": {
-        "position": {
-          "x": 0,
-          "y": 0
-        },
-        "rotation": 0,
-        "scale": {
-          "x": 1,
-          "y": 1
-        },
-        "rotation_two": 0
-      }
-    },
-    {
       "name": "Top_Eye_Background",
       "group_id": "Top_Eye",
       "visible": true,
@@ -266,7 +193,7 @@
       "offsets": {
         "position": {
           "x": 0,
-          "y": -30
+          "y": 0
         },
         "rotation": 0,
         "scale": {
@@ -335,7 +262,7 @@
       "offsets": {
         "position": {
           "x": 0,
-          "y": -40
+          "y": -8
         },
         "rotation": 0,
         "scale": {
@@ -407,8 +334,8 @@
       "show_origin_point": false,
       "offsets": {
         "position": {
-          "x": 25,
-          "y": 5
+          "x": 0,
+          "y": 0
         },
         "rotation": 0,
         "scale": {
@@ -480,8 +407,8 @@
       "show_origin_point": false,
       "offsets": {
         "position": {
-          "x": -30,
-          "y": 5
+          "x": 0,
+          "y": 0
         },
         "rotation": 0,
         "scale": {
@@ -552,8 +479,8 @@
       "visible": true,
       "offsets": {
         "position": {
-          "x": -5,
-          "y": 0
+          "x": -32,
+          "y": 5
         },
         "rotation": 0,
         "scale": {
@@ -584,8 +511,8 @@
       "visible": true,
       "offsets": {
         "position": {
-          "x": 5,
-          "y": 0
+          "x": 32,
+          "y": 5
         },
         "rotation": 0,
         "scale": {
@@ -617,7 +544,7 @@
       "offsets": {
         "position": {
           "x": 0,
-          "y": 0
+          "y": -30
         },
         "rotation": 0,
         "scale": {
