@@ -1,6 +1,13 @@
 <script lang="ts">
 	import { appState } from '../AppState.svelte';
-	import { SelectedNodeType, RigPointInterpolationTypeEnum, RigLayeringOrderNodeType } from '../DNARig';
+	import {
+		SelectedNodeType,
+		RigPointInterpolationTypeEnum,
+		RigLayeringOrderNodeType,
+
+		RigPointInterpolationType
+
+	} from '../DNARig';
 	import GroupEditor from './PropertiesExplorerComponents/GroupEditor.svelte';
 	import Boolean from './PropertiesExplorerComponents/Boolean.svelte';
 	import Color from './PropertiesExplorerComponents/Color.svelte';
@@ -65,11 +72,14 @@
 				valueToShow={rigObject.name}
 				onValueChanged={(value: string) => {
 					if (value.length <= 0) {
-						if (!nameErrors.includes("Rig Name Cannot Be Empty!")) nameErrors.push("Rig Name Cannot Be Empty!");
+						if (!nameErrors.includes('Rig Name Cannot Be Empty!'))
+							nameErrors.push('Rig Name Cannot Be Empty!');
 						return;
 					}
-					if (nameErrors.includes("Rig Name Cannot Be Empty!")) nameErrors.pop();
-					let expandedRootNode = appState.rigPlaygroundState.expandedNodes?.find(n => n.type === SelectedNodeType.Root);
+					if (nameErrors.includes('Rig Name Cannot Be Empty!')) nameErrors.pop();
+					let expandedRootNode = appState.rigPlaygroundState.expandedNodes?.find(
+						(n) => n.type === SelectedNodeType.Root
+					);
 					if (expandedRootNode) expandedRootNode.name = value;
 					rigObject.name = value;
 				}}
@@ -127,24 +137,37 @@
 					label="Group ID"
 					valueToShow={currentGroup.id}
 					onValueChanged={(value: string) => {
-						const nameAlreadyInUseErrorText = "A Group With That ID Already Exists!";
-						const nameEmpyErrorText = "Group Names Cannot Be Empty!";
+						const nameAlreadyInUseErrorText = 'A Group With That ID Already Exists!';
+						const nameEmpyErrorText = 'Group Names Cannot Be Empty!';
 						if (!rigObject) return;
 						if (value.length <= 0) {
 							if (!nameErrors.includes(nameEmpyErrorText)) nameErrors.push(nameEmpyErrorText);
 							return;
 						}
-						if (nameErrors.includes(nameEmpyErrorText)) nameErrors.splice(nameErrors.findIndex(e => e === nameEmpyErrorText), 1);
+						if (nameErrors.includes(nameEmpyErrorText))
+							nameErrors.splice(
+								nameErrors.findIndex((e) => e === nameEmpyErrorText),
+								1
+							);
 						//if (currentGroup.id === value) return;
-						if (rigObject.groups.some(g => g.id === value) && currentGroup.id != value) {
-							console.log("Value: " + value + ", Group: " + currentGroup.id);
-							if (!nameErrors.includes(nameAlreadyInUseErrorText)) nameErrors.push(nameAlreadyInUseErrorText);
+						if (rigObject.groups.some((g) => g.id === value) && currentGroup.id != value) {
+							console.log('Value: ' + value + ', Group: ' + currentGroup.id);
+							if (!nameErrors.includes(nameAlreadyInUseErrorText))
+								nameErrors.push(nameAlreadyInUseErrorText);
 							return;
 						}
-						if (nameErrors.includes(nameAlreadyInUseErrorText)) nameErrors.splice(nameErrors.findIndex(e => e === nameAlreadyInUseErrorText), 1);
-						let expandedNode = appState.rigPlaygroundState.expandedNodes?.find(n => n.name === currentGroup.id && n.type === SelectedNodeType.Group);
+						if (nameErrors.includes(nameAlreadyInUseErrorText))
+							nameErrors.splice(
+								nameErrors.findIndex((e) => e === nameAlreadyInUseErrorText),
+								1
+							);
+						let expandedNode = appState.rigPlaygroundState.expandedNodes?.find(
+							(n) => n.name === currentGroup.id && n.type === SelectedNodeType.Group
+						);
 						if (expandedNode) expandedNode.name = value;
-						let layerNode = rigObject.layering_order.find(n => n.id === currentGroup.id && n.type === RigLayeringOrderNodeType.Group);
+						let layerNode = rigObject.layering_order.find(
+							(n) => n.id === currentGroup.id && n.type === RigLayeringOrderNodeType.Group
+						);
 						if (layerNode) layerNode.id = value;
 						currentGroup.id = value;
 					}}
@@ -176,22 +199,35 @@
 					label="Element Name"
 					valueToShow={currentElement.name}
 					onValueChanged={(value: string) => {
-						const nameAlreadyInUseErrorText = "An Element With That ID Already Exists!";
-						const nameEmpyErrorText = "Element Names Cannot Be Empty!";
+						const nameAlreadyInUseErrorText = 'An Element With That ID Already Exists!';
+						const nameEmpyErrorText = 'Element Names Cannot Be Empty!';
 						if (!rigObject) return;
 						if (value.length <= 0) {
 							if (!nameErrors.includes(nameEmpyErrorText)) nameErrors.push(nameEmpyErrorText);
 							return;
 						}
-						if (nameErrors.includes(nameEmpyErrorText)) nameErrors.splice(nameErrors.findIndex(e => e === nameEmpyErrorText), 1);
-						if (rigObject.elements.some(e => e.name === value)) {
-							if (!nameErrors.includes(nameAlreadyInUseErrorText)) nameErrors.push(nameAlreadyInUseErrorText);
+						if (nameErrors.includes(nameEmpyErrorText))
+							nameErrors.splice(
+								nameErrors.findIndex((e) => e === nameEmpyErrorText),
+								1
+							);
+						if (rigObject.elements.some((e) => e.name === value)) {
+							if (!nameErrors.includes(nameAlreadyInUseErrorText))
+								nameErrors.push(nameAlreadyInUseErrorText);
 							return;
 						}
-						if (nameErrors.includes(nameAlreadyInUseErrorText)) nameErrors.splice(nameErrors.findIndex(e => e === nameAlreadyInUseErrorText), 1);
-						let expandedNode = appState.rigPlaygroundState.expandedNodes?.find(n => n.name === currentElement.name && n.type === SelectedNodeType.Element);
+						if (nameErrors.includes(nameAlreadyInUseErrorText))
+							nameErrors.splice(
+								nameErrors.findIndex((e) => e === nameAlreadyInUseErrorText),
+								1
+							);
+						let expandedNode = appState.rigPlaygroundState.expandedNodes?.find(
+							(n) => n.name === currentElement.name && n.type === SelectedNodeType.Element
+						);
 						if (expandedNode) expandedNode.name = value;
-						let layerNode = rigObject.layering_order.find(n => n.id === currentElement.name && n.type === RigLayeringOrderNodeType.Element);
+						let layerNode = rigObject.layering_order.find(
+							(n) => n.id === currentElement.name && n.type === RigLayeringOrderNodeType.Element
+						);
 						if (layerNode) layerNode.id = value;
 						currentElement.name = value;
 					}}
@@ -242,7 +278,28 @@
 					label="Interpolation Type"
 					bind:value={currentPoint.interpolation_type}
 					rigEnum={RigPointInterpolationTypeEnum}
+					onValueChanged={(value: string) => {
+						let hasControls = (currentPoint.controls != undefined);
+						let controlsLength = hasControls ? currentPoint.controls!.length : 0;
+						//WORKING HERE: make it so that way the controls don't get deleted when changing interpolation types for points.
+						if (!hasControls && value === RigPointInterpolationType.Linear) currentPoint.controls = [];
+						if (!hasControls && controlsLength < 1 && value === RigPointInterpolationType.QuadraticBezierCurve) currentPoint.controls = [{x: 0, y: 0}];
+						if (!hasControls && value === RigPointInterpolationType.CubicBezierCurve) currentPoint.controls = [{x: 0, y: 0}, {x: 0, y: 0}];
+					}}
 				/>
+			{/if}
+		{:else if selectedNode?.type === SelectedNodeType.ControlPoint}
+			{let splitName = selectedNode.name.split('_Point_')}
+			{let elementName = splitName[0]}
+			{let currentControl = $derived(
+				selectedNode && selectedNode.index !== undefined
+					? (rigObject.elements.find((e) => e.name === elementName)?.points?.[
+							parseInt(splitName[1], 10)
+						]?.controls?.[selectedNode.index] ?? null)
+					: null
+			)}
+			{#if currentControl}
+				<VectorTwo label="Position" bind:value={currentControl} />
 			{/if}
 		{:else}
 			<!--Render Nothing-->

@@ -5,8 +5,9 @@
 	let {
 		label,
 		value = $bindable(),
-		rigEnum
-	}: { label: string; value: string | number | boolean; rigEnum: RigEnum } = $props();
+		rigEnum,
+		onValueChanged
+	}: { label: string; value: string | number | boolean; rigEnum: RigEnum, onValueChanged?: (value: string) => void } = $props();
 	let expanded = $state(false);
 </script>
 
@@ -25,6 +26,7 @@
 			{#each rigEnum.allowed_values as allowedValue}
 				<button class="enum-option-button" onclick={() => {
                     value = allowedValue;
+					if (onValueChanged) onValueChanged(allowedValue.toString());
                     expanded = false;
                 }}>{allowedValue}</button>
 			{/each}

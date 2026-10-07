@@ -511,6 +511,7 @@ export const SelectedNodeType = {
     Group: 'Group',
     Element: 'Element',
     Point: 'Point',
+    ControlPoint: 'ControlPoint',
     None: 'None'
 } as const;
 export type SelectedNodeType = (typeof SelectedNodeType)[keyof typeof SelectedNodeType];

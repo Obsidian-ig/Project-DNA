@@ -33,7 +33,9 @@
 	function RepairRigLayeringOrder() {
 		if (!rigObject) return;
 		for (const group of rigObject.groups) {
-			let existsInLayeringOrder = rigObject.layering_order.find(n => n.type === DNARig.RigLayeringOrderNodeType.Group && n.id === group.id);
+			let existsInLayeringOrder = rigObject.layering_order.find(
+				(n) => n.type === DNARig.RigLayeringOrderNodeType.Group && n.id === group.id
+			);
 			if (!existsInLayeringOrder) {
 				rigObject.layering_order.push({
 					type: DNARig.RigLayeringOrderNodeType.Group,
@@ -43,7 +45,9 @@
 		}
 		for (const element of rigObject.elements) {
 			if (element.group_id) continue;
-			let existsInLayeringOrder = rigObject.layering_order.find(n => n.type === DNARig.RigLayeringOrderNodeType.Element && n.id === element.name);
+			let existsInLayeringOrder = rigObject.layering_order.find(
+				(n) => n.type === DNARig.RigLayeringOrderNodeType.Element && n.id === element.name
+			);
 			if (!existsInLayeringOrder) {
 				rigObject.layering_order.push({
 					type: DNARig.RigLayeringOrderNodeType.Element,
@@ -429,7 +433,7 @@
 						rotation_two: 0
 					}
 				};
-				
+
 				rigObject?.layering_order.push({
 					type: DNARig.RigLayeringOrderNodeType.Group,
 					id: newGroup.id
@@ -615,9 +619,13 @@
 									rigObject.groups.findIndex((g) => g.id === group.id),
 									1
 								);
-								let layerIndex = rigObject.layering_order.findIndex(n => n.type === DNARig.RigLayeringOrderNodeType.Group && n.id === group.id);
+								let layerIndex = rigObject.layering_order.findIndex(
+									(n) => n.type === DNARig.RigLayeringOrderNodeType.Group && n.id === group.id
+								);
 								rigObject.layering_order.splice(layerIndex, 1);
-								let expandedIndex = appState.rigPlaygroundState.expandedNodes?.findIndex(n => n.type === DNARig.SelectedNodeType.Group && n.name === group.id);
+								let expandedIndex = appState.rigPlaygroundState.expandedNodes?.findIndex(
+									(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
+								);
 								if (expandedIndex) {
 									appState.rigPlaygroundState.expandedNodes?.splice(expandedIndex, 1);
 								}
@@ -682,16 +690,27 @@
 									rigObject.elements.findIndex((el) => el.name === element.name),
 									1
 								);
-								if (element.group_id === "") {
+								if (element.group_id === '') {
 									rigObject.layering_order.splice(
-										rigObject.layering_order.findIndex(n => n.type === DNARig.RigLayeringOrderNodeType.Element && n.id === element.name),
+										rigObject.layering_order.findIndex(
+											(n) =>
+												n.type === DNARig.RigLayeringOrderNodeType.Element && n.id === element.name
+										),
 										1
 									);
 								} else {
-									let group = rigTreeNodes.find(n => n.type === DNARig.RigLayeringOrderNodeType.Group && n.id === element.group_id);
-									group?.elements.splice(group.elements.findIndex(e => e?.name === element.name), 1);
+									let group = rigTreeNodes.find(
+										(n) =>
+											n.type === DNARig.RigLayeringOrderNodeType.Group && n.id === element.group_id
+									);
+									group?.elements.splice(
+										group.elements.findIndex((e) => e?.name === element.name),
+										1
+									);
 								}
-								let expandedIndex = appState.rigPlaygroundState.expandedNodes?.findIndex(n => n.type === DNARig.SelectedNodeType.Element && n.name === element.name);
+								let expandedIndex = appState.rigPlaygroundState.expandedNodes?.findIndex(
+									(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+								);
 								if (expandedIndex) {
 									appState.rigPlaygroundState.expandedNodes?.splice(expandedIndex, 1);
 								}
@@ -1008,11 +1027,14 @@
 						type: DNARig.SelectedNodeType.Element,
 						index: elementIndex
 					};
-			}}>{element.name}</button
+			}}
 		>
+			{element.name}
+		</button>
 	</div>
 	{#if expandedNodes?.find((n) => n.name === element.name && n.type === DNARig.SelectedNodeType.Element)}
 		{#each element.points as point, pointIndex (point.point)}
+		{let hasControls = (point.controls && point.controls.length > 0)}
 			<div
 				class="rig-node {inGroup
 					? 'third-node'
@@ -1022,9 +1044,54 @@
 				selectedNode.name === element.name
 					? 'selected'
 					: ''}"
-				id={pointIndex.toString()}
+				id={element.name + '-' + 'point-' + pointIndex.toString()}
 				data-element-name={element.name}
+				data-point-index={pointIndex.toString()}
 			>
+				{#if hasControls}
+					<button
+						class="expand-button"
+						onclick={(e) => {
+							e.stopPropagation();
+							let exists = expandedNodes?.find(
+								(n) =>
+									n.type === DNARig.SelectedNodeType.Point &&
+									n.name === element.name &&
+									n.index === pointIndex
+							);
+							if (exists) {
+								expandedNodes?.slice().forEach((n, index) => {
+									if (
+										n.type === DNARig.SelectedNodeType.Point &&
+										n.name === element.name &&
+										n.index === pointIndex
+									) {
+										expandedNodes?.splice(index, 1);
+									}
+								});
+							} else {
+								expandedNodes?.push({
+									name: element.name,
+									type: DNARig.SelectedNodeType.Point,
+									index: pointIndex
+								});
+							}
+						}}
+					>
+						<img
+							class="expand-arrow-icon {expandedNodes?.find(
+								(n) =>
+									n.type === DNARig.SelectedNodeType.Point &&
+									n.name === element.name &&
+									n.index === pointIndex
+							)
+								? 'expanded'
+								: ''}"
+							src={downArrowIcon}
+							alt="Expand/Collapse Arrow"
+						/>
+					</button>
+				{/if}
 				<button
 					class="rig-node-select-button"
 					onclick={(e) => {
@@ -1038,6 +1105,39 @@
 					}}>Point: {pointIndex}</button
 				>
 			</div>
+			{#if expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Point && n.name === element.name && n.index === pointIndex) && hasControls}
+				{#each point.controls as control, controlIndex}
+					<div
+						class="rig-node
+						{inGroup ? 'fourth-node' : 'third-node'} 
+						point-control-node
+						{selectedNode?.type === DNARig.SelectedNodeType.ControlPoint &&
+						selectedNode.index === controlIndex &&
+						selectedNode.name === element.name + '_' + 'Point_' + pointIndex.toString()
+							? 'selected'
+							: ''}"
+						id={element.name + '-point-' + pointIndex + '-controlpoint-' + controlIndex.toString()}
+						data-element-name={element.name}
+						data-point-index={pointIndex.toString()}
+						data-control-index={controlIndex.toString()}
+					>
+						<button
+							class="rig-node-select-button"
+							onclick={(e) => {
+								e.stopPropagation();
+								if (rigObject)
+									selectedNode = {
+										name: element.name + '_' + 'Point_' + pointIndex.toString(),
+										type: DNARig.SelectedNodeType.ControlPoint,
+										index: controlIndex
+									};
+							}}
+						>
+							Control: {controlIndex}
+						</button>
+					</div>
+				{/each}
+			{/if}
 		{/each}
 	{/if}
 {/snippet}
@@ -1137,6 +1237,11 @@
 
 	.third-node {
 		margin-left: 120px;
+		margin-top: 3px;
+	}
+
+	.fourth-node {
+		margin-left: 155px;
 		margin-top: 3px;
 	}
 
