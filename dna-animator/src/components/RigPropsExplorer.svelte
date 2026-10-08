@@ -282,9 +282,15 @@
 						let hasControls = (currentPoint.controls != undefined);
 						let controlsLength = hasControls ? currentPoint.controls!.length : 0;
 						//WORKING HERE: make it so that way the controls don't get deleted when changing interpolation types for points.
-						if (!hasControls && value === RigPointInterpolationType.Linear) currentPoint.controls = [];
-						if (!hasControls && controlsLength < 1 && value === RigPointInterpolationType.QuadraticBezierCurve) currentPoint.controls = [{x: 0, y: 0}];
-						if (!hasControls && value === RigPointInterpolationType.CubicBezierCurve) currentPoint.controls = [{x: 0, y: 0}, {x: 0, y: 0}];
+						if (!hasControls && value === RigPointInterpolationType.Linear && controlsLength <= 0) currentPoint.controls = [];
+						if ((!hasControls || controlsLength < 1) && value === RigPointInterpolationType.QuadraticBezierCurve) currentPoint.controls = [{x: 0, y: 0}];
+						if ((!hasControls || controlsLength < 2) && value === RigPointInterpolationType.CubicBezierCurve) {
+							if (controlsLength <= 0) currentPoint.controls = [{x: 0, y: 0}, {x: 0, y: 0}];
+							if (controlsLength === 1) currentPoint.controls?.push({
+								x: 0,
+								y: 0
+							});
+						}
 					}}
 				/>
 			{/if}

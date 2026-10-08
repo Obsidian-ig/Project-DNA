@@ -22,6 +22,7 @@ export interface RigPoint {
     point: RigVector2;
     interpolation_type: RigPointInterpolationType;
     controls?: RigVector2[]; //for the interpolation
+    showControlPoints: boolean;
 };
 export interface RigElement {
     name: string;

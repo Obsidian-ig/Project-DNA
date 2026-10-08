@@ -494,7 +494,9 @@
 								x: 0,
 								y: 0
 							},
-							interpolation_type: DNARig.RigPointInterpolationType.Linear
+							interpolation_type: DNARig.RigPointInterpolationType.Linear,
+							controls: [],
+							showControlPoints: false
 						}
 					],
 					fill_color: '#FFFFFF',
@@ -518,7 +520,9 @@
 						x: 0,
 						y: 0
 					},
-					interpolation_type: 'Linear'
+					interpolation_type: 'Linear',
+					controls: [],
+					showControlPoints: false
 				});
 			}
 
@@ -720,7 +724,7 @@
 				};
 			} else if (target.classList.contains('point-node')) {
 				let parentElement = rigObject.elements.find((el) => el.name === target.dataset.elementName);
-				let point = parentElement?.points?.[Number.parseInt(target.id)];
+				let point = parentElement?.points?.[Number.parseInt(target.id.split('-point-')[1])];
 				if (!point) return;
 				currentContextMenuOptions = {
 					options: [
@@ -730,6 +734,19 @@
 								parentElement?.points.push(point);
 							}
 						},
+						...(point.controls && point.controls.length < 2
+							? [
+									{
+										label: 'Add Control Point',
+										action: () => {
+											point.controls?.push({
+												x: 0,
+												y: 0
+											});
+										}
+									}
+								]
+							: []),
 						{
 							label: 'Delete Point',
 							action: () => {
@@ -739,6 +756,44 @@
 								);
 							}
 						}
+					]
+				};
+			} else if (target.classList.contains('point-control-node')) {
+				let parentElement = rigObject.elements.find((e) => e.name === target.dataset.elementName);
+				if (!parentElement) return;
+				let parentPoint = parentElement.points[parseInt(target.dataset?.pointIndex ?? '')];
+				if (!parentPoint) return;
+				let controlPoint = parentPoint?.controls?.[parseInt(target.dataset?.controlIndex ?? '')];
+				if (!controlPoint) return;
+				currentContextMenuOptions = {
+					options: [
+						...(parentPoint.controls && parentPoint.controls.length === 1
+							? [
+									{
+										label: 'Duplicate Control Point',
+										action: () => {
+											if (!parentPoint.controls) return;
+											parentPoint.controls.push(controlPoint);
+										}
+									}
+								]
+							: []),
+						...(parentPoint.controls &&
+						((parentPoint.interpolation_type ===
+							DNARig.RigPointInterpolationType.QuadraticBezierCurve &&
+							parentPoint.controls.length > 1) ||
+							(parentPoint.interpolation_type ===
+								DNARig.RigPointInterpolationType.CubicBezierCurve &&
+								parentPoint.controls.length > 2) ||
+							parentPoint.interpolation_type === DNARig.RigPointInterpolationType.Linear)
+							? [{
+								label: "Delete Control Point",
+								action: () => {
+									if (!parentPoint.controls) return;
+									parentPoint.controls.splice(parseInt(target.dataset.controlIndex ?? ""), 1);
+								}
+							}]
+							: [])
 					]
 				};
 			} else if (target.classList.contains('rig-tree-container')) {
@@ -1034,7 +1089,6 @@
 	</div>
 	{#if expandedNodes?.find((n) => n.name === element.name && n.type === DNARig.SelectedNodeType.Element)}
 		{#each element.points as point, pointIndex (point.point)}
-		{let hasControls = (point.controls && point.controls.length > 0)}
 			<div
 				class="rig-node {inGroup
 					? 'third-node'
@@ -1048,7 +1102,7 @@
 				data-element-name={element.name}
 				data-point-index={pointIndex.toString()}
 			>
-				{#if hasControls}
+				{#if point.controls && point.controls.length > 0}
 					<button
 						class="expand-button"
 						onclick={(e) => {
@@ -1105,12 +1159,12 @@
 					}}>Point: {pointIndex}</button
 				>
 			</div>
-			{#if expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Point && n.name === element.name && n.index === pointIndex) && hasControls}
+			{#if expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Point && n.name === element.name && n.index === pointIndex) && point.controls && point.controls.length > 0}
 				{#each point.controls as control, controlIndex}
 					<div
 						class="rig-node
 						{inGroup ? 'fourth-node' : 'third-node'} 
-						point-control-node
+						point-control-node context-target
 						{selectedNode?.type === DNARig.SelectedNodeType.ControlPoint &&
 						selectedNode.index === controlIndex &&
 						selectedNode.name === element.name + '_' + 'Point_' + pointIndex.toString()
