@@ -28,6 +28,10 @@
 	let structureErrors: string[] = $state([]);
 
 	$effect(() => {
+		console.log(selectedNode?.name);
+	});
+
+	$effect(() => {
 		nodeExpanded =
 			expandedNodes?.find(
 				(n) =>
@@ -281,7 +285,6 @@
 					onValueChanged={(value: string) => {
 						let hasControls = (currentPoint.controls != undefined);
 						let controlsLength = hasControls ? currentPoint.controls!.length : 0;
-						//WORKING HERE: make it so that way the controls don't get deleted when changing interpolation types for points.
 						if (!hasControls && value === RigPointInterpolationType.Linear && controlsLength <= 0) currentPoint.controls = [];
 						if ((!hasControls || controlsLength < 1) && value === RigPointInterpolationType.QuadraticBezierCurve) currentPoint.controls = [{x: 0, y: 0}];
 						if ((!hasControls || controlsLength < 2) && value === RigPointInterpolationType.CubicBezierCurve) {
@@ -295,6 +298,7 @@
 				/>
 			{/if}
 		{:else if selectedNode?.type === SelectedNodeType.ControlPoint}
+			{console.log(selectedNode.name)}
 			{let splitName = selectedNode.name.split('_Point_')}
 			{let elementName = splitName[0]}
 			{let currentControl = $derived(

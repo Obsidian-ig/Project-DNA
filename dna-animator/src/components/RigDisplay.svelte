@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { appState } from '../AppState.svelte';
-	import { RigLayeringOrderNodeType, type RigElement, type RigVector2 } from '../DNARig';
+	import {
+		RigLayeringOrderNodeType,
+		RigPointInterpolationType,
+		type RigElement,
+		type RigVector2
+	} from '../DNARig';
 	import Boolean from './PropertiesExplorerComponents/Boolean.svelte';
 	import Color from './PropertiesExplorerComponents/Color.svelte';
 	import VectorTwo from './PropertiesExplorerComponents/VectorTwo.svelte';
@@ -184,6 +189,86 @@
 				elementWorldY
 			);
 
+			//all calculations are from the current point to the next point, never backwards.
+			ctx.beginPath();
+			element.points.slice().forEach((point, index) => {
+				let calculatedPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
+					point.point,
+					elementCalculatedPosition,
+					elementWorldX,
+					elementWorldY
+				);
+				let nextPointIndex = index >= element.points.length - 1 ? 0 : index + 1;
+				let nextPoint = element.points[nextPointIndex];
+				if (!nextPoint) return;
+				let calculatedNextPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
+					nextPoint.point,
+					elementCalculatedPosition,
+					elementWorldX,
+					elementWorldY
+				);
+				if (index === 0) ctx.moveTo(calculatedPointPosition.x, calculatedPointPosition.y); //move to first point's position
+				if (
+					!point.controls ||
+					point.controls.length < 1 ||
+					point.interpolation_type === RigPointInterpolationType.Linear
+				) {
+					//linear interpolation to the next point
+					ctx.lineTo(calculatedNextPointPosition.x, calculatedNextPointPosition.y);
+				} else if (
+					point.interpolation_type === RigPointInterpolationType.QuadraticBezierCurve ||
+					(point.interpolation_type === RigPointInterpolationType.CubicBezierCurve &&
+						point.controls.length < 2)
+				) {
+					//quadratic bezier curve interpolation to the next point
+					console.log("Quadratic Bezier Curve!");
+					let timeStep = 0.1;
+					let calculatedPathPoints: RigVector2[] = [];
+					for (let t = 0; t < 1; t += timeStep) {
+						//time, for now just step 0.1, i will calculate the step later.
+						let controlPoint = point.controls[0];
+						let calculatedPathPointVirtual: RigVector2 = {
+							x:
+								Math.pow(1 - t, 2) * point.point.x +
+								2 * (1 - t) * t * controlPoint.x +
+								Math.pow(t, 2) * nextPoint.point.x,
+							y:
+								Math.pow(1 - t, 2) * point.point.y +
+								2 * (1 - t) * t * controlPoint.y +
+								Math.pow(t, 2) * nextPoint.point.y
+						};
+						console.log("Calculated Path Point Virtual " + t + ":", calculatedPathPointVirtual);
+						let calculatedPathPointPhysical = CalculatePhysicalPositionFromPhysicalPosition(
+							calculatedPathPointVirtual,
+							calculatedPointPosition,
+							elementWorldX,
+							elementWorldY
+						);
+						calculatedPathPoints.push(calculatedPathPointPhysical);
+						console.log("Calculated Path Point Physical " + t + ":", calculatedPathPointPhysical);
+					}
+					console.log(calculatedPathPoints);
+					calculatedPathPoints.forEach((point, pointIndex) => {
+						if (pointIndex === 0) ctx.moveTo(point.x, point.y);
+						let nextIndex = pointIndex >= calculatedPathPoints.length - 1 ? 0 : index + 1;
+						let nextPoint = calculatedPathPoints[nextIndex];
+						if (!nextPoint) return;
+						ctx.lineTo(nextPoint.x, nextPoint.y);
+					});
+				} else if (
+					point.interpolation_type === RigPointInterpolationType.CubicBezierCurve &&
+					point.controls.length === 2
+				) {
+					//cubic bezier curve interpolation to the next point
+				}
+			});
+			ctx.closePath();
+			ctx.strokeStyle = element.stroke_color;
+			ctx.fillStyle = element.fill_color;
+			ctx.stroke();
+			if (element.filled) ctx.fill();
+
+			/*
 			let calculatedPointsPositions: RigVector2[] = [];
 			element.points.slice().forEach((point, index) => {
 				let calculatedPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
@@ -203,7 +288,7 @@
 			ctx.fillStyle = element.fill_color;
 			ctx.strokeStyle = element.stroke_color;
 			ctx.fill();
-			ctx.stroke();
+			ctx.stroke();*/
 		}
 		function Draw() {
 			if (!rigObject || !ctx) return;
@@ -332,7 +417,7 @@
 					ctx.lineTo(i * (displayWidth / columnCount), displayHeight);
 					ctx.moveTo(i * (displayWidth / columnCount), 0);
 				}
-				
+
 				//rows
 				let rowCount = displayHeight / (gridColumnsAndRows.y * scaleUnit);
 				for (let i = 0; i < rowCount; i++) {
@@ -400,7 +485,11 @@
 					</button>
 				</div>
 				<Boolean label="Grid Overlay" bind:value={gridOverlay} />
-				<VectorTwo label="Grid ColumnsxRows" bind:value={gridColumnsAndRows} tooltip="How much the columns or rows are repeated every X units." />
+				<VectorTwo
+					label="Grid ColumnsxRows"
+					bind:value={gridColumnsAndRows}
+					tooltip="How much the columns or rows are repeated every X units."
+				/>
 				<Color label="Grid Stroke Color" bind:value={gridStrokeColor} />
 			</div>
 		</div>
