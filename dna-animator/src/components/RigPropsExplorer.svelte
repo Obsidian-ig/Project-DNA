@@ -28,10 +28,6 @@
 	let structureErrors: string[] = $state([]);
 
 	$effect(() => {
-		console.log(selectedNode?.name);
-	});
-
-	$effect(() => {
 		nodeExpanded =
 			expandedNodes?.find(
 				(n) =>
@@ -298,9 +294,8 @@
 				/>
 			{/if}
 		{:else if selectedNode?.type === SelectedNodeType.ControlPoint}
-			{console.log(selectedNode.name)}
-			{let splitName = selectedNode.name.split('_Point_')}
-			{let elementName = splitName[0]}
+			{let splitName = $derived(selectedNode.name.split('_Point_'))}
+			{let elementName = $derived(splitName[0])}
 			{let currentControl = $derived(
 				selectedNode && selectedNode.index !== undefined
 					? (rigObject.elements.find((e) => e.name === elementName)?.points?.[

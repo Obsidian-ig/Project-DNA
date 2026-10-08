@@ -224,7 +224,7 @@
 					console.log("Quadratic Bezier Curve!");
 					let timeStep = 0.1;
 					let calculatedPathPoints: RigVector2[] = [];
-					for (let t = 0; t < 1; t += timeStep) {
+					for (let t = 0; t <= 1; t += timeStep) {
 						//time, for now just step 0.1, i will calculate the step later.
 						let controlPoint = point.controls[0];
 						let calculatedPathPointVirtual: RigVector2 = {
@@ -240,7 +240,7 @@
 						console.log("Calculated Path Point Virtual " + t + ":", calculatedPathPointVirtual);
 						let calculatedPathPointPhysical = CalculatePhysicalPositionFromPhysicalPosition(
 							calculatedPathPointVirtual,
-							calculatedPointPosition,
+							elementCalculatedPosition,
 							elementWorldX,
 							elementWorldY
 						);
@@ -250,7 +250,7 @@
 					console.log(calculatedPathPoints);
 					calculatedPathPoints.forEach((point, pointIndex) => {
 						if (pointIndex === 0) ctx.moveTo(point.x, point.y);
-						let nextIndex = pointIndex >= calculatedPathPoints.length - 1 ? 0 : index + 1;
+						let nextIndex = pointIndex >= calculatedPathPoints.length - 1 ? 0 : pointIndex + 1;
 						let nextPoint = calculatedPathPoints[nextIndex];
 						if (!nextPoint) return;
 						ctx.lineTo(nextPoint.x, nextPoint.y);
