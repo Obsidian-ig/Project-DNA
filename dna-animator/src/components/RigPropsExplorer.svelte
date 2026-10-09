@@ -85,6 +85,12 @@
 				}}
 				currentErrors={nameErrors}
 			/>
+			<Text label="Rig Author" valueToShow={rigObject.author} onValueChanged={(value: string) => {
+				rigObject.author = value;
+			}} currentErrors={[]} />
+			<Text label="Rig Author Link" valueToShow={rigObject.author_link} onValueChanged={(value: string) => {
+				rigObject.author_link = value;
+			}} currentErrors={[]} />
 			<Text
 				label="Rig Version"
 				valueToShow={rigObject.rig_version}
@@ -169,6 +175,10 @@
 							(n) => n.id === currentGroup.id && n.type === RigLayeringOrderNodeType.Group
 						);
 						if (layerNode) layerNode.id = value;
+						rigObject.elements.forEach((element) => {
+							if (element.group_id === currentGroup.id) element.group_id = value;
+						});
+						selectedNode.name = value;
 						currentGroup.id = value;
 					}}
 					currentErrors={nameErrors}
@@ -230,6 +240,7 @@
 						);
 						if (layerNode) layerNode.id = value;
 						currentElement.name = value;
+						selectedNode.name = value;
 					}}
 					currentErrors={nameErrors}
 				/>
@@ -244,7 +255,9 @@
 					label="Debug: Show Position Point"
 					bind:value={currentElement.show_position_point}
 				/>
+				<Color label="Position Point Color" bind:value={currentElement.position_point_color} />
 				<Boolean label="Debug: Show Origin Point" bind:value={currentElement.show_origin_point} />
+				<Color label="Origin Point Color" bind:value={currentElement.origin_point_color} />
 				<Section label="Offsets">
 					<VectorTwo label="Starting Position" bind:value={currentElement.offsets.position} />
 					<Number label="Starting Rotation" bind:value={currentElement.offsets.rotation} />
@@ -292,6 +305,9 @@
 						}
 					}}
 				/>
+				<Number label="Steps" bind:value={currentPoint.steps} />
+				<Boolean label="Show Control Points" bind:value={currentPoint.show_control_points} />
+				<Color label="Control Points Color" bind:value={currentPoint.control_point_color} />
 			{/if}
 		{:else if selectedNode?.type === SelectedNodeType.ControlPoint}
 			{let splitName = $derived(selectedNode.name.split('_Point_'))}

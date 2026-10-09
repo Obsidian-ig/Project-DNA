@@ -1,0 +1,382 @@
+{
+  "name": "Default Cubic Interpolation",
+  "rig_version": "1.0.0",
+  "rig_structure_version": "2.8",
+  "author": "ObsidianDev",
+  "author_link": "https://github.com/Obsidian-ig",
+  "last_updated_utc": "2026-10-08T22:49:03.483Z",
+  "offsets": {
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "rotation": 0,
+    "scale": {
+      "x": 1,
+      "y": 1
+    },
+    "rotation_two": 0
+  },
+  "layering_order": [
+    {
+      "type": "group",
+      "id": "Left_Eye"
+    },
+    {
+      "type": "group",
+      "id": "Right_Eye"
+    }
+  ],
+  "elements": [
+    {
+      "name": "Left_Eye_Background",
+      "group_id": "Left_Eye",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "show_origin_point": false,
+      "offsets": {
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -40,
+            "y": 0
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 0,
+              "y": -53
+            },
+            {
+              "x": 80,
+              "y": -5
+            }
+          ],
+          "showControlPoints": false,
+          "steps": 20,
+          "controlPointColor": "#e54343",
+          "show_control_points": false,
+          "control_point_color": "#000000"
+        },
+        {
+          "point": {
+            "x": 40,
+            "y": 0
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 0,
+              "y": 53
+            },
+            {
+              "x": -80,
+              "y": 53
+            }
+          ],
+          "steps": 20,
+          "showControlPoints": false,
+          "controlPointColor": "#00ff4c"
+        }
+      ],
+      "fill_color": "#FFFFFF",
+      "stroke_color": "#8a1414",
+      "closed": true,
+      "filled": true,
+      "position_point_color": "#00ff00",
+      "origin_point_color": "#fb7304"
+    },
+    {
+      "name": "Left_Eye_Pupil",
+      "group_id": "Left_Eye",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "show_origin_point": false,
+      "offsets": {
+        "position": {
+          "x": 9,
+          "y": 7
+        },
+        "rotation": -8,
+        "scale": {
+          "x": -1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -10,
+            "y": 0
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 0,
+              "y": -20
+            },
+            {
+              "x": 13,
+              "y": -9
+            }
+          ],
+          "steps": 20,
+          "showControlPoints": false,
+          "controlPointColor": "#ed263a"
+        },
+        {
+          "point": {
+            "x": 3,
+            "y": 0
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 0,
+              "y": 20
+            },
+            {
+              "x": -14,
+              "y": 16
+            }
+          ],
+          "steps": 20,
+          "showControlPoints": false,
+          "controlPointColor": "#ed263a"
+        }
+      ],
+      "fill_color": "#000000",
+      "stroke_color": "#000000",
+      "closed": true,
+      "filled": true,
+      "position_point_color": "#00ff00",
+      "origin_point_color": "#d77304"
+    },
+    {
+      "name": "Right_Eye_Background",
+      "group_id": "Right_Eye",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "show_origin_point": false,
+      "offsets": {
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -40,
+            "y": 0
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 0,
+              "y": -53
+            },
+            {
+              "x": 80,
+              "y": -5
+            }
+          ],
+          "showControlPoints": false,
+          "steps": 20,
+          "controlPointColor": "#e54343"
+        },
+        {
+          "point": {
+            "x": 40,
+            "y": 0
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 0,
+              "y": 53
+            },
+            {
+              "x": -80,
+              "y": 53
+            }
+          ],
+          "steps": 20,
+          "showControlPoints": false,
+          "controlPointColor": "#00ff4c"
+        }
+      ],
+      "fill_color": "#FFFFFF",
+      "stroke_color": "#8a1414",
+      "closed": true,
+      "filled": true,
+      "position_point_color": "#00ff00",
+      "origin_point_color": "#fb7304"
+    },
+    {
+      "name": "Right_Eye_Pupil",
+      "group_id": "Right_Eye",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "show_origin_point": false,
+      "offsets": {
+        "position": {
+          "x": 9,
+          "y": 7
+        },
+        "rotation": -8,
+        "scale": {
+          "x": -1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -10,
+            "y": 0
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 0,
+              "y": -20
+            },
+            {
+              "x": 13,
+              "y": -9
+            }
+          ],
+          "steps": 20,
+          "showControlPoints": false,
+          "controlPointColor": "#ed263a"
+        },
+        {
+          "point": {
+            "x": 3,
+            "y": 0
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 0,
+              "y": 20
+            },
+            {
+              "x": -14,
+              "y": 16
+            }
+          ],
+          "steps": 20,
+          "showControlPoints": false,
+          "controlPointColor": "#ed263a"
+        }
+      ],
+      "fill_color": "#000000",
+      "stroke_color": "#000000",
+      "closed": true,
+      "filled": true,
+      "position_point_color": "#00ff00",
+      "origin_point_color": "#fb7304"
+    }
+  ],
+  "groups": [
+    {
+      "id": "Left_Eye",
+      "visible": true,
+      "offsets": {
+        "position": {
+          "x": -45,
+          "y": 0
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": "Right_Eye",
+      "visible": true,
+      "offsets": {
+        "position": {
+          "x": 45,
+          "y": 0
+        },
+        "rotation": 0,
+        "scale": {
+          "x": -1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    }
+  ],
+  "default_state": {
+    "state": "Default"
+  },
+  "state_enum": {
+    "id": "state_enum",
+    "allowed_values": [
+      "Default"
+    ]
+  },
+  "state_rules": [],
+  "events": [],
+  "poses": [],
+  "animations": [],
+  "sensors": {
+    "required": [],
+    "optional": []
+  },
+  "bindings": []
+}

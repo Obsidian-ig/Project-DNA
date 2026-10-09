@@ -38,6 +38,7 @@ Ideas/Plans:
 	import type { RigObject } from '../../DNARig.ts';
 	import {
 		createDefaultRigObject,
+		RemoveKeysFromObject,
 		RigLayeringOrderNodeType,
 		SelectedNodeType
 	} from '../../DNARig.ts';
@@ -145,6 +146,8 @@ Ideas/Plans:
 						console.log('Failed to save rig as it is null in the appstate!');
 						return;
 					}
+					//cut the runtime properties out of the rig object.
+					let cleanedRigObject: RigObject = RemoveKeysFromObject(rigObject, ['transforms']);
 					if (!appState.rigPlaygroundState.loadedRigFilePath) {
 						console.log('Unable to save rig as the file path is invalid!');
 						console.log('Save Rig As!');
@@ -152,13 +155,11 @@ Ideas/Plans:
 							console.log('Failed to save rig as it is null in the appstate!');
 							return;
 						}
-						//cut the runtime properties out of the rig object.
-						const { transforms, ...cleanRigObject } = appState.rigPlaygroundState.loadedRig;
 						let result = await window.electronAPI.saveNewFile(
 							'Save New Rig',
 							'DNA Rig Files',
 							['dnar', 'json'],
-							JSON.stringify(cleanRigObject, null, 2)
+							JSON.stringify(cleanedRigObject, null, 2)
 						);
 						if (result.success) {
 							console.log('Successfully saved new rig!');
@@ -169,11 +170,9 @@ Ideas/Plans:
 						savedChanges = true;
 						return;
 					}
-					//cut the runtime properties out of the rig object.
-					const { transforms, ...cleanRigObject } = appState.rigPlaygroundState.loadedRig;
 					let result = await window.electronAPI.saveOrCreateFile(
 						appState.rigPlaygroundState.loadedRigFilePath,
-						JSON.stringify(cleanRigObject, null, 2)
+						JSON.stringify(cleanedRigObject, null, 2)
 					);
 					console.log(result ? 'Saved Rig Successfully!' : 'Failed to save rig :(');
 					savedChanges = true;
@@ -188,12 +187,12 @@ Ideas/Plans:
 						return;
 					}
 					//cut the runtime properties out of the rig object.
-					const { transforms, ...cleanRigObject } = appState.rigPlaygroundState.loadedRig;
+					let cleanedRigObject: RigObject = RemoveKeysFromObject(rigObject, ['transforms']);
 					let result = await window.electronAPI.saveNewFile(
 						'Save New Rig',
 						'DNA Rig Files',
 						['dnar', 'json'],
-						JSON.stringify(cleanRigObject, null, 2)
+						JSON.stringify(cleanedRigObject, null, 2)
 					);
 					if (result.success) {
 						console.log('Successfully saved new rig!');
@@ -423,7 +422,7 @@ Ideas/Plans:
 							),
 							1
 						);
-						console.log("Removed unused element node from expandedElements");
+						console.log('Removed unused element node from expandedElements');
 					}
 				} else if (n.type === SelectedNodeType.Group) {
 					let groupExists = false;
@@ -433,21 +432,21 @@ Ideas/Plans:
 					if (!groupExists) {
 						appState.rigPlaygroundState.expandedNodes?.splice(
 							appState.rigPlaygroundState.expandedNodes.findIndex(
-								n1 => n1.name === n.name && n1.type === n.type
+								(n1) => n1.name === n.name && n1.type === n.type
 							),
 							1
 						);
-						console.log("Removed unused group node from expandedElements");
+						console.log('Removed unused group node from expandedElements');
 					}
 				} else if (n.type === SelectedNodeType.Root) {
 					if (rigObject.name != n.name) {
 						appState.rigPlaygroundState.expandedNodes?.splice(
 							appState.rigPlaygroundState.expandedNodes.findIndex(
-								n1 => n1.type === SelectedNodeType.Root && n1.name === n.name
+								(n1) => n1.type === SelectedNodeType.Root && n1.name === n.name
 							),
 							1
 						);
-						console.log("Removed unused root node from expandedElements");
+						console.log('Removed unused root node from expandedElements');
 					}
 				}
 			});

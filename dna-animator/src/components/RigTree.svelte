@@ -459,7 +459,9 @@
 					expanded: false,
 					visible: true,
 					show_position_point: false,
+					position_point_color: '#00fc22',
 					show_origin_point: false,
+					origin_point_color: '#ed6f26',
 					offsets: {
 						position: {
 							x: 0,
@@ -496,7 +498,9 @@
 							},
 							interpolation_type: DNARig.RigPointInterpolationType.Linear,
 							controls: [],
-							showControlPoints: false
+							steps: 20,
+							show_control_points: false,
+							control_point_color: '#ed263a'
 						}
 					],
 					fill_color: '#FFFFFF',
@@ -504,10 +508,12 @@
 					closed: true,
 					filled: true
 				};
-				rigObject.layering_order.push({
-					type: DNARig.RigLayeringOrderNodeType.Element,
-					id: newElement.name
-				});
+				if (!groupId) {
+					rigObject.layering_order.push({
+						type: DNARig.RigLayeringOrderNodeType.Element,
+						id: newElement.name
+					});
+				}
 				return newElement;
 			}
 
@@ -522,7 +528,9 @@
 					},
 					interpolation_type: 'Linear',
 					controls: [],
-					showControlPoints: false
+					steps: 20,
+					show_control_points: false,
+					control_point_color: '#ed263a'
 				});
 			}
 
@@ -616,23 +624,53 @@
 							}
 						},
 						{
+							label: 'Duplicate Group',
+							action: () => {
+								let clone: DNARig.RigGroup = JSON.parse(JSON.stringify(group));
+								clone.id = clone.id + '_Clone';
+								rigObject.groups.push(clone);
+								rigObject.elements.forEach((e) => {
+									if (e.group_id !== group.id) return;
+									let elementClone: DNARig.RigElement = JSON.parse(JSON.stringify(e));
+									elementClone.group_id = clone.id;
+									elementClone.name = clone.id + '_' + elementClone.name;
+									rigObject.elements.push(elementClone);
+								});
+								rigObject.layering_order.push({
+									type: DNARig.RigLayeringOrderNodeType.Group,
+									id: clone.id
+								});
+							}
+						},
+						{
 							label: 'Delete Group',
 							action: () => {
 								if (!rigObject) return;
-								rigObject.groups.splice(
-									rigObject.groups.findIndex((g) => g.id === group.id),
-									1
-								);
 								let layerIndex = rigObject.layering_order.findIndex(
 									(n) => n.type === DNARig.RigLayeringOrderNodeType.Group && n.id === group.id
 								);
 								rigObject.layering_order.splice(layerIndex, 1);
-								let expandedIndex = appState.rigPlaygroundState.expandedNodes?.findIndex(
-									(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
-								);
-								if (expandedIndex) {
+								let expandedIndex =
+									appState.rigPlaygroundState.expandedNodes?.findIndex(
+										(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
+									) ?? -1;
+								if (expandedIndex && expandedIndex !== -1) {
+									console.log('deleted expanded node at index: ' + expandedIndex.toString());
 									appState.rigPlaygroundState.expandedNodes?.splice(expandedIndex, 1);
 								}
+								rigObject.elements.slice().forEach((e) => {
+									if (e.group_id !== group.id) return;
+									rigObject.elements.splice(
+										rigObject.elements.findIndex(
+											(e2) => e2.name === e.name && e2.group_id === e.group_id
+										),
+										1
+									);
+								});
+								rigObject.groups.splice(
+									rigObject.groups.findIndex((g) => g.id === group.id),
+									1
+								);
 							}
 						}
 					]
@@ -650,7 +688,7 @@
 							label: 'Duplicate Element',
 							action: () => {
 								if (!rigObject) return;
-								let clone = structuredClone($state.snapshot(element));
+								let clone = JSON.parse(JSON.stringify(element));
 								clone.name = clone.name + '_Clone';
 								rigObject.elements.push(clone);
 							}
@@ -690,10 +728,16 @@
 							label: 'Delete Element',
 							action: () => {
 								if (!rigObject) return;
-								rigObject.elements.splice(
-									rigObject.elements.findIndex((el) => el.name === element.name),
-									1
-								);
+								appState.rigPlaygroundState.expandedNodes?.slice().forEach((node, nodeIndex) => {
+									if (
+										node.name === element.name &&
+										(node.type === DNARig.SelectedNodeType.Element ||
+											node.type === DNARig.SelectedNodeType.Point)
+									) {
+										appState.rigPlaygroundState.expandedNodes?.splice(nodeIndex, 1);
+									}
+								});
+
 								if (element.group_id === '') {
 									rigObject.layering_order.splice(
 										rigObject.layering_order.findIndex(
@@ -712,26 +756,26 @@
 										1
 									);
 								}
-								let expandedIndex = appState.rigPlaygroundState.expandedNodes?.findIndex(
-									(n) => n.type === DNARig.SelectedNodeType.Element && n.name === element.name
+								rigObject.elements.splice(
+									rigObject.elements.findIndex((el) => el.name === element.name),
+									1
 								);
-								if (expandedIndex) {
-									appState.rigPlaygroundState.expandedNodes?.splice(expandedIndex, 1);
-								}
 							}
 						}
 					]
 				};
 			} else if (target.classList.contains('point-node')) {
 				let parentElement = rigObject.elements.find((el) => el.name === target.dataset.elementName);
-				let point = parentElement?.points?.[Number.parseInt(target.id.split('-point-')[1])];
+				let pointIndex = Number.parseInt(target.id.split('-point-')[1]);
+				let point = parentElement?.points?.[pointIndex];
 				if (!point) return;
 				currentContextMenuOptions = {
 					options: [
 						{
 							label: 'Duplicate Point',
 							action: () => {
-								parentElement?.points.push(point);
+								let clone = JSON.parse(JSON.stringify(point));
+								parentElement?.points.push(clone);
 							}
 						},
 						...(point.controls && point.controls.length < 2
@@ -754,6 +798,15 @@
 									parentElement?.points.findIndex((p) => p === point),
 									1
 								);
+								appState.rigPlaygroundState.expandedNodes?.slice().forEach((node, nodeIndex) => {
+									if (
+										node.name === parentElement?.name &&
+										node.type === DNARig.SelectedNodeType.Point &&
+										node.index === pointIndex
+									) {
+										appState.rigPlaygroundState.expandedNodes?.splice(nodeIndex, 1);
+									}
+								});
 							}
 						}
 					]
@@ -773,7 +826,7 @@
 										label: 'Duplicate Control Point',
 										action: () => {
 											if (!parentPoint.controls) return;
-											parentPoint.controls.push(controlPoint);
+											parentPoint.controls.push(JSON.parse(JSON.stringify(controlPoint)));
 										}
 									}
 								]
@@ -786,13 +839,15 @@
 								DNARig.RigPointInterpolationType.CubicBezierCurve &&
 								parentPoint.controls.length > 2) ||
 							parentPoint.interpolation_type === DNARig.RigPointInterpolationType.Linear)
-							? [{
-								label: "Delete Control Point",
-								action: () => {
-									if (!parentPoint.controls) return;
-									parentPoint.controls.splice(parseInt(target.dataset.controlIndex ?? ""), 1);
-								}
-							}]
+							? [
+									{
+										label: 'Delete Control Point',
+										action: () => {
+											if (!parentPoint.controls) return;
+											parentPoint.controls.splice(parseInt(target.dataset.controlIndex ?? ''), 1);
+										}
+									}
+								]
 							: [])
 					]
 				};

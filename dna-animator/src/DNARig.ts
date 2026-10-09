@@ -22,14 +22,18 @@ export interface RigPoint {
     point: RigVector2;
     interpolation_type: RigPointInterpolationType;
     controls?: RigVector2[]; //for the interpolation
-    showControlPoints: boolean;
+    steps: number;
+    show_control_points: boolean;
+    control_point_color: string;
 };
 export interface RigElement {
     name: string;
     group_id?: string;
     visible: boolean;
     show_position_point: boolean;
+    position_point_color: string;
     show_origin_point: boolean;
+    origin_point_color: string;
     offsets: {
         position: RigVector2;
         rotation: number;
@@ -270,8 +274,7 @@ export interface RigEvent {
 
 export const RigLayeringOrderNodeType = {
     Group: 'group',
-    Element: 'element',
-    GroupDivider: 'group_divider'
+    Element: 'element'
 } as const;
 export type RigLayeringOrderNodeType = (typeof RigLayeringOrderNodeType)[keyof typeof RigLayeringOrderNodeType];
 
@@ -466,7 +469,7 @@ export const createDefaultRigObject = (overrides: Partial<RigObject> = {}): RigO
     return {
         name: "New Rig",
         rig_version: "1.0.0",
-        rig_structure_version: "2.7",
+        rig_structure_version: "2.8",
         author: "Unknown",
         author_link: "",
         last_updated_utc: new Date().toISOString(),
@@ -520,4 +523,26 @@ export interface SelectedNode {
     name: string;
     type: SelectedNodeType;
     index: number;
+}
+
+export function RemoveKeysFromObject(obj: any, keysToRemove: string[]): any {
+    if (obj === null || typeof obj !== "object") {
+        return obj;
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(item => RemoveKeysFromObject(item, keysToRemove));
+    }
+    const finishedObj: Record<string, any> = {};
+    Object.keys(obj).forEach((key) => {
+        if (keysToRemove.includes(key)) {
+            return;
+        }
+        const field = obj[key];
+        if (typeof field === "object" && field !== null) {
+            finishedObj[key] = RemoveKeysFromObject(field, keysToRemove);
+        } else {
+            finishedObj[key] = field;
+        }
+    });
+    return finishedObj;
 }

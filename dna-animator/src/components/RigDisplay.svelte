@@ -221,7 +221,7 @@
 						point.controls.length < 2)
 				) {
 					//quadratic bezier curve interpolation to the next point
-					let steps = 20;
+					let steps = point.steps;
 					for (let i = 1; i <= steps; i++) {
 						const timeStep = i / steps;
 						let control = point.controls[0];
@@ -245,13 +245,46 @@
 							elementWorldX,
 							elementWorldY
 						);
-						ctx.lineTo(calculatedPathPointPhysical.x, calculatedNextPointPosition.y);
+						ctx.lineTo(calculatedPathPointPhysical.x, calculatedPathPointPhysical.y);
 					}
 				} else if (
 					point.interpolation_type === RigPointInterpolationType.CubicBezierCurve &&
 					point.controls.length === 2
 				) {
 					//cubic bezier curve interpolation to the next point
+					let steps = point.steps;
+					for (let i = 1; i <= steps; i++) {
+						const timeStep = i / steps;
+						let control = point.controls[0];
+						let controlTwo = point.controls[1];
+						let controlPoint = {
+							x: point.point.x + control.x,
+							y: point.point.y + control.y
+						};
+						let controlPointTwo = {
+							x: point.point.x + controlTwo.x,
+							y: point.point.y + controlTwo.y
+						};
+						let calculatedPathPointVirtual: RigVector2 = {
+							x:
+								Math.pow(1 - timeStep, 3) * point.point.x +
+								3 * Math.pow(1 - timeStep, 2) * timeStep * controlPoint.x +
+								3 * (1 - timeStep) * Math.pow(timeStep, 2) * controlPointTwo.x +
+								Math.pow(timeStep, 3) * nextPoint.point.x,
+							y:
+								Math.pow(1 - timeStep, 3) * point.point.y +
+								3 * Math.pow(1 - timeStep, 2) * timeStep * controlPoint.y +
+								3 * (1 - timeStep) * Math.pow(timeStep, 2) * controlPointTwo.y +
+								Math.pow(timeStep, 3) * nextPoint.point.y
+						};
+						let calculatedPathPointPhysical = CalculatePhysicalPositionFromPhysicalPosition(
+							calculatedPathPointVirtual,
+							elementCalculatedPosition,
+							elementWorldX,
+							elementWorldY
+						);
+						ctx.lineTo(calculatedPathPointPhysical.x, calculatedPathPointPhysical.y);
+					}
 				}
 			});
 			ctx.closePath();
@@ -259,6 +292,51 @@
 			ctx.fillStyle = element.fill_color;
 			ctx.stroke();
 			if (element.filled) ctx.fill();
+
+			element.points.forEach((point) => {
+				if (!point.controls || point.controls.length <= 0 || !point.show_control_points || appState.rigPlaygroundState.disabledAllDebugOptions || appState.rigPlaygroundState.hideAllElements) return;
+				point.controls.forEach((control) => {
+					ctx.beginPath();
+					let controlPoint = {
+						x: point.point.x + control.x,
+						y: point.point.y + control.y
+					};
+					let calculatedControlPointPhysical = CalculatePhysicalPositionFromPhysicalPosition(
+						controlPoint,
+						elementCalculatedPosition,
+						elementWorldX,
+						elementWorldY
+					);
+					ctx.arc(
+						calculatedControlPointPhysical.x,
+						calculatedControlPointPhysical.y,
+						1 * scaleUnit,
+						0,
+						360
+					);
+					ctx.closePath();
+					ctx.fillStyle = point.control_point_color;
+					ctx.fill();
+				});
+			});
+
+			if (!appState.rigPlaygroundState.disabledAllDebugOptions) {
+				if (element.show_position_point) {
+					ctx.beginPath();
+					ctx.arc(elementCalculatedOrigin.x, elementCalculatedOrigin.y, 2, 0, 360);
+					ctx.closePath();
+					ctx.fillStyle = element.position_point_color;
+					ctx.fill();
+				}
+				if (element.show_origin_point) {
+					ctx.beginPath();
+					ctx.arc(elementCalculatedOrigin.x, elementCalculatedOrigin.y, 2, 0, 360);
+					ctx.closePath();
+					ctx.fillStyle = element.origin_point_color;
+					ctx.fill();
+				}
+			}
+			
 
 			/*
 			let calculatedPointsPositions: RigVector2[] = [];
