@@ -221,40 +221,32 @@
 						point.controls.length < 2)
 				) {
 					//quadratic bezier curve interpolation to the next point
-					console.log("Quadratic Bezier Curve!");
-					let timeStep = 0.1;
-					let calculatedPathPoints: RigVector2[] = [];
-					for (let t = 0; t <= 1; t += timeStep) {
-						//time, for now just step 0.1, i will calculate the step later.
-						let controlPoint = point.controls[0];
+					let steps = 20;
+					for (let i = 1; i <= steps; i++) {
+						const timeStep = i / steps;
+						let control = point.controls[0];
+						let controlPoint = {
+							x: point.point.x + control.x,
+							y: point.point.y + control.y
+						};
 						let calculatedPathPointVirtual: RigVector2 = {
 							x:
-								Math.pow(1 - t, 2) * point.point.x +
-								2 * (1 - t) * t * controlPoint.x +
-								Math.pow(t, 2) * nextPoint.point.x,
+								Math.pow(1 - timeStep, 2) * point.point.x +
+								2 * (1 - timeStep) * timeStep * controlPoint.x +
+								Math.pow(timeStep, 2) * nextPoint.point.x,
 							y:
-								Math.pow(1 - t, 2) * point.point.y +
-								2 * (1 - t) * t * controlPoint.y +
-								Math.pow(t, 2) * nextPoint.point.y
+								Math.pow(1 - timeStep, 2) * point.point.y +
+								2 * (1 - timeStep) * timeStep * controlPoint.y +
+								Math.pow(timeStep, 2) * nextPoint.point.y
 						};
-						console.log("Calculated Path Point Virtual " + t + ":", calculatedPathPointVirtual);
 						let calculatedPathPointPhysical = CalculatePhysicalPositionFromPhysicalPosition(
 							calculatedPathPointVirtual,
 							elementCalculatedPosition,
 							elementWorldX,
 							elementWorldY
 						);
-						calculatedPathPoints.push(calculatedPathPointPhysical);
-						console.log("Calculated Path Point Physical " + t + ":", calculatedPathPointPhysical);
+						ctx.lineTo(calculatedPathPointPhysical.x, calculatedNextPointPosition.y);
 					}
-					console.log(calculatedPathPoints);
-					calculatedPathPoints.forEach((point, pointIndex) => {
-						if (pointIndex === 0) ctx.moveTo(point.x, point.y);
-						let nextIndex = pointIndex >= calculatedPathPoints.length - 1 ? 0 : pointIndex + 1;
-						let nextPoint = calculatedPathPoints[nextIndex];
-						if (!nextPoint) return;
-						ctx.lineTo(nextPoint.x, nextPoint.y);
-					});
 				} else if (
 					point.interpolation_type === RigPointInterpolationType.CubicBezierCurve &&
 					point.controls.length === 2
