@@ -100,7 +100,9 @@
       "closed": true,
       "filled": true,
       "position_point_color": "#00ff00",
-      "origin_point_color": "#fb7304"
+      "origin_point_color": "#fb7304",
+      "show_points": false,
+      "points_color": "#000000"
     },
     {
       "name": "Left_Eye_Pupil",

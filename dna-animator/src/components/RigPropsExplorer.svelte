@@ -19,9 +19,11 @@
 	import Text from './PropertiesExplorerComponents/Text.svelte';
 	import VectorTwo from './PropertiesExplorerComponents/VectorTwo.svelte';
 
-	let rigObject = $derived(appState.rigPlaygroundState.loadedRig);
-	let selectedNode = $derived(appState.rigPlaygroundState.selectedNode);
-	let expandedNodes = $derived(appState.rigPlaygroundState.expandedNodes);
+	let {pageId}:{pageId: string} = $props();
+	let pageState = $derived(appState.pageStates.find(ps => ps.id === pageId));
+	let rigObject = $derived(pageState?.loadedRig);
+	let selectedNode = $derived(pageState?.selectedNode);
+	let expandedNodes = $derived(pageState?.expandedNodes);
 	let nodeExpanded = $state(false);
 	let nameErrors: string[] = $state([]);
 	let versionErrors: string[] = $state([]);
@@ -64,7 +66,7 @@
 	<h1>Properties Explorer</h1>
 </div>
 <div class="props-container">
-	{#if rigObject}
+	{#if pageState && rigObject}
 		{#if selectedNode?.type === SelectedNodeType.Root}
 			<!--Root Node-->
 			<Text
@@ -77,7 +79,7 @@
 						return;
 					}
 					if (nameErrors.includes('Rig Name Cannot Be Empty!')) nameErrors.pop();
-					let expandedRootNode = appState.rigPlaygroundState.expandedNodes?.find(
+					let expandedRootNode = pageState.expandedNodes?.find(
 						(n) => n.type === SelectedNodeType.Root
 					);
 					if (expandedRootNode) expandedRootNode.name = value;
@@ -112,10 +114,10 @@
 			<Boolean label="Node Expanded" bind:value={nodeExpanded} />
 			<Boolean
 				label="Disable All Debug Options"
-				bind:value={appState.rigPlaygroundState.disabledAllDebugOptions}
+				bind:value={pageState.disableAllDebugOptions}
 			/>
-			<Boolean label="Hide All Elements" bind:value={appState.rigPlaygroundState.hideAllElements} />
-			<Boolean label="Hide All Groups" bind:value={appState.rigPlaygroundState.hideAllGroups} />
+			<Boolean label="Hide All Elements" bind:value={pageState.hideAllElements} />
+			<Boolean label="Hide All Groups" bind:value={pageState.hideAllGroups} />
 			<Section label="Base Offsets">
 				<VectorTwo label="Starting Position" bind:value={rigObject.offsets.position} />
 				<Number label="Starting Rotation" bind:value={rigObject.offsets.rotation} />
@@ -167,7 +169,7 @@
 								nameErrors.findIndex((e) => e === nameAlreadyInUseErrorText),
 								1
 							);
-						let expandedNode = appState.rigPlaygroundState.expandedNodes?.find(
+						let expandedNode = pageState.expandedNodes?.find(
 							(n) => n.name === currentGroup.id && n.type === SelectedNodeType.Group
 						);
 						if (expandedNode) expandedNode.name = value;
@@ -231,7 +233,7 @@
 								nameErrors.findIndex((e) => e === nameAlreadyInUseErrorText),
 								1
 							);
-						let expandedNode = appState.rigPlaygroundState.expandedNodes?.find(
+						let expandedNode = pageState.expandedNodes?.find(
 							(n) => n.name === currentElement.name && n.type === SelectedNodeType.Element
 						);
 						if (expandedNode) expandedNode.name = value;
@@ -256,8 +258,13 @@
 					bind:value={currentElement.show_position_point}
 				/>
 				<Color label="Position Point Color" bind:value={currentElement.position_point_color} />
+				<Number label="Position Point Radius" bind:value={currentElement.position_point_radius} />
 				<Boolean label="Debug: Show Origin Point" bind:value={currentElement.show_origin_point} />
 				<Color label="Origin Point Color" bind:value={currentElement.origin_point_color} />
+				<Number label="Origin Point Radius" bind:value={currentElement.origin_point_radius} />
+				<Boolean label="Debug: Show Points" bind:value={currentElement.show_points} />
+				<Color label="Points Color" bind:value={currentElement.points_color} />
+				<Number label="Points Radius" bind:value={currentElement.points_radius} />
 				<Section label="Offsets">
 					<VectorTwo label="Starting Position" bind:value={currentElement.offsets.position} />
 					<Number label="Starting Rotation" bind:value={currentElement.offsets.rotation} />

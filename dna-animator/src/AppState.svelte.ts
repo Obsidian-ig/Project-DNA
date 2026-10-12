@@ -1,4 +1,5 @@
 import { browser } from "$app/environment";
+import { untrack } from "svelte";
 import type { RigObject, RigVector2, SelectedNode } from "./DNARig";
 
 //supported themes
@@ -57,7 +58,93 @@ export interface RigDisplayState {
     showGridOverlay: boolean;
     gridColumnsAndRows: RigVector2;
     gridStrokeColor: string;
+    errorMessages: string[];
 }
+
+export interface PageHeader {
+    menu: {
+        type: HeaderType,
+        panels: HeaderPanel[];
+    }
+}
+
+export interface PageWatchRule {
+    watch: any;
+    handler: (data: any) => void;
+}
+
+export class PageState {
+    title: string; //the page title that should be displayed
+    id: string; //the constant id of the page for identification.
+    header: PageHeader;
+    loadedRig: RigObject | null;
+    loadedRigFilePath: string | null;
+    selectedNode: SelectedNode | null;
+    expandedNodes: SelectedNode[] | null;
+    hideAllGroups: boolean;
+    hideAllElements: boolean;
+    disableAllDebugOptions: boolean;
+    showGridOverlay: boolean;
+    gridColumnsAndRows: RigVector2;
+    gridStrokeColor: string;
+    rigErrorMessages: string[];
+    watchRules: PageWatchRule[];
+
+    constructor(title: string, id: string, header: PageHeader, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
+        this.title = title;
+        this.id = id;
+        this.header = header;
+        this.loadedRig = loadedRig;
+        this.loadedRigFilePath = loadedRigFilePath;
+        this.selectedNode = selectedNode;
+        this.expandedNodes = expandedNodes;
+        this.hideAllGroups = hideAllGroups;
+        this.hideAllElements = hideAllElements;
+        this.disableAllDebugOptions = disableAllDebugOptions;
+        this.showGridOverlay = showGridOverlay;
+        this.gridColumnsAndRows = gridColumnsAndRows;
+        this.gridStrokeColor = gridStrokeColor;
+        this.rigErrorMessages = rigErrorMessages;
+        this.watchRules = watchRules;
+
+        for (const rule of watchRules) {
+            $effect(() => {
+                rule.watch(this);
+                untrack(() => {
+                    rule.handler(this);
+                });
+            });
+        }
+    }
+}
+
+export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): PageState => {
+    return new PageState(
+        overrides.title ?? "Title",
+        overrides.id ?? "id",
+        overrides.header ?? {
+            menu: {
+                type: HeaderType.Default,
+                panels: []
+            }
+        },
+        overrides.loadedRig ?? null, //loaded rig
+        overrides.loadedRigFilePath ?? null, //file path
+        overrides.selectedNode ?? null, //selected node
+        overrides.expandedNodes ?? [], //expanded nodes
+        overrides.gridColumnsAndRows ?? {
+            x: 10,
+            y: 10
+        }, //grid columns and rows
+        overrides.gridStrokeColor ?? "strokecolor", //grid stroke color
+        overrides.rigErrorMessages ?? [], //rig errors
+        overrides.watchRules ?? [], //watch rules
+        overrides.hideAllGroups ?? false,
+        overrides.hideAllElements ?? false,
+        overrides.disableAllDebugOptions ?? false,
+        overrides.showGridOverlay ?? false
+    );
+};
 
 
 class AppState {
@@ -65,80 +152,110 @@ class AppState {
     config = $state(this.constAppConfig); //whatever should/needs to be persistant between sessions.
     loading = $state(true);
     loadingErrorMessage: string | null = $state(null);
-    rigPlaygroundState: RigPlaygroundState = $state({ loadedRig: null, loadedRigFilePath: null, selectedNode: null, expandedNodes: [], hideAllGroups: false, hideAllElements: false, disabledAllDebugOptions: false });
-    currentPageConfig: PageConfig | null = $state(null);
-    rigDisplayState: RigDisplayState = $state({
-        showGridOverlay: false,
-        gridColumnsAndRows: {
-            x: 10,
-            y: 10
-        },
-        gridStrokeColor: "#ffffff"
-    });
+    pageStates: PageState[] = $state([
+        CreateDefaultPageState({ title: "Rig Playground", id: "rig_playground" })
+    ]);
 
-    constructor() {
+    /*constructor() {
         $effect.root(() => {
             $effect(() => {
+
+                if (this.rigPlaygroundState.loadedRig) {
+                    let rigErrors: string[] = [];
+                    for (const [key, value] of Object.entries(this.rigPlaygroundState.loadedRig)) {
+                        if (typeof value === typeof String) {
+                            if (!value) {
+                                rigErrors.push("Rig Key ['" + key + "'] is either empty, null, or undefined!");
+                            }
+                        }
+                    }
+
+                    this.rigDisplayState.errorMessages = rigErrors;
+                }
+
                 this.UpdateAppState();
             });
         });
-    }
-    ImportConfigFromLocalStorage(config: AppConfig) {
+    }*/
+
+
+    ImportConfig(config: AppConfig) {
         this.config = config;
-        console.log("Successfully imported config from local storage!");
     }
 
-    ImportRigPlaygroundStateFromLocalStorage(state: RigPlaygroundState) {
-        if (state) this.rigPlaygroundState = state;
+    ImportPageStates(states: PageState[]) {
+        if (states && states.length > 0) this.pageStates = states;
     }
 
-    
-
-    UpdateRigPlaygroundStateLoadedRig(rig: RigObject | null) {
-        this.rigPlaygroundState.loadedRig = rig;
-        this.UpdateRigPlaygroundStateInLocalStorage();
+    CreatePageStatesInLocalStorage() {
+        localStorage.setItem("pageStates", JSON.stringify(this.pageStates));
     }
-    UpdateRigPlaygroundStateRigFilePath(filePath: string | null) {
-        this.rigPlaygroundState.loadedRigFilePath = filePath;
-        this.UpdateRigPlaygroundStateInLocalStorage();
-    }
-    UpdateRigPlaygroundStateSelectedNode(node: SelectedNode | null) {
-        this.rigPlaygroundState.selectedNode = node;
-        this.UpdateRigPlaygroundStateInLocalStorage();
-    }
-    UpdateRigPlaygroundStateInLocalStorage() {
-        if (browser) {
-            localStorage.setItem("rigPlaygroundState", JSON.stringify(this.rigPlaygroundState));
-            //console.log("Updated rig playground state in local storage.");
+    UpdatePageStatePartial(pageStateId: string, changes: Partial<PageState>) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
         }
+        Object.assign(pageState, changes);
+    }
+    UpdatePageStateLoadedRig(pageStateId: string, rig: RigObject | null) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.loadedRig = rig;
+    }
+    UpdatePageStateLoadedRigFilePath(pageStateId: string, filePath: string | null) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.loadedRigFilePath = filePath;
+    }
+    UpdatePageStateSelectedNode(pageStateId: string, selectedNode: SelectedNode | null) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.selectedNode = selectedNode;
+    }
+    UpdatePageStateShowGridOverlay(pageStateId: string, showGridOverlay: boolean) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.showGridOverlay = showGridOverlay;
+    }
+    UpdatePageStateGridColumnsAndRows(pageStateId: string, gridColumnsAndRows: RigVector2) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.gridColumnsAndRows = gridColumnsAndRows;
+    }
+    UpdatePageStateGridStrokeColor(pageStateId: string, gridStrokeColor: string) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.gridStrokeColor = gridStrokeColor;
+    }
+    UpdatePageStateExpandedNodes(pageStateId: string, expandedNodes: SelectedNode[]) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.expandedNodes = expandedNodes;
     }
 
 
-    ImportRigDisplayStateFromLocalStorage(state: RigDisplayState) {
-        if (state) this.rigDisplayState = state;
-    }
-    UpdateRigDisplayStateShowGridOverlay(show: boolean) {
-        this.rigDisplayState.showGridOverlay = show;
-    }
-    UpdateRigDisplayStateGridColumnsAndRows(gridColumnsAndRows: RigVector2) {
-        this.rigDisplayState.gridColumnsAndRows = gridColumnsAndRows;
-    }
-    UpdateRigDisplayStateGridStrokeColor(color: string) {
-        this.rigDisplayState.gridStrokeColor = color;
-    }
-    UpdateRigDisplayStateInLocalStorage() {
-        localStorage.setItem("rigDisplayState", JSON.stringify(this.rigDisplayState));
-    }
-
-
-
-    private UpdateAppState() {
-        localStorage.setItem("appConfig", JSON.stringify(this.config));
-        localStorage.setItem("rigPlaygroundState", JSON.stringify(this.rigPlaygroundState));
-        localStorage.setItem("rigDisplayState", JSON.stringify(this.rigDisplayState));
-        //console.log("Saved changes to appConfig to local storage!");
-        this.UpdateTheme();
-    }
     MarkAsDoneLoading() {
         this.loading = false;
     }
@@ -147,7 +264,6 @@ class AppState {
     }
     ChangeTheme(theme: Theme) {
         this.config.theme = theme;
-        this.UpdateAppState();
     }
     UpdateTheme() {
         const body = document.body;
@@ -164,10 +280,6 @@ class AppState {
                     break;
             }
         }
-    }
-    UpdatePageConfig(config: PageConfig) {
-        let temp = structuredClone(config);
-        this.currentPageConfig = temp;
     }
 }
 

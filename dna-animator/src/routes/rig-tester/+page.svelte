@@ -54,16 +54,21 @@ Ideas/Plans:
 			{
 				id: 'closeRig',
 				action: () => {
+					if (!pageState) return;
 					currentRigFile = null;
-					appState.UpdateRigPlaygroundStateLoadedRig(null);
-					appState.UpdateRigPlaygroundStateRigFilePath('');
-					appState.UpdateRigPlaygroundStateSelectedNode(null);
-					appState.rigPlaygroundState.expandedNodes = [];
+					pageState.loadedRig = null;
+					pageState.loadedRigFilePath = null;
+					pageState.selectedNode = null;
+					pageState.expandedNodes = [];
+					//appState.UpdateRigPlaygroundStateLoadedRig(null);
+					//appState.UpdateRigPlaygroundStateRigFilePath('');
+					//appState.UpdateRigPlaygroundStateSelectedNode(null);
 				}
 			},
 			{
 				id: 'importRig',
 				action: async () => {
+					if (!pageState) return;
 					console.log('Import Rig!');
 					let selectedFilePaths = await window.electronAPI.openFile(
 						'Select a Rig File',
@@ -123,35 +128,42 @@ Ideas/Plans:
 							};
 						});
 					}
-					appState.rigPlaygroundState.expandedNodes = [];
-					appState.UpdateRigPlaygroundStateLoadedRig(rigObject);
-					appState.UpdateRigPlaygroundStateRigFilePath(rigFilePath);
+					pageState.expandedNodes = [];
+					pageState.loadedRig = rigObject;
+					pageState.loadedRigFilePath = rigFilePath;
+					//appState.UpdateRigPlaygroundStateLoadedRig(rigObject);
+					//appState.UpdateRigPlaygroundStateRigFilePath(rigFilePath);
 				}
 			},
 			{
 				id: 'newRig',
 				action: () => {
-					appState.rigPlaygroundState.expandedNodes = [];
-					appState.UpdateRigPlaygroundStateLoadedRig(createDefaultRigObject());
-					appState.UpdateRigPlaygroundStateRigFilePath(null);
-					appState.UpdateRigPlaygroundStateSelectedNode(null);
+					if (!pageState) return;
+					pageState.expandedNodes = [];
+					pageState.loadedRig = createDefaultRigObject();
+					pageState.loadedRigFilePath = null;
+					pageState.selectedNode = null;
+					//appState.UpdatePageStateLoadedRig(pageId, createDefaultRigObject());
+					//appState.UpdatePageStateLoadedRigFilePath(pageId, null);
+					//appState.UpdatePageStateSelectedNode(pageId, null);
 					console.log('New Rig!');
 				}
 			},
 			{
 				id: 'saveRig',
 				action: async () => {
+					if (!pageState) return;
 					console.log('Save Rig!');
-					if (!appState.rigPlaygroundState.loadedRig) {
+					if (!pageState.loadedRig) {
 						console.log('Failed to save rig as it is null in the appstate!');
 						return;
 					}
 					//cut the runtime properties out of the rig object.
 					let cleanedRigObject: RigObject = RemoveKeysFromObject(rigObject, ['transforms']);
-					if (!appState.rigPlaygroundState.loadedRigFilePath) {
+					if (!pageState.loadedRigFilePath) {
 						console.log('Unable to save rig as the file path is invalid!');
 						console.log('Save Rig As!');
-						if (!appState.rigPlaygroundState.loadedRig) {
+						if (!pageState.loadedRig) {
 							console.log('Failed to save rig as it is null in the appstate!');
 							return;
 						}
@@ -163,7 +175,8 @@ Ideas/Plans:
 						);
 						if (result.success) {
 							console.log('Successfully saved new rig!');
-							appState.UpdateRigPlaygroundStateRigFilePath(result.filePath);
+							pageState.loadedRigFilePath = result.filePath;
+							//appState.UpdateRigPlaygroundStateRigFilePath(result.filePath);
 						} else {
 							console.log('Failed to save new rig :(');
 						}
@@ -171,7 +184,7 @@ Ideas/Plans:
 						return;
 					}
 					let result = await window.electronAPI.saveOrCreateFile(
-						appState.rigPlaygroundState.loadedRigFilePath,
+						pageState.loadedRigFilePath,
 						JSON.stringify(cleanedRigObject, null, 2)
 					);
 					console.log(result ? 'Saved Rig Successfully!' : 'Failed to save rig :(');
@@ -181,8 +194,9 @@ Ideas/Plans:
 			{
 				id: 'saveRigAs',
 				action: async () => {
+					if (!pageState) return;
 					console.log('Save Rig As!');
-					if (!appState.rigPlaygroundState.loadedRig) {
+					if (!pageState.loadedRig) {
 						console.log('Failed to save rig as it is null in the appstate!');
 						return;
 					}
@@ -196,7 +210,8 @@ Ideas/Plans:
 					);
 					if (result.success) {
 						console.log('Successfully saved new rig!');
-						appState.UpdateRigPlaygroundStateRigFilePath(result.filePath);
+						pageState.loadedRigFilePath = result.filePath;
+						//appState.UpdateRigPlaygroundStateRigFilePath(result.filePath);
 					} else {
 						console.log('Failed to save new rig :(');
 					}
@@ -206,12 +221,13 @@ Ideas/Plans:
 			{
 				id: 'openInFileExplorer',
 				action: () => {
+					if (!pageState) return;
 					console.log('Open File Explorer!');
-					if (!appState.rigPlaygroundState.loadedRigFilePath) {
+					if (!pageState.loadedRigFilePath) {
 						console.log('Failed to get rig file path from appstate!');
 						return;
 					}
-					let splicedPath = appState.rigPlaygroundState.loadedRigFilePath.split('\\');
+					let splicedPath = pageState.loadedRigFilePath.split('\\');
 					let splicedFolderPath = splicedPath.splice(splicedPath.length - 2, 1);
 					let joinedFolderPath = splicedFolderPath.join('');
 					console.log(joinedFolderPath);
@@ -302,11 +318,11 @@ Ideas/Plans:
 	});
 	onDestroy(() => registerHeaderActions({})); //clears the registered actions obviously
 
+	const pageId = "rig_playground";
 	let currentRigFile: File | null = $state(null);
 	let savedChanges = $state(true);
-	let rigObject: RigObject = $derived(
-		JSON.parse(JSON.stringify(appState.rigPlaygroundState.loadedRig))
-	);
+	let pageState = $derived(appState.pageStates.find(ps => ps.id === pageId));
+	let rigObject: RigObject | null | undefined = $derived(pageState?.loadedRig);
 
 	$effect(() => {
 		let config = {
@@ -401,23 +417,23 @@ Ideas/Plans:
 			}
 		};
 		config.title = config.title + (savedChanges ? '' : ' *');
-		appState.UpdatePageConfig(config);
+		appState.UpdatePageStatePartial(pageId, config);
 	});
 
 	$effect(() => {
-		if (rigObject) {
+		if (pageState && rigObject) {
 			savedChanges = false;
 
 			//remove elements/groups inside the expanded nodes that don't exist in the rig elements/groups.
-			appState.rigPlaygroundState.expandedNodes?.slice().forEach((n) => {
+			pageState.expandedNodes?.slice().forEach((n) => {
 				if (n.type === SelectedNodeType.Element) {
 					let elementExists = false;
 					rigObject.elements.forEach((e) => {
 						if (e.name === n.name && n.type === SelectedNodeType.Element) elementExists = true;
 					});
 					if (!elementExists) {
-						appState.rigPlaygroundState.expandedNodes?.splice(
-							appState.rigPlaygroundState.expandedNodes.findIndex(
+						pageState.expandedNodes?.splice(
+							pageState.expandedNodes.findIndex(
 								(n1) => n1.name === n.name && n1.type === n.type
 							),
 							1
@@ -430,8 +446,8 @@ Ideas/Plans:
 						if (g.id === n.name && n.type === SelectedNodeType.Group) groupExists = true;
 					});
 					if (!groupExists) {
-						appState.rigPlaygroundState.expandedNodes?.splice(
-							appState.rigPlaygroundState.expandedNodes.findIndex(
+						pageState.expandedNodes?.splice(
+							pageState.expandedNodes.findIndex(
 								(n1) => n1.name === n.name && n1.type === n.type
 							),
 							1
@@ -440,8 +456,8 @@ Ideas/Plans:
 					}
 				} else if (n.type === SelectedNodeType.Root) {
 					if (rigObject.name != n.name) {
-						appState.rigPlaygroundState.expandedNodes?.splice(
-							appState.rigPlaygroundState.expandedNodes.findIndex(
+						pageState.expandedNodes?.splice(
+							pageState.expandedNodes.findIndex(
 								(n1) => n1.type === SelectedNodeType.Root && n1.name === n.name
 							),
 							1
@@ -455,34 +471,34 @@ Ideas/Plans:
 
 	/*Rig Playground page title based on saved state*/
 	$effect(() => {
-		if (appState.currentPageConfig) {
+		if (pageState) {
 			if (savedChanges) {
-				appState.currentPageConfig.title = 'Rig Playground';
+				pageState.title = 'Rig Playground';
 			} else {
-				appState.currentPageConfig.title = 'Rig Playground *';
+				pageState.title = 'Rig Playground *';
 			}
 		}
 	});
 </script>
 
 <svelte:head>
-	<title>{appState.currentPageConfig?.title}{savedChanges ? '' : ' *'}</title>
+	<title>{pageState?.title}{savedChanges ? '' : ' *'}</title>
 </svelte:head>
 
 <div class="app" id="app">
 	<Splitpanes style="height:100%; max-height: 100%; overflow: hidden;">
 		<Pane snapSize={5}>
-			<RigTree rigFile={currentRigFile} />
+			<RigTree pageId={pageId} />
 		</Pane>
 		<Pane snapSize={5}>
 			<!--Rig Item Properties Explorer-->
-			<RigPropsExplorer />
+			<RigPropsExplorer pageId={pageId} />
 		</Pane>
 		<Pane>
 			<Splitpanes horizontal={true}>
 				<Pane snapSize={3}>
 					<!--Render Preview Screen-->
-					<RigDisplay />
+					<RigDisplay pageId={pageId} />
 				</Pane>
 				<Pane snapSize={3}>
 					<!--Device Sensor Settings/Simulation-->

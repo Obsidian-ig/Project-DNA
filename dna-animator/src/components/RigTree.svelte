@@ -21,12 +21,13 @@
 		id: string;
 	}
 
-	let { rigFile }: { rigFile: File | null } = $props();
-	let rigObject = $derived(appState.rigPlaygroundState.loadedRig);
-	let selectedNode = $derived(appState.rigPlaygroundState.selectedNode);
+	let {pageId}:{pageId: string} = $props();
+	let pageState = $derived(appState.pageStates.find(ps => ps.id === pageId));
+	let rigObject = $derived(pageState?.loadedRig);
+	let selectedNode = $derived(pageState?.selectedNode);
 	let showContextMenu = $state(false);
 	let currentContextMenuOptions: ContextMenuOptions | null = $state(null);
-	let expandedNodes = $derived(appState.rigPlaygroundState.expandedNodes);
+	let expandedNodes = $derived(pageState?.expandedNodes);
 	let dragged: DraggedElement | null = $state(null);
 	let rigTreeNodes = $derived(rigObject ? BuildTree(rigObject) : []);
 
@@ -97,10 +98,6 @@
 	$effect(() => {
 		if (!rigObject) return;
 		RepairRigLayeringOrder();
-	});
-
-	$effect(() => {
-		appState.UpdateRigPlaygroundStateSelectedNode(selectedNode);
 	});
 
 	function SaveLayerOrder(nodes: RigTreeNode[]) {
@@ -460,8 +457,13 @@
 					visible: true,
 					show_position_point: false,
 					position_point_color: '#00fc22',
+					position_point_radius: 1.5,
 					show_origin_point: false,
 					origin_point_color: '#ed6f26',
+					origin_point_radius: 1.5,
+					show_points: false,
+					points_color: '#03e3fc',
+					points_radius: 1.5,
 					offsets: {
 						position: {
 							x: 0,
@@ -500,7 +502,8 @@
 							controls: [],
 							steps: 20,
 							show_control_points: false,
-							control_point_color: '#ed263a'
+							control_point_color: '#ed263a',
+							control_point_radius: 1.5
 						}
 					],
 					fill_color: '#FFFFFF',
@@ -530,7 +533,8 @@
 					controls: [],
 					steps: 20,
 					show_control_points: false,
-					control_point_color: '#ed263a'
+					control_point_color: '#ed263a',
+					control_point_radius: 1.5
 				});
 			}
 
@@ -645,18 +649,18 @@
 						{
 							label: 'Delete Group',
 							action: () => {
-								if (!rigObject) return;
+								if (!pageState || !rigObject) return;
 								let layerIndex = rigObject.layering_order.findIndex(
 									(n) => n.type === DNARig.RigLayeringOrderNodeType.Group && n.id === group.id
 								);
 								rigObject.layering_order.splice(layerIndex, 1);
 								let expandedIndex =
-									appState.rigPlaygroundState.expandedNodes?.findIndex(
+									pageState.expandedNodes?.findIndex(
 										(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
 									) ?? -1;
 								if (expandedIndex && expandedIndex !== -1) {
 									console.log('deleted expanded node at index: ' + expandedIndex.toString());
-									appState.rigPlaygroundState.expandedNodes?.splice(expandedIndex, 1);
+									pageState.expandedNodes?.splice(expandedIndex, 1);
 								}
 								rigObject.elements.slice().forEach((e) => {
 									if (e.group_id !== group.id) return;
@@ -727,14 +731,14 @@
 						{
 							label: 'Delete Element',
 							action: () => {
-								if (!rigObject) return;
-								appState.rigPlaygroundState.expandedNodes?.slice().forEach((node, nodeIndex) => {
+								if (!pageState || !rigObject) return;
+								pageState.expandedNodes?.slice().forEach((node, nodeIndex) => {
 									if (
 										node.name === element.name &&
 										(node.type === DNARig.SelectedNodeType.Element ||
 											node.type === DNARig.SelectedNodeType.Point)
 									) {
-										appState.rigPlaygroundState.expandedNodes?.splice(nodeIndex, 1);
+										pageState.expandedNodes?.splice(nodeIndex, 1);
 									}
 								});
 
@@ -794,17 +798,18 @@
 						{
 							label: 'Delete Point',
 							action: () => {
+								if (!pageState) return;
 								parentElement?.points.splice(
 									parentElement?.points.findIndex((p) => p === point),
 									1
 								);
-								appState.rigPlaygroundState.expandedNodes?.slice().forEach((node, nodeIndex) => {
+								pageState.expandedNodes?.slice().forEach((node, nodeIndex) => {
 									if (
 										node.name === parentElement?.name &&
 										node.type === DNARig.SelectedNodeType.Point &&
 										node.index === pointIndex
 									) {
-										appState.rigPlaygroundState.expandedNodes?.splice(nodeIndex, 1);
+										pageState.expandedNodes?.splice(nodeIndex, 1);
 									}
 								});
 							}

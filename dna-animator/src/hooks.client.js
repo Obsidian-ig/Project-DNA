@@ -5,24 +5,17 @@ console.log("App initializing...");
 let pulledConfig = localStorage.getItem("appConfig");
 if (pulledConfig) {
     let configObject = JSON.parse(pulledConfig);
-    appState.ImportConfigFromLocalStorage(configObject);
+    appState.ImportConfig(configObject);
 } else {
     localStorage.setItem("appConfig", JSON.stringify(appState.constAppConfig));
 }
 
-let pulledRigPlaygroundState = localStorage.getItem("rigPlaygroundState");
-if (pulledRigPlaygroundState) {
-    let stateObject = pulledRigPlaygroundState ? JSON.parse(pulledRigPlaygroundState) : undefined;
-    appState.ImportRigPlaygroundStateFromLocalStorage(stateObject);
+let pulledPageStates = localStorage.getItem("pageStates");
+if (pulledPageStates) {
+    let stateObject = pulledPageStates ? JSON.parse(pulledPageStates) : undefined;
+    appState.ImportPageStates(stateObject);
 } else {
-    appState.UpdateRigPlaygroundStateInLocalStorage();
-}
-let pulledRigDisplayState = localStorage.getItem("rigDisplayState");
-if (pulledRigDisplayState) {
-    let stateObject = JSON.parse(pulledRigDisplayState);
-    appState.ImportRigDisplayStateFromLocalStorage(stateObject);
-} else {
-    appState.UpdateRigDisplayStateInLocalStorage();
+    appState.CreatePageStatesInLocalStorage();
 }
 
 

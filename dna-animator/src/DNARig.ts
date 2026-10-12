@@ -25,6 +25,7 @@ export interface RigPoint {
     steps: number;
     show_control_points: boolean;
     control_point_color: string;
+    control_point_radius: number;
 };
 export interface RigElement {
     name: string;
@@ -32,8 +33,13 @@ export interface RigElement {
     visible: boolean;
     show_position_point: boolean;
     position_point_color: string;
+    position_point_radius: number;
     show_origin_point: boolean;
     origin_point_color: string;
+    origin_point_radius: number;
+    show_points: boolean;
+    points_color: string;
+    points_radius: number;
     offsets: {
         position: RigVector2;
         rotation: number;

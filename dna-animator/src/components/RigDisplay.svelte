@@ -13,17 +13,13 @@
 	let canvas: HTMLCanvasElement;
 	let displayWidth = $state(0);
 	let displayHeight = $state(0);
-	let rigObject = $derived(appState.rigPlaygroundState.loadedRig);
+	let {pageId}:{pageId: string} = $props();
+	let pageState = $derived(appState.pageStates.find(ps => ps.id === pageId));
+	let rigObject = $derived(pageState?.loadedRig);
 	let showSettingsPanel = $state(false);
-	let gridOverlay = $derived(appState.rigDisplayState.showGridOverlay);
-	let gridColumnsAndRows: RigVector2 = $derived(appState.rigDisplayState.gridColumnsAndRows);
-	let gridStrokeColor: string = $derived(appState.rigDisplayState.gridStrokeColor);
-
-	$effect(() => {
-		appState.UpdateRigDisplayStateShowGridOverlay(gridOverlay);
-		appState.UpdateRigDisplayStateGridColumnsAndRows(gridColumnsAndRows);
-		appState.UpdateRigDisplayStateGridStrokeColor(gridStrokeColor);
-	});
+	let gridOverlay = $derived(pageState?.showGridOverlay ?? false);
+	let gridColumnsAndRows: RigVector2 = $derived(pageState?.gridColumnsAndRows ?? {x:10,y:10});
+	let gridStrokeColor: string = $derived(pageState?.gridStrokeColor ?? '#ffffff');
 
 	$effect(() => {
 		if (!canvas || !rigObject) return;
@@ -66,29 +62,6 @@
 			return {
 				x: physicalPoint.x + pointToCalc.x * scaleUnit,
 				y: physicalPoint.y + pointToCalc.y * scaleUnit
-			};
-		}
-
-		function CalculateTotalPhysicalPositionForPoint(
-			element: RigElement,
-			pointPosition: RigVector2
-		): RigVector2 | null {
-			if (!rigObject) return null;
-			return {
-				x:
-					(rigObject.offsets.position.x +
-						rigObject.transforms.position.x +
-						element.offsets.position.x +
-						element.transforms.position.x +
-						pointPosition.x) *
-					scaleUnit,
-				y:
-					(rigObject.offsets.position.y +
-						rigObject.transforms.position.y +
-						element.offsets.position.y +
-						element.transforms.position.y +
-						pointPosition.y) *
-					scaleUnit
 			};
 		}
 
@@ -294,71 +267,88 @@
 			if (element.filled) ctx.fill();
 
 			element.points.forEach((point) => {
-				if (!point.controls || point.controls.length <= 0 || !point.show_control_points || appState.rigPlaygroundState.disabledAllDebugOptions || appState.rigPlaygroundState.hideAllElements) return;
-				point.controls.forEach((control) => {
+				if (element.show_points) {
 					ctx.beginPath();
-					let controlPoint = {
-						x: point.point.x + control.x,
-						y: point.point.y + control.y
-					};
-					let calculatedControlPointPhysical = CalculatePhysicalPositionFromPhysicalPosition(
-						controlPoint,
+					let calculatedPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
+						point.point,
 						elementCalculatedPosition,
 						elementWorldX,
 						elementWorldY
 					);
 					ctx.arc(
-						calculatedControlPointPhysical.x,
-						calculatedControlPointPhysical.y,
-						1 * scaleUnit,
+						calculatedPointPosition.x,
+						calculatedPointPosition.y,
+						element.points_radius * scaleUnit,
 						0,
 						360
 					);
 					ctx.closePath();
-					ctx.fillStyle = point.control_point_color;
+					ctx.fillStyle = element.points_color;
 					ctx.fill();
-				});
+				}
+
+				if (
+					pageState &&
+					point.controls &&
+					point.controls.length > 0 &&
+					point.show_control_points &&
+					!pageState.disableAllDebugOptions &&
+					!pageState.hideAllElements
+				) {
+					point.controls.forEach((control) => {
+						ctx.beginPath();
+						let controlPoint = {
+							x: point.point.x + control.x,
+							y: point.point.y + control.y
+						};
+						let calculatedControlPointPhysical = CalculatePhysicalPositionFromPhysicalPosition(
+							controlPoint,
+							elementCalculatedPosition,
+							elementWorldX,
+							elementWorldY
+						);
+						ctx.arc(
+							calculatedControlPointPhysical.x,
+							calculatedControlPointPhysical.y,
+							point.control_point_radius * scaleUnit,
+							0,
+							360
+						);
+						ctx.closePath();
+						ctx.fillStyle = point.control_point_color;
+						ctx.fill();
+					});
+				}
 			});
 
-			if (!appState.rigPlaygroundState.disabledAllDebugOptions) {
+			if (pageState && !pageState.disableAllDebugOptions) {
 				if (element.show_position_point) {
 					ctx.beginPath();
-					ctx.arc(elementCalculatedOrigin.x, elementCalculatedOrigin.y, 2, 0, 360);
+					ctx.arc(
+						elementCalculatedOrigin.x,
+						elementCalculatedOrigin.y,
+						element.position_point_radius * scaleUnit,
+						0,
+						360
+					);
 					ctx.closePath();
 					ctx.fillStyle = element.position_point_color;
 					ctx.fill();
 				}
 				if (element.show_origin_point) {
 					ctx.beginPath();
-					ctx.arc(elementCalculatedOrigin.x, elementCalculatedOrigin.y, 2, 0, 360);
+					ctx.arc(
+						elementCalculatedOrigin.x,
+						elementCalculatedOrigin.y,
+						element.origin_point_radius * scaleUnit,
+						0,
+						360
+					);
 					ctx.closePath();
 					ctx.fillStyle = element.origin_point_color;
 					ctx.fill();
 				}
 			}
-			
-
-			/*
-			let calculatedPointsPositions: RigVector2[] = [];
-			element.points.slice().forEach((point, index) => {
-				let calculatedPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
-					point.point,
-					elementCalculatedPosition,
-					elementWorldX,
-					elementWorldY
-				);
-				calculatedPointsPositions.push(calculatedPointPosition);
-			});
-			ctx.beginPath();
-			ctx.moveTo(calculatedPointsPositions?.[0].x, calculatedPointsPositions?.[0].y);
-			for (let i = 1; i < calculatedPointsPositions.length; i++) {
-				ctx?.lineTo(calculatedPointsPositions[i].x, calculatedPointsPositions[i].y);
-			}
-			ctx.closePath();
-			ctx.fillStyle = element.fill_color;
-			ctx.strokeStyle = element.stroke_color;
-			ctx.fill();
-			ctx.stroke();*/
 		}
 		function Draw() {
 			if (!rigObject || !ctx) return;
@@ -381,11 +371,11 @@
 			rigObject.layering_order.slice().forEach((item) => {
 				if (item.type === RigLayeringOrderNodeType.Group) {
 					let group = rigObject.groups.find((g) => g.id === item.id);
-					if (!group) return;
+					if (!group || !pageState) return;
 					if (
 						!group.visible ||
-						appState.rigPlaygroundState.hideAllGroups ||
-						appState.rigPlaygroundState.hideAllElements
+						pageState.hideAllGroups ||
+						pageState.hideAllElements
 					)
 						return;
 
