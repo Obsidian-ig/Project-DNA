@@ -4,7 +4,7 @@ import Header from "../header.svelte";
 export function load(): PageConfig {
     return {
         title: "Rig Playground",
-        id: "Rig Playground",
+        id: "rig_playground",
         header: {
             menu: {
                 type: HeaderType.File,

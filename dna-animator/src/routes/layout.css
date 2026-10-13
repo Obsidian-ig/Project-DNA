@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@plugin '@tailwindcss/forms';
 
 /*Theme Provided By https://iamsajid.com/ui-colors/ (thank you for making this tool)*/
 :root {

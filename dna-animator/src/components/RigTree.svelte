@@ -882,7 +882,7 @@
 	<div
 		class="rig-tree-container"
 		onclick={() => {
-			selectedNode = null;
+			appState.UpdatePageStateSelectedNode(pageId, null);
 		}}
 		ondragover={(e) => e.preventDefault()}
 		ondragenter={(e) => {
@@ -938,7 +938,7 @@
 				onclick={(e) => {
 					e.stopPropagation();
 					if (rigObject)
-						selectedNode = { name: rigObject.name, type: DNARig.SelectedNodeType.Root, index: 0 };
+						appState.UpdatePageStateSelectedNode(pageId, { name: rigObject.name, type: DNARig.SelectedNodeType.Root, index: 0 });
 				}}>{rigObject?.name}</button
 			>
 		</div>
@@ -1019,11 +1019,11 @@
 									onclick={(e) => {
 										e.stopPropagation();
 										if (rigObject)
-											selectedNode = {
+											appState.UpdatePageStateSelectedNode(pageId, {
 												name: group.id,
 												type: DNARig.SelectedNodeType.Group,
 												index: groupIndex
-											};
+											});
 									}}>{group.id}</button
 								>
 							</div>
@@ -1137,11 +1137,11 @@
 			onclick={(e) => {
 				e.stopPropagation();
 				if (rigObject)
-					selectedNode = {
+					appState.UpdatePageStateSelectedNode(pageId, {
 						name: element.name,
 						type: DNARig.SelectedNodeType.Element,
 						index: elementIndex
-					};
+					});
 			}}
 		>
 			{element.name}
@@ -1211,11 +1211,11 @@
 					onclick={(e) => {
 						e.stopPropagation();
 						if (rigObject)
-							selectedNode = {
+							appState.UpdatePageStateSelectedNode(pageId, {
 								name: element.name,
 								type: DNARig.SelectedNodeType.Point,
 								index: pointIndex
-							};
+							});
 					}}>Point: {pointIndex}</button
 				>
 			</div>
@@ -1240,11 +1240,11 @@
 							onclick={(e) => {
 								e.stopPropagation();
 								if (rigObject)
-									selectedNode = {
+									appState.UpdatePageStateSelectedNode(pageId, {
 										name: element.name + '_' + 'Point_' + pointIndex.toString(),
 										type: DNARig.SelectedNodeType.ControlPoint,
 										index: controlIndex
-									};
+									});
 							}}
 						>
 							Control: {controlIndex}

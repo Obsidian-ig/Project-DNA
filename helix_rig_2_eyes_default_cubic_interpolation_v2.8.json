@@ -72,7 +72,7 @@
           "steps": 20,
           "controlPointColor": "#e54343",
           "show_control_points": false,
-          "control_point_color": "#000000"
+          "control_point_color": "#4b00fa"
         },
         {
           "point": {
@@ -92,7 +92,9 @@
           ],
           "steps": 20,
           "showControlPoints": false,
-          "controlPointColor": "#00ff4c"
+          "controlPointColor": "#00ff4c",
+          "show_control_points": false,
+          "control_point_color": "#4b00fa"
         }
       ],
       "fill_color": "#FFFFFF",
@@ -102,7 +104,10 @@
       "position_point_color": "#00ff00",
       "origin_point_color": "#fb7304",
       "show_points": false,
-      "points_color": "#000000"
+      "points_color": "#ff00f7",
+      "position_point_radius": 1.5,
+      "origin_point_radius": 1.5,
+      "points_radius": 1.5
     },
     {
       "name": "Left_Eye_Pupil",
@@ -146,7 +151,8 @@
           ],
           "steps": 20,
           "showControlPoints": false,
-          "controlPointColor": "#ed263a"
+          "controlPointColor": "#ed263a",
+          "control_point_color": "#4b00fa"
         },
         {
           "point": {
@@ -166,7 +172,8 @@
           ],
           "steps": 20,
           "showControlPoints": false,
-          "controlPointColor": "#ed263a"
+          "controlPointColor": "#ed263a",
+          "control_point_color": "#4b00fa"
         }
       ],
       "fill_color": "#000000",
@@ -174,7 +181,12 @@
       "closed": true,
       "filled": true,
       "position_point_color": "#00ff00",
-      "origin_point_color": "#d77304"
+      "origin_point_color": "#d77304",
+      "show_points": false,
+      "position_point_radius": 1.5,
+      "origin_point_radius": 1.5,
+      "points_color": "#ff00f7",
+      "points_radius": 1.5
     },
     {
       "name": "Right_Eye_Background",
@@ -218,7 +230,8 @@
           ],
           "showControlPoints": false,
           "steps": 20,
-          "controlPointColor": "#e54343"
+          "controlPointColor": "#e54343",
+          "control_point_color": "#4b00fa"
         },
         {
           "point": {
@@ -238,7 +251,9 @@
           ],
           "steps": 20,
           "showControlPoints": false,
-          "controlPointColor": "#00ff4c"
+          "controlPointColor": "#00ff4c",
+          "show_control_points": false,
+          "control_point_color": "#4b00fa"
         }
       ],
       "fill_color": "#FFFFFF",
@@ -246,7 +261,12 @@
       "closed": true,
       "filled": true,
       "position_point_color": "#00ff00",
-      "origin_point_color": "#fb7304"
+      "origin_point_color": "#fb7304",
+      "show_points": false,
+      "position_point_radius": 1.5,
+      "origin_point_radius": 1.5,
+      "points_color": "#ff00f7",
+      "points_radius": 1.5
     },
     {
       "name": "Right_Eye_Pupil",
@@ -290,7 +310,9 @@
           ],
           "steps": 20,
           "showControlPoints": false,
-          "controlPointColor": "#ed263a"
+          "controlPointColor": "#ed263a",
+          "show_control_points": false,
+          "control_point_color": "#4b00fa"
         },
         {
           "point": {
@@ -310,7 +332,9 @@
           ],
           "steps": 20,
           "showControlPoints": false,
-          "controlPointColor": "#ed263a"
+          "controlPointColor": "#ed263a",
+          "show_control_points": false,
+          "control_point_color": "#4b00fa"
         }
       ],
       "fill_color": "#000000",
@@ -318,7 +342,12 @@
       "closed": true,
       "filled": true,
       "position_point_color": "#00ff00",
-      "origin_point_color": "#fb7304"
+      "origin_point_color": "#fb7304",
+      "show_points": false,
+      "points_color": "#ff00f7",
+      "position_point_radius": 1.5,
+      "origin_point_radius": 1.5,
+      "points_radius": 1.5
     }
   ],
   "groups": [

@@ -12,7 +12,7 @@ Ideas/Plans:
 -->
 
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import {
 		appState,
 		HeaderPanelOptionType,
@@ -56,13 +56,10 @@ Ideas/Plans:
 				action: () => {
 					if (!pageState) return;
 					currentRigFile = null;
-					pageState.loadedRig = null;
-					pageState.loadedRigFilePath = null;
-					pageState.selectedNode = null;
-					pageState.expandedNodes = [];
-					//appState.UpdateRigPlaygroundStateLoadedRig(null);
-					//appState.UpdateRigPlaygroundStateRigFilePath('');
-					//appState.UpdateRigPlaygroundStateSelectedNode(null);
+					appState.UpdatePageStateLoadedRig(pageId, null);
+					appState.UpdatePageStateLoadedRigFilePath(pageId, null);
+					appState.UpdatePageStateSelectedNode(pageId, null);
+					appState.UpdatePageStateExpandedNodes(pageId, []);
 				}
 			},
 			{
@@ -128,24 +125,19 @@ Ideas/Plans:
 							};
 						});
 					}
-					pageState.expandedNodes = [];
-					pageState.loadedRig = rigObject;
-					pageState.loadedRigFilePath = rigFilePath;
-					//appState.UpdateRigPlaygroundStateLoadedRig(rigObject);
-					//appState.UpdateRigPlaygroundStateRigFilePath(rigFilePath);
+					appState.UpdatePageStateExpandedNodes(pageId, []);
+					appState.UpdatePageStateLoadedRig(pageId, rigObject);
+					appState.UpdatePageStateLoadedRigFilePath(pageId, rigFilePath);
 				}
 			},
 			{
 				id: 'newRig',
 				action: () => {
 					if (!pageState) return;
-					pageState.expandedNodes = [];
-					pageState.loadedRig = createDefaultRigObject();
-					pageState.loadedRigFilePath = null;
-					pageState.selectedNode = null;
-					//appState.UpdatePageStateLoadedRig(pageId, createDefaultRigObject());
-					//appState.UpdatePageStateLoadedRigFilePath(pageId, null);
-					//appState.UpdatePageStateSelectedNode(pageId, null);
+					appState.UpdatePageStateExpandedNodes(pageId, []);
+					appState.UpdatePageStateLoadedRig(pageId, createDefaultRigObject());
+					appState.UpdatePageStateLoadedRigFilePath(pageId, null);
+					appState.UpdatePageStateSelectedNode(pageId, null);
 					console.log('New Rig!');
 				}
 			},
@@ -175,12 +167,12 @@ Ideas/Plans:
 						);
 						if (result.success) {
 							console.log('Successfully saved new rig!');
-							pageState.loadedRigFilePath = result.filePath;
-							//appState.UpdateRigPlaygroundStateRigFilePath(result.filePath);
+							appState.UpdatePageStateLoadedRigFilePath(pageId, result.filePath);
 						} else {
 							console.log('Failed to save new rig :(');
 						}
 						savedChanges = true;
+						appState.UpdatePageStatePartial(pageId, { title: 'Rig Playground' });
 						return;
 					}
 					let result = await window.electronAPI.saveOrCreateFile(
@@ -189,6 +181,7 @@ Ideas/Plans:
 					);
 					console.log(result ? 'Saved Rig Successfully!' : 'Failed to save rig :(');
 					savedChanges = true;
+					appState.UpdatePageStatePartial(pageId, { title: 'Rig Playground' });
 				}
 			},
 			{
@@ -210,12 +203,12 @@ Ideas/Plans:
 					);
 					if (result.success) {
 						console.log('Successfully saved new rig!');
-						pageState.loadedRigFilePath = result.filePath;
-						//appState.UpdateRigPlaygroundStateRigFilePath(result.filePath);
+						appState.UpdatePageStateLoadedRigFilePath(pageId, result.filePath);
 					} else {
 						console.log('Failed to save new rig :(');
 					}
 					savedChanges = true;
+					appState.UpdatePageStatePartial(pageId, { title: 'Rig Playground' });
 				}
 			},
 			{
@@ -318,103 +311,15 @@ Ideas/Plans:
 	});
 	onDestroy(() => registerHeaderActions({})); //clears the registered actions obviously
 
-	const pageId = "rig_playground";
+	const pageId = 'rig_playground';
 	let currentRigFile: File | null = $state(null);
 	let savedChanges = $state(true);
-	let pageState = $derived(appState.pageStates.find(ps => ps.id === pageId));
+	let pageState = $derived(appState.pageStates.find((ps) => ps.id === pageId));
 	let rigObject: RigObject | null | undefined = $derived(pageState?.loadedRig);
 
 	$effect(() => {
 		let config = {
-			title: 'Rig Playground',
-			id: 'Rig Playground',
-			header: {
-				menu: {
-					type: HeaderType.File,
-					panels: [
-						{
-							name: 'File',
-							options: [
-								{
-									label: 'Close Playground',
-									id: 'closePlayground',
-									type: HeaderPanelOptionType.Default
-								},
-								{ label: 'Close Rig', id: 'closeRig', type: HeaderPanelOptionType.Default },
-								{ label: 'Import Rig', id: 'importRig', type: HeaderPanelOptionType.Default },
-								{ label: 'New Rig', id: 'newRig', type: HeaderPanelOptionType.Default },
-								{ label: 'Save Rig', id: 'saveRig', type: HeaderPanelOptionType.Default },
-								{ label: 'Save Rig As', id: 'saveRigAs', type: HeaderPanelOptionType.Default },
-								{
-									label: 'Open In File Explorer',
-									id: 'openInFileExplorer',
-									type: HeaderPanelOptionType.Default
-								}
-							]
-						},
-						{
-							name: 'Edit',
-							options: [
-								{ label: 'Undo', id: 'undo', type: HeaderPanelOptionType.Default },
-								{ label: 'Redo', id: 'redo', type: HeaderPanelOptionType.Default },
-								{ label: 'Cut', id: 'cut', type: HeaderPanelOptionType.Default },
-								{ label: 'Copy', id: 'copy', type: HeaderPanelOptionType.Default },
-								{ label: 'Paste', id: 'paste', type: HeaderPanelOptionType.Default },
-								{ label: 'Find', id: 'find', type: HeaderPanelOptionType.Default }
-							]
-						},
-						{
-							name: 'View',
-							options: [
-								{
-									label: 'Toggle Rig Tree',
-									id: 'toggleRigTree',
-									type: HeaderPanelOptionType.Default
-								},
-								{
-									label: 'Toggle Properties Explorer',
-									id: 'togglePropertiesExplorer',
-									type: HeaderPanelOptionType.Default
-								},
-								{
-									label: 'Toggle Draggable Indicators',
-									id: 'toggleDraggableIndicators',
-									type: HeaderPanelOptionType.Default
-								},
-								{
-									label: 'Toggle Sensors Simulation',
-									id: 'toggleSensorsSimulation',
-									type: HeaderPanelOptionType.Default
-								},
-								{ label: 'Layout', id: 'layout', type: HeaderPanelOptionType.Expand }
-							]
-						},
-						{
-							name: 'Options',
-							options: [
-								{ label: 'Colors', id: 'colors', type: HeaderPanelOptionType.Default },
-								{ label: 'Text & Font', id: 'textAndFont', type: HeaderPanelOptionType.Default },
-								{
-									label: 'Miscellaneous',
-									id: 'miscellaneous',
-									type: HeaderPanelOptionType.Default
-								},
-								{ label: 'Change Theme', id: 'changeTheme', type: HeaderPanelOptionType.Default }
-							]
-						},
-						{
-							name: 'Device',
-							options: [
-								{
-									label: 'Toggle Device Live Preview',
-									id: 'toggleDeviceLivePreview',
-									type: HeaderPanelOptionType.Default
-								}
-							]
-						}
-					]
-				}
-			}
+			title: 'Rig Playground'
 		};
 		config.title = config.title + (savedChanges ? '' : ' *');
 		appState.UpdatePageStatePartial(pageId, config);
@@ -422,7 +327,9 @@ Ideas/Plans:
 
 	$effect(() => {
 		if (pageState && rigObject) {
+			JSON.stringify(rigObject);
 			savedChanges = false;
+			appState.UpdatePageStatePartial(pageId, { title: 'Rig Playground *' });
 
 			//remove elements/groups inside the expanded nodes that don't exist in the rig elements/groups.
 			pageState.expandedNodes?.slice().forEach((n) => {
@@ -433,9 +340,7 @@ Ideas/Plans:
 					});
 					if (!elementExists) {
 						pageState.expandedNodes?.splice(
-							pageState.expandedNodes.findIndex(
-								(n1) => n1.name === n.name && n1.type === n.type
-							),
+							pageState.expandedNodes.findIndex((n1) => n1.name === n.name && n1.type === n.type),
 							1
 						);
 						console.log('Removed unused element node from expandedElements');
@@ -447,9 +352,7 @@ Ideas/Plans:
 					});
 					if (!groupExists) {
 						pageState.expandedNodes?.splice(
-							pageState.expandedNodes.findIndex(
-								(n1) => n1.name === n.name && n1.type === n.type
-							),
+							pageState.expandedNodes.findIndex((n1) => n1.name === n.name && n1.type === n.type),
 							1
 						);
 						console.log('Removed unused group node from expandedElements');
@@ -468,17 +371,6 @@ Ideas/Plans:
 			});
 		}
 	});
-
-	/*Rig Playground page title based on saved state*/
-	$effect(() => {
-		if (pageState) {
-			if (savedChanges) {
-				pageState.title = 'Rig Playground';
-			} else {
-				pageState.title = 'Rig Playground *';
-			}
-		}
-	});
 </script>
 
 <svelte:head>
@@ -488,17 +380,17 @@ Ideas/Plans:
 <div class="app" id="app">
 	<Splitpanes style="height:100%; max-height: 100%; overflow: hidden;">
 		<Pane snapSize={5}>
-			<RigTree pageId={pageId} />
+			<RigTree {pageId} />
 		</Pane>
 		<Pane snapSize={5}>
 			<!--Rig Item Properties Explorer-->
-			<RigPropsExplorer pageId={pageId} />
+			<RigPropsExplorer {pageId} />
 		</Pane>
 		<Pane>
 			<Splitpanes horizontal={true}>
 				<Pane snapSize={3}>
 					<!--Render Preview Screen-->
-					<RigDisplay pageId={pageId} />
+					<RigDisplay {pageId} />
 				</Pane>
 				<Pane snapSize={3}>
 					<!--Device Sensor Settings/Simulation-->

@@ -10,7 +10,7 @@
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 {#if !appState.loading}
-	<Header />
+	<Header pageConfig={page.data as PageConfig} />
 	<div class="content">
 		{@render children()}
 	</div>

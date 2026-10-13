@@ -44,23 +44,6 @@ export interface PageConfig {
     }
 }
 
-export interface RigPlaygroundState {
-    loadedRig: RigObject | null;
-    loadedRigFilePath: string | null | undefined;
-    selectedNode: SelectedNode | null;
-    expandedNodes: SelectedNode[] | null;
-    hideAllGroups: boolean;
-    hideAllElements: boolean;
-    disabledAllDebugOptions: boolean;
-}
-
-export interface RigDisplayState {
-    showGridOverlay: boolean;
-    gridColumnsAndRows: RigVector2;
-    gridStrokeColor: string;
-    errorMessages: string[];
-}
-
 export interface PageHeader {
     menu: {
         type: HeaderType,
@@ -76,7 +59,6 @@ export interface PageWatchRule {
 export class PageState {
     title: string; //the page title that should be displayed
     id: string; //the constant id of the page for identification.
-    header: PageHeader;
     loadedRig: RigObject | null;
     loadedRigFilePath: string | null;
     selectedNode: SelectedNode | null;
@@ -90,10 +72,9 @@ export class PageState {
     rigErrorMessages: string[];
     watchRules: PageWatchRule[];
 
-    constructor(title: string, id: string, header: PageHeader, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
+    constructor(title: string, id: string, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
         this.title = title;
         this.id = id;
-        this.header = header;
         this.loadedRig = loadedRig;
         this.loadedRigFilePath = loadedRigFilePath;
         this.selectedNode = selectedNode;
@@ -122,12 +103,6 @@ export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): Page
     return new PageState(
         overrides.title ?? "Title",
         overrides.id ?? "id",
-        overrides.header ?? {
-            menu: {
-                type: HeaderType.Default,
-                panels: []
-            }
-        },
         overrides.loadedRig ?? null, //loaded rig
         overrides.loadedRigFilePath ?? null, //file path
         overrides.selectedNode ?? null, //selected node
@@ -156,27 +131,14 @@ class AppState {
         CreateDefaultPageState({ title: "Rig Playground", id: "rig_playground" })
     ]);
 
-    /*constructor() {
+    constructor() {
         $effect.root(() => {
             $effect(() => {
-
-                if (this.rigPlaygroundState.loadedRig) {
-                    let rigErrors: string[] = [];
-                    for (const [key, value] of Object.entries(this.rigPlaygroundState.loadedRig)) {
-                        if (typeof value === typeof String) {
-                            if (!value) {
-                                rigErrors.push("Rig Key ['" + key + "'] is either empty, null, or undefined!");
-                            }
-                        }
-                    }
-
-                    this.rigDisplayState.errorMessages = rigErrors;
-                }
-
-                this.UpdateAppState();
+                console.log("Saved pageStates to local storage!");
+                localStorage.setItem('pageStates', JSON.stringify(this.pageStates));
             });
         });
-    }*/
+    }
 
 
     ImportConfig(config: AppConfig) {
@@ -193,9 +155,12 @@ class AppState {
     UpdatePageStatePartial(pageStateId: string, changes: Partial<PageState>) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);
         if (!pageState) {
+            console.log(this.pageStates);
+            console.log(pageState);
             console.log("Failed to find page state with id: '" + pageStateId + "'!");
             return;
         }
+        console.log("Updating page state!");
         Object.assign(pageState, changes);
     }
     UpdatePageStateLoadedRig(pageStateId: string, rig: RigObject | null) {

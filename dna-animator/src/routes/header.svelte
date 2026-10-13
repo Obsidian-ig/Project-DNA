@@ -7,9 +7,10 @@
 	import type { HeaderActionsPanels } from './header-actions.svelte.ts';
 	import type { PageConfig } from '../AppState.svelte';
 
+	let {pageConfig}:{pageConfig: PageConfig} = $props();
 	let showDropdownMenu = $state(false);
 	let selectedOption: string | null = $state(null); // "file", "edit", "view", "options"
-	let pageConfig = $derived(appState.currentPageConfig);
+	let pageState = $derived(appState.pageStates.find(ps => ps.id === pageConfig.id));
 
 	function HandleSelected(option: string) {
 		showDropdownMenu = !showDropdownMenu;
@@ -28,9 +29,6 @@
 		showDropdownMenu = false;
 		selectedOption = null;
 	});
-	$effect(() => {
-		if (pageConfig) pageConfig.title = pageConfig.title;
-	})
 </script>
 
 <nav class="navbar">
@@ -48,7 +46,7 @@
 			{/each}
 		{/if}
 	</div>
-	<p class="navbar-title">{pageConfig?.title}</p>
+	<p class="navbar-title">{(pageState?.title)}</p>
 	<div class="navbar-window-buttons-container">
 		<button class="navbar-window-button" onclick={() => {
 			window.electronAPI?.minimizeWindow();
