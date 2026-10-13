@@ -98,7 +98,7 @@
         }
       ],
       "fill_color": "#FFFFFF",
-      "stroke_color": "#8a1414",
+      "stroke_color": "#ffffff",
       "closed": true,
       "filled": true,
       "position_point_color": "#00ff00",
@@ -231,7 +231,8 @@
           "showControlPoints": false,
           "steps": 20,
           "controlPointColor": "#e54343",
-          "control_point_color": "#4b00fa"
+          "control_point_color": "#4b00fa",
+          "show_control_points": false
         },
         {
           "point": {
@@ -257,7 +258,7 @@
         }
       ],
       "fill_color": "#FFFFFF",
-      "stroke_color": "#8a1414",
+      "stroke_color": "#ffffff",
       "closed": true,
       "filled": true,
       "position_point_color": "#00ff00",

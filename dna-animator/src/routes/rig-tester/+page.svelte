@@ -384,7 +384,7 @@ Ideas/Plans:
 		</Pane>
 		<Pane snapSize={5}>
 			<!--Rig Item Properties Explorer-->
-			<RigPropsExplorer {pageId} />
+			<RigPropsExplorer {pageId} showLiveTransforms={false} />
 		</Pane>
 		<Pane>
 			<Splitpanes horizontal={true}>

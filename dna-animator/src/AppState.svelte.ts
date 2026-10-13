@@ -136,6 +136,8 @@ class AppState {
             $effect(() => {
                 console.log("Saved pageStates to local storage!");
                 localStorage.setItem('pageStates', JSON.stringify(this.pageStates));
+                localStorage.setItem('appConfig', JSON.stringify(this.config));
+                this.UpdateTheme();
             });
         });
     }

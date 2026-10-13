@@ -492,10 +492,27 @@
 		}
 
 		Draw();
+
+		/*
+		TODO:
+		-Start working on visual editor
+		-Make it so if you have visual editing turned on and you have a node selected, it displays Movement Arrows, A Rotation Circle, and Scale Arrows
+			-Depending on the editor mode. Make it so users can choose between All, Movement, Rotation, or Scale in order to make it less cluttered if wanted.
+		-Add an option inside the display settings to make it so you can override any debug settings and make all points/controls visible for easier editing.
+		-Possibly make it so that if a user has an element selected, they don't have to individually select the points in the RigTree and can just select them in the display.
+		-Maybe make it so there are two different visual editing modes.
+			-The normal one with all the visual indicators
+			-The minimalist one were you can only drag position points, origin points, element points, and control points around to move them. Maybe you can still select between the editor modes 
+				-Which makes it change what happens when you drag and move a point.
+					-Movement Mode/All: Dragging a point moves it
+					-Scale Mode: You can only mess with position points, dragging left/right changes the scale of the rig/group/element on the X axis, Up/Down modifies the Y axis.
+					-Rotate Mode: Again, only position points. Dragging left rotates the rig/group/element counter clockwise, dragging right does clockwise.
+		*/
 	});
 </script>
 
 <div class="display-container">
+	<div class="display-background"></div>
 	<canvas
 		id="rig-display"
 		bind:this={canvas}
@@ -572,13 +589,23 @@
 			linear-gradient(-45deg, transparent 75%, #9c9b9b 75%);
 		background-size: 40px 40px;
 		position: relative;
+		box-sizing: border-box;
+		padding: 20px;
+	}
+
+	.display-background {
+		background-color: black;
+		width: 100%;
+		aspect-ratio: 1;
+		border-radius: 50%;
 	}
 
 	#rig-display {
-		background-color: black;
-		width: 75%;
+		width: 100%;
 		aspect-ratio: 1;
-		border-radius: 50%;
+		z-index: 1;
+		position: absolute;
+		padding: inherit;
 	}
 
 	.display-settings-button {

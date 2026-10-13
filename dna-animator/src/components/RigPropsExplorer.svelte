@@ -19,7 +19,7 @@
 	import Text from './PropertiesExplorerComponents/Text.svelte';
 	import VectorTwo from './PropertiesExplorerComponents/VectorTwo.svelte';
 
-	let {pageId}:{pageId: string} = $props();
+	let {pageId, showLiveTransforms}:{pageId: string, showLiveTransforms: boolean} = $props();
 	let pageState = $derived(appState.pageStates.find(ps => ps.id === pageId));
 	let rigObject = $derived(pageState?.loadedRig);
 	let selectedNode = $derived(pageState?.selectedNode);
@@ -123,11 +123,13 @@
 				<Number label="Starting Rotation" bind:value={rigObject.offsets.rotation} />
 				<VectorTwo label="Starting Scale" bind:value={rigObject.offsets.scale} />
 			</Section>
+			{#if showLiveTransforms}
 			<Section label="Rig Transforms">
 				<VectorTwo label="Position" bind:value={rigObject.transforms.position} />
 				<Number label="Rotation" bind:value={rigObject.transforms.rotation} />
 				<VectorTwo label="Scale" bind:value={rigObject.transforms.scale} />
 			</Section>
+			{/if}
 			<Section label="Rig Groups">
 				<GroupEditor bind:value={rigObject.groups} />
 			</Section>
@@ -194,12 +196,14 @@
 					<Number label="Rotation Two" bind:value={currentGroup.offsets.rotation_two} />
 					<VectorTwo label="Transform Origin" bind:value={currentGroup.offsets.transform_origin} />
 				</Section>
+				{#if showLiveTransforms}
 				<Section label="Transforms">
 					<VectorTwo label="Position" bind:value={currentGroup.transforms.position} />
 					<Number label="Rotation" bind:value={currentGroup.transforms.rotation} />
 					<VectorTwo label="Scale" bind:value={currentGroup.transforms.scale} />
 					<Number label="Rotation Two" bind:value={currentGroup.transforms.rotation_two} />
 				</Section>
+				{/if}
 			{/if}
 		{:else if selectedNode?.type === SelectedNodeType.Element}
 			<!--Element/Shape Node-->
@@ -275,12 +279,14 @@
 						bind:value={currentElement.offsets.transform_origin}
 					/>
 				</Section>
+				{#if showLiveTransforms}
 				<Section label="Transforms">
 					<VectorTwo label="Position" bind:value={currentElement.transforms.position} />
 					<Number label="Rotation" bind:value={currentElement.transforms.rotation} />
 					<VectorTwo label="Scale" bind:value={currentElement.transforms.scale} />
 					<Number label="Rotation 2" bind:value={currentElement.transforms.rotation_two} />
 				</Section>
+				{/if}
 				<Boolean label="Closed Shape" bind:value={currentElement.closed} />
 				<Color label="Fill Color" bind:value={currentElement.fill_color} />
 				<Color label="Stroke Color" bind:value={currentElement.stroke_color} />
