@@ -321,6 +321,7 @@
 				<Number label="Steps" bind:value={currentPoint.steps} />
 				<Boolean label="Show Control Points" bind:value={currentPoint.show_control_points} />
 				<Color label="Control Points Color" bind:value={currentPoint.control_point_color} />
+				<Number label="Control Points Radius" bind:value={currentPoint.control_point_radius} />
 			{/if}
 		{:else if selectedNode?.type === SelectedNodeType.ControlPoint}
 			{let splitName = $derived(selectedNode.name.split('_Point_'))}

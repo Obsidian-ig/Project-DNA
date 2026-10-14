@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { appState } from '../AppState.svelte';
+	import { appState, VisualEditorModes, VisualEditorTools } from '../AppState.svelte';
 	import {
 		RigLayeringOrderNodeType,
 		RigPointInterpolationType,
+		SelectedNodeType,
 		type RigElement,
 		type RigVector2
 	} from '../DNARig';
@@ -13,13 +14,14 @@
 	let canvas: HTMLCanvasElement;
 	let displayWidth = $state(0);
 	let displayHeight = $state(0);
-	let {pageId}:{pageId: string} = $props();
-	let pageState = $derived(appState.pageStates.find(ps => ps.id === pageId));
+	let { pageId }: { pageId: string } = $props();
+	let pageState = $derived(appState.pageStates.find((ps) => ps.id === pageId));
 	let rigObject = $derived(pageState?.loadedRig);
 	let showSettingsPanel = $state(false);
 	let gridOverlay = $derived(pageState?.showGridOverlay ?? false);
-	let gridColumnsAndRows: RigVector2 = $derived(pageState?.gridColumnsAndRows ?? {x:10,y:10});
+	let gridColumnsAndRows: RigVector2 = $derived(pageState?.gridColumnsAndRows ?? { x: 10, y: 10 });
 	let gridStrokeColor: string = $derived(pageState?.gridStrokeColor ?? '#ffffff');
+	let visualEditingEnabled = $derived(pageState?.visualEditorEnabled ?? false);
 
 	$effect(() => {
 		if (!canvas || !rigObject) return;
@@ -372,12 +374,7 @@
 				if (item.type === RigLayeringOrderNodeType.Group) {
 					let group = rigObject.groups.find((g) => g.id === item.id);
 					if (!group || !pageState) return;
-					if (
-						!group.visible ||
-						pageState.hideAllGroups ||
-						pageState.hideAllElements
-					)
-						return;
+					if (!group.visible || pageState.hideAllGroups || pageState.hideAllElements) return;
 
 					let groupRotation = group.offsets.rotation + group.transforms.rotation;
 					let groupScale: RigVector2 = {
@@ -508,43 +505,232 @@
 					-Scale Mode: You can only mess with position points, dragging left/right changes the scale of the rig/group/element on the X axis, Up/Down modifies the Y axis.
 					-Rotate Mode: Again, only position points. Dragging left rotates the rig/group/element counter clockwise, dragging right does clockwise.
 		*/
+		if (visualEditingEnabled) {
+			if (
+				pageState?.selectedNode?.type === SelectedNodeType.Point ||
+				pageState?.selectedNode?.type === SelectedNodeType.ControlPoint
+			) {
+				//these are the only two that can't use rotate or scale transform tools.
+				
+			} else {
+			}
+		}
+	});
+
+	$effect(() => {
+		appState.UpdatePageStateShowGridOverlay(pageId, gridOverlay);
+		appState.UpdatePageStateGridColumnsAndRows(pageId, gridColumnsAndRows);
+		appState.UpdatePageStateGridStrokeColor(pageId, gridStrokeColor);
+		appState.UpdatePageStateVisualEditingEnabled(pageId, visualEditingEnabled);
 	});
 </script>
 
 <div class="display-container">
-	<div class="display-background"></div>
-	<canvas
-		id="rig-display"
-		bind:this={canvas}
-		bind:clientWidth={displayWidth}
-		bind:clientHeight={displayHeight}
-		width={displayWidth}
-		height={displayHeight}
-	></canvas>
-
-	<button
-		class="display-settings-button"
-		aria-label="display preview settings"
-		onclick={() => {
-			showSettingsPanel = !showSettingsPanel;
-		}}
-	>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="24"
-			height="24"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="#000000"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			class="lucide lucide-settings preview-icon"
-			><path
-				d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"
-			/><circle cx="12" cy="12" r="3" /></svg
+	<div class="header-container">
+		{#if visualEditingEnabled}
+			<div class="display-toolbar-container">
+				<div class="toolbar-transform-tools">
+					<button
+						class="toolbar-button {pageState?.currentVisualEditorTool === VisualEditorTools.ALL
+							? 'selected'
+							: ''}"
+						title="Transform Tool"
+						onclick={() => {
+							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.ALL);
+						}}
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="#ffffff"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-scale-3d preview-icon"
+							><path d="M5 7v11a1 1 0 0 0 1 1h11" /><path d="M5.293 18.707 11 13" /><circle
+								cx="19"
+								cy="19"
+								r="2"
+							/><circle cx="5" cy="5" r="2" /></svg
+						>
+					</button>
+					<button
+						class="toolbar-button {pageState?.currentVisualEditorTool === VisualEditorTools.MOVE
+							? 'selected'
+							: ''}"
+						title="Move Tool"
+						onclick={() => {
+							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.MOVE);
+						}}
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="#ffffff"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-move preview-icon"
+							><path d="M12 2v20" /><path d="m15 19-3 3-3-3" /><path d="m19 9 3 3-3 3" /><path
+								d="M2 12h20"
+							/><path d="m5 9-3 3 3 3" /><path d="m9 5 3-3 3 3" /></svg
+						>
+					</button>
+					<button
+						class="toolbar-button {pageState?.currentVisualEditorTool === VisualEditorTools.ROTATE
+							? 'selected'
+							: ''}"
+						title="Rotate Tool"
+						onclick={() => {
+							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.ROTATE);
+						}}
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="#ffffff"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-refresh-cw preview-icon"
+							><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path
+								d="M21 3v5h-5"
+							/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path
+								d="M8 16H3v5"
+							/></svg
+						>
+					</button>
+					<button
+						class="toolbar-button {pageState?.currentVisualEditorTool === VisualEditorTools.SCALE
+							? 'selected'
+							: ''}"
+						title="Scale Tool"
+						onclick={() => {
+							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.SCALE);
+						}}
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="#ffffff"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-scaling preview-icon"
+							><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path
+								d="M14 15H9v-5"
+							/><path d="M16 3h5v5" /><path d="M21 3 9 15" /></svg
+						>
+					</button>
+				</div>
+				<div class="toolbar-divider"></div>
+				<div class="toolbar-edit-modes">
+					<button
+						class="toolbar-button {pageState?.currentVisualEditorMode === VisualEditorModes.VISUAL
+							? 'selected'
+							: ''}"
+						title="Visual Mode"
+						onclick={() => {
+							appState.UpdatePageStateVisualEditorMode(pageId, VisualEditorModes.VISUAL);
+						}}
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="#ffffff"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-vector-polygon preview-icon"
+							><path d="m12.828 4.813 5.344 2.375" /><path d="m15.769 18.153 3.461-8.306" /><path
+								d="m5.687 14.074 7.625 4.852"
+							/><path d="M9.772 5.579 5.228 11.42" /><circle cx="11" cy="4" r="2" /><circle
+								cx="15"
+								cy="20"
+								r="2"
+							/><circle cx="20" cy="8" r="2" /><circle cx="4" cy="13" r="2" /></svg
+						>
+					</button>
+					<button
+						class="toolbar-button {pageState?.currentVisualEditorMode === VisualEditorModes.MINIMAL
+							? 'selected'
+							: ''}"
+						title="Minimal Mode"
+						onclick={() => {
+							appState.UpdatePageStateVisualEditorMode(pageId, VisualEditorModes.MINIMAL);
+						}}
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="#ffffff"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-squares-unite preview-icon"
+							><path
+								d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3a1 1 0 0 0 1 1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-3a1 1 0 0 0-1-1z"
+							/></svg
+						>
+					</button>
+				</div>
+			</div>
+		{/if}
+		<button
+			class="display-settings-button"
+			aria-label="display preview settings"
+			onclick={() => {
+				showSettingsPanel = !showSettingsPanel;
+			}}
 		>
-	</button>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="24"
+				height="24"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="#000000"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				class="lucide lucide-settings preview-icon"
+				><path
+					d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"
+				/><circle cx="12" cy="12" r="3" /></svg
+			>
+		</button>
+	</div>
+
+	<div class="screen-container">
+		<div class="display-background"></div>
+		<canvas
+			id="rig-display"
+			bind:this={canvas}
+			bind:clientWidth={displayWidth}
+			bind:clientHeight={displayHeight}
+			width={displayWidth}
+			height={displayHeight}
+		></canvas>
+	</div>
+
 	{#if showSettingsPanel}
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -568,6 +754,7 @@
 					tooltip="How much the columns or rows are repeated every X units."
 				/>
 				<Color label="Grid Stroke Color" bind:value={gridStrokeColor} />
+				<Boolean label="Visual Editing" bind:value={visualEditingEnabled} />
 			</div>
 		</div>
 	{/if}
@@ -580,8 +767,7 @@
 		background-color: #d9d9d9;
 		background-size: cover;
 		display: flex;
-		align-items: center;
-		justify-content: center;
+		flex-direction: column;
 		background-image:
 			linear-gradient(45deg, #9c9b9b 25%, transparent 25%),
 			linear-gradient(-45deg, #9c9b9b 25%, transparent 25%),
@@ -590,27 +776,60 @@
 		background-size: 40px 40px;
 		position: relative;
 		box-sizing: border-box;
-		padding: 20px;
+		padding-top: 5px;
 	}
 
-	.display-background {
-		background-color: black;
-		width: 100%;
-		aspect-ratio: 1;
-		border-radius: 50%;
+	.header-container {
+		display: flex;
+		align-items: center;
+		padding-left: 5px;
 	}
 
-	#rig-display {
-		width: 100%;
-		aspect-ratio: 1;
-		z-index: 1;
-		position: absolute;
-		padding: inherit;
+	.display-toolbar-container {
+		width: fit-content;
+		height: 35px;
+		background-color: var(--bg);
+		border-radius: 8px;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		position: relative;
+		flex-wrap: nowrap;
+		padding: 10px;
+
+		.toolbar-divider {
+			width: 1px;
+			height: 75%;
+			background-color: var(--text-muted);
+			margin-left: 8px;
+		}
+
+		.toolbar-button {
+			height: 100%;
+			display: flex;
+
+			svg {
+				stroke: var(--text);
+			}
+
+			&.selected svg {
+				stroke: var(--primary);
+			}
+		}
+
+		.toolbar-transform-tools,
+		.toolbar-edit-modes {
+			display: flex;
+			gap: 8px;
+		}
+		.toolbar-edit-modes {
+			margin-left: 8px;
+		}
 	}
 
 	.display-settings-button {
-		position: absolute;
-		left: calc(100% - 30px);
+		margin-left: auto;
+		margin-right: 5px;
 		top: 5px;
 		cursor: pointer;
 		z-index: 3;
@@ -644,5 +863,28 @@
 				}
 			}
 		}
+	}
+
+	.screen-container {
+		padding: 10px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+	}
+
+	.display-background {
+		background-color: black;
+		width: 100%;
+		aspect-ratio: 1;
+		border-radius: 50%;
+	}
+
+	#rig-display {
+		width: 100%;
+		aspect-ratio: 1;
+		z-index: 1;
+		position: absolute;
+		padding: inherit;
 	}
 </style>

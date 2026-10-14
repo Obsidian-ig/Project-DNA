@@ -72,7 +72,8 @@
           "steps": 20,
           "controlPointColor": "#e54343",
           "show_control_points": false,
-          "control_point_color": "#4b00fa"
+          "control_point_color": "#4b00fa",
+          "control_point_radius": 1.5
         },
         {
           "point": {
@@ -94,7 +95,8 @@
           "showControlPoints": false,
           "controlPointColor": "#00ff4c",
           "show_control_points": false,
-          "control_point_color": "#4b00fa"
+          "control_point_color": "#4b00fa",
+          "control_point_radius": 1.5
         }
       ],
       "fill_color": "#FFFFFF",
@@ -152,7 +154,9 @@
           "steps": 20,
           "showControlPoints": false,
           "controlPointColor": "#ed263a",
-          "control_point_color": "#4b00fa"
+          "control_point_color": "#4b00fa",
+          "show_control_points": false,
+          "control_point_radius": 1.5
         },
         {
           "point": {
@@ -173,7 +177,8 @@
           "steps": 20,
           "showControlPoints": false,
           "controlPointColor": "#ed263a",
-          "control_point_color": "#4b00fa"
+          "control_point_color": "#4b00fa",
+          "control_point_radius": 1.5
         }
       ],
       "fill_color": "#000000",
@@ -232,7 +237,8 @@
           "steps": 20,
           "controlPointColor": "#e54343",
           "control_point_color": "#4b00fa",
-          "show_control_points": false
+          "show_control_points": false,
+          "control_point_radius": 1.5
         },
         {
           "point": {
@@ -254,7 +260,8 @@
           "showControlPoints": false,
           "controlPointColor": "#00ff4c",
           "show_control_points": false,
-          "control_point_color": "#4b00fa"
+          "control_point_color": "#4b00fa",
+          "control_point_radius": 1.5
         }
       ],
       "fill_color": "#FFFFFF",
@@ -312,8 +319,9 @@
           "steps": 20,
           "showControlPoints": false,
           "controlPointColor": "#ed263a",
-          "show_control_points": false,
-          "control_point_color": "#4b00fa"
+          "show_control_points": true,
+          "control_point_color": "#4b00fa",
+          "control_point_radius": 1.5
         },
         {
           "point": {
@@ -334,8 +342,9 @@
           "steps": 20,
           "showControlPoints": false,
           "controlPointColor": "#ed263a",
-          "show_control_points": false,
-          "control_point_color": "#4b00fa"
+          "show_control_points": true,
+          "control_point_color": "#4b00fa",
+          "control_point_radius": 1.5
         }
       ],
       "fill_color": "#000000",

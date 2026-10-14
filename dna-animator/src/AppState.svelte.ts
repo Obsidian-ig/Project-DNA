@@ -56,6 +56,19 @@ export interface PageWatchRule {
     handler: (data: any) => void;
 }
 
+export const VisualEditorTools = {
+    ALL: "ALL",
+    MOVE: "MOVE",
+    ROTATE: "ROTATE",
+    SCALE: "SCALE"
+} as const;
+export type VisualEditorTools = (typeof VisualEditorTools)[keyof typeof VisualEditorTools];
+export const VisualEditorModes = {
+    VISUAL: "VISUAL",
+    MINIMAL: "MINIMAL"
+} as const;
+export type VisualEditorModes = (typeof VisualEditorModes)[keyof typeof VisualEditorModes];
+
 export class PageState {
     title: string; //the page title that should be displayed
     id: string; //the constant id of the page for identification.
@@ -69,10 +82,13 @@ export class PageState {
     showGridOverlay: boolean;
     gridColumnsAndRows: RigVector2;
     gridStrokeColor: string;
+    currentVisualEditorTool: VisualEditorTools;
+    currentVisualEditorMode: VisualEditorModes;
+    visualEditorEnabled: boolean;
     rigErrorMessages: string[];
     watchRules: PageWatchRule[];
 
-    constructor(title: string, id: string, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
+    constructor(title: string, id: string, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, currentVisualEditorTool: VisualEditorTools = VisualEditorTools.MOVE, currentVisualEditorMode: VisualEditorModes = VisualEditorModes.VISUAL, visualEditorEnabled: boolean = false, rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
         this.title = title;
         this.id = id;
         this.loadedRig = loadedRig;
@@ -85,6 +101,9 @@ export class PageState {
         this.showGridOverlay = showGridOverlay;
         this.gridColumnsAndRows = gridColumnsAndRows;
         this.gridStrokeColor = gridStrokeColor;
+        this.currentVisualEditorTool = currentVisualEditorTool;
+        this.currentVisualEditorMode = currentVisualEditorMode;
+        this.visualEditorEnabled = visualEditorEnabled;
         this.rigErrorMessages = rigErrorMessages;
         this.watchRules = watchRules;
 
@@ -112,6 +131,9 @@ export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): Page
             y: 10
         }, //grid columns and rows
         overrides.gridStrokeColor ?? "strokecolor", //grid stroke color
+        overrides.currentVisualEditorTool,
+        overrides.currentVisualEditorMode,
+        overrides.visualEditorEnabled,
         overrides.rigErrorMessages ?? [], //rig errors
         overrides.watchRules ?? [], //watch rules
         overrides.hideAllGroups ?? false,
@@ -220,6 +242,30 @@ class AppState {
             return;
         }
         pageState.expandedNodes = expandedNodes;
+    }
+    UpdatePageStateVisualEditorTool(pageStateId: string, tool: VisualEditorTools) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.currentVisualEditorTool = tool;
+    }
+    UpdatePageStateVisualEditorMode(pageStateId: string, mode: VisualEditorModes) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.currentVisualEditorMode = mode;
+    }
+    UpdatePageStateVisualEditingEnabled(pageStateId: string, visualEditorEnabled: boolean) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.visualEditorEnabled = visualEditorEnabled;
     }
 
 
