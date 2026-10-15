@@ -268,7 +268,7 @@
 			ctx.stroke();
 			if (element.filled) ctx.fill();
 
-			element.points.forEach((point) => {
+			element.points.forEach((point, pointIndex) => {
 				if (element.show_points) {
 					ctx.beginPath();
 					let calculatedPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
@@ -288,16 +288,22 @@
 					ctx.fillStyle = element.points_color;
 					ctx.fill();
 				}
+				let splitSelectedVisualEditorNodeName =
+					pageState?.selectedNode?.name.split('_Point_');
+				let isParentElement = element.name === splitSelectedVisualEditorNodeName?.[0];
+				let isParentPoint = pointIndex === parseInt(splitSelectedVisualEditorNodeName?.[1] ?? '');
 
-				if (
-					pageState &&
-					point.controls &&
-					point.controls.length > 0 &&
-					point.show_control_points &&
-					!pageState.disableAllDebugOptions &&
-					!pageState.hideAllElements
-				) {
-					point.controls.forEach((control) => {
+				point.controls?.forEach((control, controlIndex) => {
+					if (
+						pageState &&
+						((point.show_control_points &&
+							!pageState.disableAllDebugOptions &&
+							!pageState.hideAllElements) ||
+							(pageState.visualEditorEnabled &&
+								isParentElement &&
+								isParentPoint &&
+								controlIndex === pageState.selectedNode?.index))
+					) {
 						ctx.beginPath();
 						let controlPoint = {
 							x: point.point.x + control.x,
@@ -319,8 +325,47 @@
 						ctx.closePath();
 						ctx.fillStyle = point.control_point_color;
 						ctx.fill();
-					});
-				}
+
+						if (
+							controlIndex === pageState.selectedVisualEditorNode?.index &&
+							pageState.visualEditorEnabled && isParentElement && isParentPoint
+						) {
+							//is the selected visual editor node
+							console.log("Is Selected Visual Editor Node!");
+							//render the move tool around it.
+							//draw the free movement box first
+							ctx.beginPath();
+							let absoluteBoxStep = 5 * scaleUnit;
+							ctx.lineWidth = 2;
+							ctx.moveTo(calculatedControlPointPhysical.x - absoluteBoxStep, calculatedControlPointPhysical.y - absoluteBoxStep);//top left
+							ctx.lineTo(calculatedControlPointPhysical.x + absoluteBoxStep, calculatedControlPointPhysical.y - absoluteBoxStep);//top right
+							ctx.lineTo(calculatedControlPointPhysical.x + absoluteBoxStep, calculatedControlPointPhysical.y + absoluteBoxStep);//bottom right
+							ctx.lineTo(calculatedControlPointPhysical.x - absoluteBoxStep, calculatedControlPointPhysical.y + absoluteBoxStep);//bottom left
+							ctx.closePath();
+							ctx.strokeStyle = "#fcba03"; //yellow box outline
+							ctx.stroke();
+							//draw the y axis arrow
+							let absoluteLineLength = 15 * scaleUnit;
+							let absoluteArrowSideLength = 3 * scaleUnit;
+							ctx.beginPath();
+							ctx.lineWidth = 3;
+							ctx.moveTo(calculatedControlPointPhysical.x, calculatedControlPointPhysical.y - absoluteBoxStep);//move to center top of box
+							ctx.lineTo(calculatedControlPointPhysical.x, calculatedControlPointPhysical.y - absoluteLineLength);//move up
+							ctx.closePath();
+							ctx.strokeStyle = "#24a803";
+							ctx.stroke();
+							ctx.beginPath();
+							//FIX THIS, NOT DRAWING RIGHT BECAUSE I FORGOT THAT I NEED TO MOVE TO THE FAR LEFT, DRAW UP TO THE MIDDLE + Point height AND THEN DOWN to the right side
+							ctx.lineTo(calculatedControlPointPhysical.x - absoluteArrowSideLength, calculatedControlPointPhysical.y - (absoluteLineLength));//left arrow side
+							ctx.lineTo(calculatedControlPointPhysical.x + absoluteArrowSideLength, calculatedControlPointPhysical.y - absoluteLineLength);//under line
+							ctx.lineTo(calculatedControlPointPhysical.x, calculatedControlPointPhysical.y - absoluteLineLength);//right arrow side
+							ctx.strokeStyle = "#24a803"; //green y axis arrow
+							ctx.fillStyle = "#24a803";
+							ctx.stroke();
+							ctx.fill();
+						}
+					}
+				});
 			});
 
 			if (pageState && !pageState.disableAllDebugOptions) {
@@ -505,13 +550,114 @@
 					-Scale Mode: You can only mess with position points, dragging left/right changes the scale of the rig/group/element on the X axis, Up/Down modifies the Y axis.
 					-Rotate Mode: Again, only position points. Dragging left rotates the rig/group/element counter clockwise, dragging right does clockwise.
 		*/
+		function handleVisualEditorMouseDown(e: MouseEvent) {
+			if (!rigObject) return;
+			if (visualEditingEnabled) {
+				//find the selected node.
+				if (
+					!pageState?.selectedNode &&
+					pageState?.currentVisualEditorTool != VisualEditorTools.SELECT
+				)
+					return;
+				switch (pageState?.selectedNode?.type) {
+					case SelectedNodeType.Group:
+						break;
+					case SelectedNodeType.Element:
+						break;
+					case SelectedNodeType.Point:
+						break;
+					case SelectedNodeType.ControlPoint:
+						let splitSelectedNodeName = pageState.selectedNode.name.split('_Point_'); //will look like "Element_Name_Here", 0, "controlpoint-0"
+						let parentElement = rigObject.elements.find((e) => e.name === splitSelectedNodeName[0]);
+						if (!parentElement) {
+							console.error(
+								"Unable to find parent element for control point! Element Name: '" +
+									splitSelectedNodeName[0] +
+									"', Control Point Index: " +
+									pageState.selectedNode.index
+							);
+							return;
+						}
+						let parentGroup = parentElement.group_id
+							? rigObject.groups.find((g) => g.id === parentElement.group_id)
+							: null;
+						let groupVirtualLocalPosition: RigVector2 = {
+							x: parentGroup
+								? parentGroup.offsets.position.x + parentGroup.transforms.position.x
+								: 0,
+							y: parentGroup
+								? parentGroup.offsets.position.y + parentGroup.transforms.position.y
+								: 0
+						};
+						let parentPoint = parentElement.points[parseInt(splitSelectedNodeName[1])];
+						if (!parentPoint) {
+							console.error(
+								'Unable to find parent point for control point! Point Index: ' +
+									splitSelectedNodeName[1] +
+									', Control Point Index: ' +
+									pageState.selectedNode.index
+							);
+							return;
+						}
+						let controlPoint = parentPoint?.controls?.[pageState.selectedNode.index];
+						if (!controlPoint) {
+							console.error('Unable to find control point!');
+							return;
+						}
+						//need to check if the cursor is within the "active range" to render to move tool on the control point.
+						let canvasRect = canvas.getBoundingClientRect();
+						let mouseVirtualPosition: RigVector2 = {
+							//might need to multiply by scaleUnit idk yet
+							x: (e.clientX - canvasRect.left - displayWidth / 2) / scaleUnit,
+							y: (e.clientY - canvasRect.top - displayHeight / 2) / scaleUnit
+						};
+						let controlPointVirtualPosition: RigVector2 = {
+							x:
+								rigObject.offsets.position.x +
+								rigObject.transforms.position.x +
+								groupVirtualLocalPosition.x +
+								parentElement.offsets.position.x +
+								parentElement.transforms.position.x +
+								parentPoint.point.x +
+								controlPoint.x,
+							y:
+								rigObject.offsets.position.y +
+								rigObject.transforms.position.y +
+								groupVirtualLocalPosition.y +
+								parentElement.offsets.position.y +
+								parentElement.transforms.position.y +
+								parentPoint.point.y +
+								controlPoint.y
+						};
+						let distance = Math.sqrt(
+							Math.pow(mouseVirtualPosition.x - controlPointVirtualPosition.x, 2) +
+								Math.pow(mouseVirtualPosition.y - controlPointVirtualPosition.y, 2)
+						);
+						if (distance <= 10) {
+							appState.UpdatePageStateSelectedVisualEditorNode(pageId, pageState.selectedNode);
+						} else {
+							appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
+						}
+
+						break;
+					default:
+						console.error(
+							"SelectedNode.type was null or invalid! '" +
+								pageState.selectedNode?.type.toString() +
+								"'."
+						);
+						return;
+				}
+			}
+		}
+		document.removeEventListener('mousedown', (e) => handleVisualEditorMouseDown);
+		document.addEventListener('mousedown', (e) => handleVisualEditorMouseDown(e));
 		if (visualEditingEnabled) {
 			if (
 				pageState?.selectedNode?.type === SelectedNodeType.Point ||
 				pageState?.selectedNode?.type === SelectedNodeType.ControlPoint
 			) {
 				//these are the only two that can't use rotate or scale transform tools.
-				
 			} else {
 			}
 		}
@@ -537,6 +683,7 @@
 						title="Transform Tool"
 						onclick={() => {
 							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.ALL);
+							console.log('test');
 						}}
 					>
 						<svg
@@ -564,6 +711,7 @@
 						title="Move Tool"
 						onclick={() => {
 							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.MOVE);
+							console.log('test 2');
 						}}
 					>
 						<svg
@@ -589,6 +737,7 @@
 						title="Rotate Tool"
 						onclick={() => {
 							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.ROTATE);
+							console.log('test 3');
 						}}
 					>
 						<svg
@@ -616,6 +765,7 @@
 						title="Scale Tool"
 						onclick={() => {
 							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.SCALE);
+							console.log('test 4');
 						}}
 					>
 						<svg
@@ -632,6 +782,34 @@
 							><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path
 								d="M14 15H9v-5"
 							/><path d="M16 3h5v5" /><path d="M21 3 9 15" /></svg
+						>
+					</button>
+					<button
+						class="toolbar-button {pageState?.currentVisualEditorTool === VisualEditorTools.SELECT
+							? 'selected'
+							: ''}"
+						title="Select Tool"
+						onclick={() => {
+							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.SELECT);
+							console.log('test 5');
+						}}
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-mouse-pointer-click preview-icon"
+							><path d="M14 4.1 12 6" /><path d="m5.1 8-2.9-.8" /><path d="m6 12-1.9 2" /><path
+								d="M7.2 2.2 8 5.1"
+							/><path
+								d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"
+							/></svg
 						>
 					</button>
 				</div>
@@ -796,6 +974,7 @@
 		position: relative;
 		flex-wrap: nowrap;
 		padding: 10px;
+		z-index: 2;
 
 		.toolbar-divider {
 			width: 1px;

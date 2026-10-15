@@ -939,6 +939,7 @@
 					e.stopPropagation();
 					if (rigObject)
 						appState.UpdatePageStateSelectedNode(pageId, { name: rigObject.name, type: DNARig.SelectedNodeType.Root, index: 0 });
+						appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
 				}}>{rigObject?.name}</button
 			>
 		</div>
@@ -1024,6 +1025,7 @@
 												type: DNARig.SelectedNodeType.Group,
 												index: groupIndex
 											});
+											appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
 									}}>{group.id}</button
 								>
 							</div>
@@ -1142,6 +1144,7 @@
 						type: DNARig.SelectedNodeType.Element,
 						index: elementIndex
 					});
+					appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
 			}}
 		>
 			{element.name}
@@ -1216,6 +1219,7 @@
 								type: DNARig.SelectedNodeType.Point,
 								index: pointIndex
 							});
+							appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
 					}}>Point: {pointIndex}</button
 				>
 			</div>
@@ -1245,6 +1249,7 @@
 										type: DNARig.SelectedNodeType.ControlPoint,
 										index: controlIndex
 									});
+									appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
 							}}
 						>
 							Control: {controlIndex}

@@ -60,7 +60,8 @@ export const VisualEditorTools = {
     ALL: "ALL",
     MOVE: "MOVE",
     ROTATE: "ROTATE",
-    SCALE: "SCALE"
+    SCALE: "SCALE",
+    SELECT: "SELECT"
 } as const;
 export type VisualEditorTools = (typeof VisualEditorTools)[keyof typeof VisualEditorTools];
 export const VisualEditorModes = {
@@ -85,10 +86,11 @@ export class PageState {
     currentVisualEditorTool: VisualEditorTools;
     currentVisualEditorMode: VisualEditorModes;
     visualEditorEnabled: boolean;
+    selectedVisualEditorNode: SelectedNode | null;
     rigErrorMessages: string[];
     watchRules: PageWatchRule[];
 
-    constructor(title: string, id: string, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, currentVisualEditorTool: VisualEditorTools = VisualEditorTools.MOVE, currentVisualEditorMode: VisualEditorModes = VisualEditorModes.VISUAL, visualEditorEnabled: boolean = false, rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
+    constructor(title: string, id: string, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, currentVisualEditorTool: VisualEditorTools = VisualEditorTools.MOVE, currentVisualEditorMode: VisualEditorModes = VisualEditorModes.VISUAL, visualEditorEnabled: boolean = false, selectedVisualEditorNode: SelectedNode | null = null, rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
         this.title = title;
         this.id = id;
         this.loadedRig = loadedRig;
@@ -104,6 +106,7 @@ export class PageState {
         this.currentVisualEditorTool = currentVisualEditorTool;
         this.currentVisualEditorMode = currentVisualEditorMode;
         this.visualEditorEnabled = visualEditorEnabled;
+        this.selectedVisualEditorNode = selectedVisualEditorNode;
         this.rigErrorMessages = rigErrorMessages;
         this.watchRules = watchRules;
 
@@ -131,9 +134,10 @@ export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): Page
             y: 10
         }, //grid columns and rows
         overrides.gridStrokeColor ?? "strokecolor", //grid stroke color
-        overrides.currentVisualEditorTool,
-        overrides.currentVisualEditorMode,
-        overrides.visualEditorEnabled,
+        overrides.currentVisualEditorTool ?? VisualEditorTools.MOVE,
+        overrides.currentVisualEditorMode ?? VisualEditorModes.MINIMAL,
+        overrides.visualEditorEnabled ?? false,
+        overrides.selectedVisualEditorNode ?? null,
         overrides.rigErrorMessages ?? [], //rig errors
         overrides.watchRules ?? [], //watch rules
         overrides.hideAllGroups ?? false,
@@ -266,6 +270,14 @@ class AppState {
             return;
         }
         pageState.visualEditorEnabled = visualEditorEnabled;
+    }
+    UpdatePageStateSelectedVisualEditorNode(pageStateId: string, selectedVisualEditorNode: SelectedNode | null) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.selectedVisualEditorNode = selectedVisualEditorNode;
     }
 
 
