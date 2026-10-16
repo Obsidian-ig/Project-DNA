@@ -123,8 +123,8 @@
 				y: 1 / scaleMultiplier.y
 			});
 			physicalPoint = RotatePhysicalPoint(physicalPoint, -degreesOfRotation);
-			physicalPoint.x -= physicalOrigin.x;
-			physicalPoint.y -= physicalOrigin.y;
+			physicalPoint.x += physicalOrigin.x;
+			physicalPoint.y += physicalOrigin.y;
 			return physicalPoint;
 		}
 
@@ -914,21 +914,21 @@
 								(g) => g.id === pageState.selectedNode?.name
 							);
 							if (!selectedGroup) return;
+							cursorPhysicalPosition.x += grabOffset.x;
+							cursorPhysicalPosition.y += grabOffset.y;
 							cursorPhysicalPosition = CalculateNewPhysicalPositionWithParamsInversed(
 								physicalRigCenter,
 								cursorPhysicalPosition,
-								rigObject.offsets.rotation + selectedGroup.offsets.rotation,
+								rigObject.offsets.rotation,
 								{
-									x: rigObject.offsets.scale.x * selectedGroup.offsets.scale.x,
-									y: rigObject.offsets.scale.y * selectedGroup.offsets.scale.y
+									x: rigObject.offsets.scale.x,
+									y: rigObject.offsets.scale.y
 								},
-								rigObject.offsets.rotation_two + selectedGroup.offsets.rotation_two
+								rigObject.offsets.rotation_two
 							);
-							cursorPhysicalPosition.x += grabOffset.x;
-							cursorPhysicalPosition.y += grabOffset.y;
 							virtualCursorPosition = {
-								x: (cursorPhysicalPosition.x + displayWidth / 2) / scaleUnit,
-								y: (cursorPhysicalPosition.y + displayHeight / 2) / scaleUnit
+								x: (cursorPhysicalPosition.x - displayWidth / 2) / scaleUnit,
+								y: (cursorPhysicalPosition.y - displayHeight / 2) / scaleUnit
 							};
 							fixedMouseVirtualPosition = {
 								x: virtualCursorPosition.x - rigObject.offsets.position.x,
