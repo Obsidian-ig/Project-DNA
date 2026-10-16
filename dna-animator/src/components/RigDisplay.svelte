@@ -22,6 +22,9 @@
 	let gridColumnsAndRows: RigVector2 = $derived(pageState?.gridColumnsAndRows ?? { x: 10, y: 10 });
 	let gridStrokeColor: string = $derived(pageState?.gridStrokeColor ?? '#ffffff');
 	let visualEditingEnabled = $derived(pageState?.visualEditorEnabled ?? false);
+	let isDragging = $state(false);
+	let grabOffset: RigVector2 = $state({ x: 0, y: 0 });
+	let visualEditorDraggingItem = $state(null);
 
 	$effect(() => {
 		if (!canvas || !rigObject) return;
@@ -34,6 +37,9 @@
 		};
 		let displayShortestSide = Math.min(displayWidth, displayHeight);
 		const scaleUnit = displayShortestSide / 200; //fixed "grid" of 200x200 "pixels" -100 <-> +100
+		let absoluteBoxStep = 5 * scaleUnit;
+		let absoluteLineLength = 25 * scaleUnit;
+		let absoluteArrowSideLength = 3 * scaleUnit;
 
 		let virtualRigCenter: RigVector2 = {
 			x: rigObject.offsets.position.x + rigObject.transforms.position.x,
@@ -100,6 +106,88 @@
 			physicalPoint.x += physicalOrigin.x;
 			physicalPoint.y += physicalOrigin.y;
 			return physicalPoint;
+		}
+		function CalculateNewPhysicalPositionWithParamsInversed(
+			physicalOrigin: RigVector2,
+			physicalPoint: RigVector2,
+			degreesOfRotation: number,
+			scaleMultiplier: RigVector2,
+			degreesOfRotationTwo: number
+		) {
+			if (scaleMultiplier.x === 0 || scaleMultiplier.y === 0) return physicalPoint;
+			physicalPoint.x -= physicalOrigin.x;
+			physicalPoint.y -= physicalOrigin.y;
+			physicalPoint = RotatePhysicalPoint(physicalPoint, -degreesOfRotationTwo);
+			physicalPoint = ScalePhysicalPoint(physicalPoint, {
+				x: 1 / scaleMultiplier.x,
+				y: 1 / scaleMultiplier.y
+			});
+			physicalPoint = RotatePhysicalPoint(physicalPoint, -degreesOfRotation);
+			physicalPoint.x -= physicalOrigin.x;
+			physicalPoint.y -= physicalOrigin.y;
+			return physicalPoint;
+		}
+
+		/*VISUAL EDITOR TOOLS*/
+		function DrawMoveTool(physicalPosition: RigVector2) {
+			if (!ctx) return;
+			ctx.beginPath();
+			ctx.lineWidth = 2;
+			ctx.moveTo(physicalPosition.x - absoluteBoxStep, physicalPosition.y - absoluteBoxStep); //top left
+			ctx.lineTo(physicalPosition.x + absoluteBoxStep, physicalPosition.y - absoluteBoxStep); //top right
+			ctx.lineTo(physicalPosition.x + absoluteBoxStep, physicalPosition.y + absoluteBoxStep); //bottom right
+			ctx.lineTo(physicalPosition.x - absoluteBoxStep, physicalPosition.y + absoluteBoxStep); //bottom left
+			ctx.closePath();
+			ctx.strokeStyle = '#fcba03'; //yellow box outline
+			ctx.stroke();
+			//draw the y axis arrow
+			ctx.lineWidth = 3;
+			ctx.beginPath();
+			ctx.moveTo(physicalPosition.x, physicalPosition.y - absoluteBoxStep); //move to center top of box
+			ctx.lineTo(physicalPosition.x, physicalPosition.y - (absoluteLineLength + absoluteBoxStep)); //move up
+			ctx.closePath();
+			ctx.strokeStyle = '#156307';
+			ctx.fillStyle = '#156307';
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.moveTo(
+				physicalPosition.x - absoluteArrowSideLength,
+				physicalPosition.y - (absoluteLineLength + absoluteBoxStep)
+			);
+			ctx.lineTo(
+				physicalPosition.x,
+				physicalPosition.y - (absoluteArrowSideLength + absoluteLineLength + absoluteBoxStep)
+			);
+			ctx.lineTo(
+				physicalPosition.x + absoluteArrowSideLength,
+				physicalPosition.y - (absoluteLineLength + absoluteBoxStep)
+			);
+			ctx.stroke();
+			ctx.fill();
+			//draw the x axis arrow
+			ctx.beginPath();
+			ctx.moveTo(physicalPosition.x + absoluteBoxStep, physicalPosition.y);
+			ctx.lineTo(physicalPosition.x + absoluteBoxStep + absoluteLineLength, physicalPosition.y);
+			ctx.closePath();
+			ctx.strokeStyle = '#9c0606';
+			ctx.fillStyle = '#9c0606';
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.moveTo(
+				physicalPosition.x + absoluteBoxStep + absoluteLineLength,
+				physicalPosition.y - absoluteArrowSideLength
+			);
+			ctx.lineTo(
+				physicalPosition.x + absoluteBoxStep + absoluteLineLength + absoluteArrowSideLength,
+				physicalPosition.y
+			);
+			ctx.lineTo(
+				physicalPosition.x + absoluteBoxStep + absoluteLineLength,
+				physicalPosition.y + absoluteArrowSideLength
+			);
+			ctx.closePath();
+			ctx.stroke();
+			ctx.fill();
 		}
 
 		function DrawElement(
@@ -268,8 +356,17 @@
 			ctx.stroke();
 			if (element.filled) ctx.fill();
 
+			let splitSelectedVisualEditorNodeName = pageState?.selectedNode?.name.split('_Point_');
+			let isParentElement = element.name === splitSelectedVisualEditorNodeName?.[0];
+
 			element.points.forEach((point, pointIndex) => {
-				if (element.show_points) {
+				if (
+					element.show_points ||
+					(pageState?.visualEditorEnabled &&
+						isParentElement &&
+						pointIndex === pageState.selectedNode?.index &&
+						pageState.selectedNode.type === SelectedNodeType.Point)
+				) {
 					ctx.beginPath();
 					let calculatedPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
 						point.point,
@@ -287,12 +384,23 @@
 					ctx.closePath();
 					ctx.fillStyle = element.points_color;
 					ctx.fill();
-				}
-				let splitSelectedVisualEditorNodeName =
-					pageState?.selectedNode?.name.split('_Point_');
-				let isParentElement = element.name === splitSelectedVisualEditorNodeName?.[0];
-				let isParentPoint = pointIndex === parseInt(splitSelectedVisualEditorNodeName?.[1] ?? '');
 
+					if (
+						pageState?.visualEditorEnabled &&
+						isParentElement &&
+						pointIndex === pageState.selectedNode?.index &&
+						pageState.selectedNode.type === SelectedNodeType.Point
+					) {
+						if (
+							calculatedPointPosition.x !== pageState.selectedNodePhysicalPosition?.x ||
+							calculatedPointPosition.y !== pageState.selectedNodePhysicalPosition.y
+						) {
+							appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, calculatedPointPosition);
+						}
+					}
+				}
+
+				let isParentPoint = pointIndex === parseInt(splitSelectedVisualEditorNodeName?.[1] ?? '');
 				point.controls?.forEach((control, controlIndex) => {
 					if (
 						pageState &&
@@ -302,7 +410,8 @@
 							(pageState.visualEditorEnabled &&
 								isParentElement &&
 								isParentPoint &&
-								controlIndex === pageState.selectedNode?.index))
+								controlIndex === pageState.selectedNode?.index &&
+								pageState.selectedNode.type === SelectedNodeType.ControlPoint))
 					) {
 						ctx.beginPath();
 						let controlPoint = {
@@ -315,6 +424,7 @@
 							elementWorldX,
 							elementWorldY
 						);
+
 						ctx.arc(
 							calculatedControlPointPhysical.x,
 							calculatedControlPointPhysical.y,
@@ -327,53 +437,38 @@
 						ctx.fill();
 
 						if (
-							controlIndex === pageState.selectedVisualEditorNode?.index &&
-							pageState.visualEditorEnabled && isParentElement && isParentPoint
+							controlIndex === pageState.selectedNode?.index &&
+							pageState.visualEditorEnabled &&
+							isParentElement &&
+							isParentPoint &&
+							pageState.selectedNode.type === SelectedNodeType.ControlPoint
 						) {
-							//is the selected visual editor node
-							console.log("Is Selected Visual Editor Node!");
-							//render the move tool around it.
-							//draw the free movement box first
-							ctx.beginPath();
-							let absoluteBoxStep = 5 * scaleUnit;
-							ctx.lineWidth = 2;
-							ctx.moveTo(calculatedControlPointPhysical.x - absoluteBoxStep, calculatedControlPointPhysical.y - absoluteBoxStep);//top left
-							ctx.lineTo(calculatedControlPointPhysical.x + absoluteBoxStep, calculatedControlPointPhysical.y - absoluteBoxStep);//top right
-							ctx.lineTo(calculatedControlPointPhysical.x + absoluteBoxStep, calculatedControlPointPhysical.y + absoluteBoxStep);//bottom right
-							ctx.lineTo(calculatedControlPointPhysical.x - absoluteBoxStep, calculatedControlPointPhysical.y + absoluteBoxStep);//bottom left
-							ctx.closePath();
-							ctx.strokeStyle = "#fcba03"; //yellow box outline
-							ctx.stroke();
-							//draw the y axis arrow
-							let absoluteLineLength = 15 * scaleUnit;
-							let absoluteArrowSideLength = 3 * scaleUnit;
-							ctx.beginPath();
-							ctx.lineWidth = 3;
-							ctx.moveTo(calculatedControlPointPhysical.x, calculatedControlPointPhysical.y - absoluteBoxStep);//move to center top of box
-							ctx.lineTo(calculatedControlPointPhysical.x, calculatedControlPointPhysical.y - absoluteLineLength);//move up
-							ctx.closePath();
-							ctx.strokeStyle = "#24a803";
-							ctx.stroke();
-							ctx.beginPath();
-							//FIX THIS, NOT DRAWING RIGHT BECAUSE I FORGOT THAT I NEED TO MOVE TO THE FAR LEFT, DRAW UP TO THE MIDDLE + Point height AND THEN DOWN to the right side
-							ctx.lineTo(calculatedControlPointPhysical.x - absoluteArrowSideLength, calculatedControlPointPhysical.y - (absoluteLineLength));//left arrow side
-							ctx.lineTo(calculatedControlPointPhysical.x + absoluteArrowSideLength, calculatedControlPointPhysical.y - absoluteLineLength);//under line
-							ctx.lineTo(calculatedControlPointPhysical.x, calculatedControlPointPhysical.y - absoluteLineLength);//right arrow side
-							ctx.strokeStyle = "#24a803"; //green y axis arrow
-							ctx.fillStyle = "#24a803";
-							ctx.stroke();
-							ctx.fill();
+							if (
+								pageState.selectedNodePhysicalPosition?.x !== calculatedControlPointPhysical.x ||
+								pageState.selectedNodePhysicalPosition.y !== calculatedControlPointPhysical.y
+							) {
+								//if I don't check whether or not it is different, then it just updates forever and causes an update loop
+								appState.UpdatePageStateSelectedNodePhysicalPosition(
+									pageId,
+									calculatedControlPointPhysical
+								);
+							}
 						}
 					}
 				});
 			});
 
 			if (pageState && !pageState.disableAllDebugOptions) {
-				if (element.show_position_point) {
+				if (
+					element.show_position_point ||
+					(pageState?.visualEditorEnabled &&
+						pageState.selectedNode?.type === SelectedNodeType.Element &&
+						element.name === pageState.selectedNode.name)
+				) {
 					ctx.beginPath();
 					ctx.arc(
-						elementCalculatedOrigin.x,
-						elementCalculatedOrigin.y,
+						elementCalculatedPosition.x,
+						elementCalculatedPosition.y,
 						element.position_point_radius * scaleUnit,
 						0,
 						360
@@ -381,6 +476,21 @@
 					ctx.closePath();
 					ctx.fillStyle = element.position_point_color;
 					ctx.fill();
+					if (
+						pageState?.visualEditorEnabled &&
+						pageState.selectedNode?.type === SelectedNodeType.Element &&
+						element.name === pageState.selectedNode.name
+					) {
+						if (
+							elementCalculatedPosition.x !== pageState.selectedNodePhysicalPosition?.x ||
+							elementCalculatedPosition.y !== pageState.selectedNodePhysicalPosition.y
+						) {
+							appState.UpdatePageStateSelectedNodePhysicalPosition(
+								pageId,
+								elementCalculatedPosition
+							);
+						}
+					}
 				}
 				if (element.show_origin_point) {
 					ctx.beginPath();
@@ -414,6 +524,34 @@
 			rigYAxis = ScalePhysicalPoint(rigYAxis, rigScale);
 			rigXAxis = RotatePhysicalPoint(rigXAxis, totalRigRotationTwo);
 			rigYAxis = RotatePhysicalPoint(rigYAxis, totalRigRotationTwo);
+
+			if (
+				(!pageState?.disableAllDebugOptions && rigObject.show_position_point) ||
+				(pageState?.visualEditorEnabled && pageState.selectedNode?.type === SelectedNodeType.Root)
+			) {
+				ctx.beginPath();
+				ctx.arc(
+					physicalRigCenter.x,
+					physicalRigCenter.y,
+					rigObject.position_point_radius * scaleUnit,
+					0,
+					360
+				);
+				ctx.closePath();
+				ctx.fillStyle = rigObject.position_point_color;
+				ctx.fill();
+				if (
+					pageState?.visualEditorEnabled &&
+					pageState.selectedNode?.type === SelectedNodeType.Root
+				) {
+					if (
+						physicalRigCenter.x !== pageState.selectedNodePhysicalPosition?.x ||
+						physicalRigCenter.y !== pageState.selectedNodePhysicalPosition.y
+					) {
+						appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, physicalRigCenter);
+					}
+				}
+			}
 
 			rigObject.layering_order.slice().forEach((item) => {
 				if (item.type === RigLayeringOrderNodeType.Group) {
@@ -500,6 +638,55 @@
 						.forEach((element) => {
 							DrawElement(element, groupCalculatedPosition, groupWorldX, groupWorldY);
 						});
+
+					if (!pageState.disableAllDebugOptions && group.visible && !pageState.hideAllGroups) {
+						if (
+							group.show_position_point ||
+							(pageState?.visualEditorEnabled &&
+								pageState.selectedNode?.type === SelectedNodeType.Group &&
+								group.id === pageState.selectedNode.name)
+						) {
+							ctx.beginPath();
+							ctx.arc(
+								groupCalculatedPosition.x,
+								groupCalculatedPosition.y,
+								group.position_point_radius * scaleUnit,
+								0,
+								360
+							);
+							ctx.closePath();
+							ctx.fillStyle = group.position_point_color;
+							ctx.fill();
+							if (
+								pageState?.visualEditorEnabled &&
+								pageState.selectedNode?.type === SelectedNodeType.Group &&
+								group.id === pageState.selectedNode.name
+							) {
+								if (
+									groupCalculatedPosition.x !== pageState.selectedNodePhysicalPosition?.x ||
+									groupCalculatedPosition.y !== pageState.selectedNodePhysicalPosition.y
+								) {
+									appState.UpdatePageStateSelectedNodePhysicalPosition(
+										pageId,
+										groupCalculatedPosition
+									);
+								}
+							}
+						}
+						if (group.show_origin_point) {
+							ctx.beginPath();
+							ctx.arc(
+								calculatedGroupOrigin.x,
+								calculatedGroupOrigin.y,
+								group.origin_point_radius * scaleUnit,
+								0,
+								360
+							);
+							ctx.closePath();
+							ctx.fillStyle = group.origin_point_color;
+							ctx.fill();
+						}
+					}
 				} else if (item.type === RigLayeringOrderNodeType.Element) {
 					let element = rigObject.elements.find((e) => e.name === item.id);
 					if (!element) return;
@@ -511,6 +698,7 @@
 
 			//grid overlay
 			if (gridOverlay) {
+				ctx.lineWidth = 1;
 				ctx.beginPath();
 				//columns
 				let columnCount = displayWidth / (gridColumnsAndRows.x * scaleUnit);
@@ -531,6 +719,18 @@
 				ctx.strokeStyle = gridStrokeColor;
 				ctx.stroke();
 			}
+
+			//visual editor tools & stuff
+			if (pageState?.visualEditorEnabled) {
+				if (
+					pageState.selectedNode?.type === SelectedNodeType.Point ||
+					pageState.selectedNode?.type === SelectedNodeType.ControlPoint ||
+					pageState.currentVisualEditorTool === VisualEditorTools.MOVE
+				) {
+					if (!pageState.selectedNodePhysicalPosition) return;
+					DrawMoveTool(pageState.selectedNodePhysicalPosition);
+				}
+			}
 		}
 
 		Draw();
@@ -550,117 +750,255 @@
 					-Scale Mode: You can only mess with position points, dragging left/right changes the scale of the rig/group/element on the X axis, Up/Down modifies the Y axis.
 					-Rotate Mode: Again, only position points. Dragging left rotates the rig/group/element counter clockwise, dragging right does clockwise.
 		*/
-		function handleVisualEditorMouseDown(e: MouseEvent) {
-			if (!rigObject) return;
-			if (visualEditingEnabled) {
-				//find the selected node.
-				if (
-					!pageState?.selectedNode &&
-					pageState?.currentVisualEditorTool != VisualEditorTools.SELECT
-				)
-					return;
-				switch (pageState?.selectedNode?.type) {
-					case SelectedNodeType.Group:
-						break;
-					case SelectedNodeType.Element:
-						break;
-					case SelectedNodeType.Point:
-						break;
-					case SelectedNodeType.ControlPoint:
-						let splitSelectedNodeName = pageState.selectedNode.name.split('_Point_'); //will look like "Element_Name_Here", 0, "controlpoint-0"
-						let parentElement = rigObject.elements.find((e) => e.name === splitSelectedNodeName[0]);
-						if (!parentElement) {
-							console.error(
-								"Unable to find parent element for control point! Element Name: '" +
-									splitSelectedNodeName[0] +
-									"', Control Point Index: " +
-									pageState.selectedNode.index
-							);
-							return;
-						}
-						let parentGroup = parentElement.group_id
-							? rigObject.groups.find((g) => g.id === parentElement.group_id)
-							: null;
-						let groupVirtualLocalPosition: RigVector2 = {
-							x: parentGroup
-								? parentGroup.offsets.position.x + parentGroup.transforms.position.x
-								: 0,
-							y: parentGroup
-								? parentGroup.offsets.position.y + parentGroup.transforms.position.y
-								: 0
-						};
-						let parentPoint = parentElement.points[parseInt(splitSelectedNodeName[1])];
-						if (!parentPoint) {
-							console.error(
-								'Unable to find parent point for control point! Point Index: ' +
-									splitSelectedNodeName[1] +
-									', Control Point Index: ' +
-									pageState.selectedNode.index
-							);
-							return;
-						}
-						let controlPoint = parentPoint?.controls?.[pageState.selectedNode.index];
-						if (!controlPoint) {
-							console.error('Unable to find control point!');
-							return;
-						}
-						//need to check if the cursor is within the "active range" to render to move tool on the control point.
-						let canvasRect = canvas.getBoundingClientRect();
-						let mouseVirtualPosition: RigVector2 = {
-							//might need to multiply by scaleUnit idk yet
-							x: (e.clientX - canvasRect.left - displayWidth / 2) / scaleUnit,
-							y: (e.clientY - canvasRect.top - displayHeight / 2) / scaleUnit
-						};
-						let controlPointVirtualPosition: RigVector2 = {
-							x:
-								rigObject.offsets.position.x +
-								rigObject.transforms.position.x +
-								groupVirtualLocalPosition.x +
-								parentElement.offsets.position.x +
-								parentElement.transforms.position.x +
-								parentPoint.point.x +
-								controlPoint.x,
-							y:
-								rigObject.offsets.position.y +
-								rigObject.transforms.position.y +
-								groupVirtualLocalPosition.y +
-								parentElement.offsets.position.y +
-								parentElement.transforms.position.y +
-								parentPoint.point.y +
-								controlPoint.y
-						};
-						let distance = Math.sqrt(
-							Math.pow(mouseVirtualPosition.x - controlPointVirtualPosition.x, 2) +
-								Math.pow(mouseVirtualPosition.y - controlPointVirtualPosition.y, 2)
-						);
-						if (distance <= 10) {
-							appState.UpdatePageStateSelectedVisualEditorNode(pageId, pageState.selectedNode);
-						} else {
-							appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
-						}
+		// function handleVisualEditorMouseDown(e: MouseEvent) {
+		// 	if (!rigObject) return;
+		// 	if (pageState?.visualEditorEnabled) {
+		// 		//find the selected node.
+		// 		if (
+		// 			!pageState?.selectedNode &&
+		// 			pageState?.currentVisualEditorTool != VisualEditorTools.SELECT
+		// 		)
+		// 			return;
+		// 		switch (pageState?.selectedNode?.type) {
+		// 			case SelectedNodeType.Root:
+		// 				break;
+		// 			case SelectedNodeType.Group:
+		// 				break;
+		// 			case SelectedNodeType.Element:
+		// 				break;
+		// 			case SelectedNodeType.Point:
+		// 				break;
+		// 			case SelectedNodeType.ControlPoint:
+		// 				let splitSelectedNodeName = pageState.selectedNode.name.split('_Point_'); //will look like "Element_Name_Here", 0, "controlpoint-0"
+		// 				let parentElement = rigObject.elements.find((e) => e.name === splitSelectedNodeName[0]);
+		// 				if (!parentElement) {
+		// 					console.error(
+		// 						"Unable to find parent element for control point! Element Name: '" +
+		// 							splitSelectedNodeName[0] +
+		// 							"', Control Point Index: " +
+		// 							pageState.selectedNode.index
+		// 					);
+		// 					return;
+		// 				}
+		// 				let parentGroup = parentElement.group_id
+		// 					? rigObject.groups.find((g) => g.id === parentElement.group_id)
+		// 					: null;
+		// 				let groupVirtualLocalPosition: RigVector2 = {
+		// 					x: parentGroup
+		// 						? parentGroup.offsets.position.x + parentGroup.transforms.position.x
+		// 						: 0,
+		// 					y: parentGroup
+		// 						? parentGroup.offsets.position.y + parentGroup.transforms.position.y
+		// 						: 0
+		// 				};
+		// 				let parentPoint = parentElement.points[parseInt(splitSelectedNodeName[1])];
+		// 				if (!parentPoint) {
+		// 					console.error(
+		// 						'Unable to find parent point for control point! Point Index: ' +
+		// 							splitSelectedNodeName[1] +
+		// 							', Control Point Index: ' +
+		// 							pageState.selectedNode.index
+		// 					);
+		// 					return;
+		// 				}
+		// 				let controlPoint = parentPoint?.controls?.[pageState.selectedNode.index];
+		// 				if (!controlPoint) {
+		// 					console.error('Unable to find control point!');
+		// 					return;
+		// 				}
+		// 				//need to check if the cursor is within the "active range" to render to move tool on the control point.
+		// 				if (!canvas) return;
+		// 				let canvasRect = canvas.getBoundingClientRect();
+		// 				if (!canvasRect) return;
+		// 				let mouseVirtualPosition: RigVector2 = {
+		// 					//might need to multiply by scaleUnit idk yet
+		// 					x: (e.clientX - canvasRect.left - displayWidth / 2) / scaleUnit,
+		// 					y: (e.clientY - canvasRect.top - displayHeight / 2) / scaleUnit
+		// 				};
+		// 				let controlPointVirtualPosition: RigVector2 = {
+		// 					x:
+		// 						rigObject.offsets.position.x +
+		// 						rigObject.transforms.position.x +
+		// 						groupVirtualLocalPosition.x +
+		// 						parentElement.offsets.position.x +
+		// 						parentElement.transforms.position.x +
+		// 						parentPoint.point.x +
+		// 						controlPoint.x,
+		// 					y:
+		// 						rigObject.offsets.position.y +
+		// 						rigObject.transforms.position.y +
+		// 						groupVirtualLocalPosition.y +
+		// 						parentElement.offsets.position.y +
+		// 						parentElement.transforms.position.y +
+		// 						parentPoint.point.y +
+		// 						controlPoint.y
+		// 				};
+		// 				let distance = Math.sqrt(
+		// 					Math.pow(mouseVirtualPosition.x - controlPointVirtualPosition.x, 2) +
+		// 						Math.pow(mouseVirtualPosition.y - controlPointVirtualPosition.y, 2)
+		// 				);
+		// 				/*
+		// 				if (distance <= 10) {
+		// 					appState.UpdatePageStateSelectedVisualEditorNode(pageId, pageState.selectedNode);
+		// 				} else {
+		// 					appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
+		// 				}
+		// 				*/
 
-						break;
-					default:
-						console.error(
-							"SelectedNode.type was null or invalid! '" +
-								pageState.selectedNode?.type.toString() +
-								"'."
-						);
-						return;
-				}
-			}
-		}
-		document.removeEventListener('mousedown', (e) => handleVisualEditorMouseDown);
-		document.addEventListener('mousedown', (e) => handleVisualEditorMouseDown(e));
-		if (visualEditingEnabled) {
+		// 				break;
+		// 			default:
+		// 				console.error(
+		// 					"SelectedNode.type was null or invalid! '" +
+		// 						pageState.selectedNode?.type.toString() +
+		// 						"'."
+		// 				);
+		// 				return;
+		// 		}
+		// 	}
+		// }
+		// document.removeEventListener('mousedown', handleVisualEditorMouseDown);
+		// document.addEventListener('mousedown', handleVisualEditorMouseDown);
+
+		let VisualEditorDragStarted = function (e: MouseEvent) {
+			e.preventDefault();
+			if (isDragging) return;
+			let canvasBoundingRect = canvas.getBoundingClientRect();
+			let cursorPhysicalPosition: RigVector2 = {
+				x: e.clientX - canvasBoundingRect.left,
+				y: e.clientY - canvasBoundingRect.top
+			};
+			if (!pageState?.selectedNodePhysicalPosition) return;
+			let isCursorInFreeMoveSquare =
+				cursorPhysicalPosition.x >= pageState.selectedNodePhysicalPosition.x - absoluteBoxStep && //cursor.x >= box_left
+				cursorPhysicalPosition.x <= pageState.selectedNodePhysicalPosition.x + absoluteBoxStep && //cursor.x <= box_right
+				cursorPhysicalPosition.y >= pageState.selectedNodePhysicalPosition.y - absoluteBoxStep && //cursor.y >= box_top
+				cursorPhysicalPosition.y <= pageState.selectedNodePhysicalPosition.y + absoluteBoxStep; //cursor.y <= box_bottom
 			if (
-				pageState?.selectedNode?.type === SelectedNodeType.Point ||
-				pageState?.selectedNode?.type === SelectedNodeType.ControlPoint
+				(isCursorInFreeMoveSquare &&
+					pageState.currentVisualEditorTool === VisualEditorTools.MOVE) ||
+				pageState.currentVisualEditorTool === VisualEditorTools.ALL
 			) {
-				//these are the only two that can't use rotate or scale transform tools.
-			} else {
+				//console.log('Drag Started');
+				grabOffset = {
+					x: (pageState?.selectedNodePhysicalPosition?.x ?? 0) - cursorPhysicalPosition.x,
+					y: (pageState?.selectedNodePhysicalPosition?.y ?? 0) - cursorPhysicalPosition.y
+				};
+				isDragging = true;
 			}
-		}
+		};
+		let handleVisualEditorDrag = function (e: MouseEvent) {
+			e.preventDefault();
+			if (!isDragging) return;
+			//console.log('Dragging');
+			let canvasBoundingRect = canvas.getBoundingClientRect();
+			let cursorPhysicalPosition: RigVector2 = {
+				x: e.clientX - canvasBoundingRect.left,
+				y: e.clientY - canvasBoundingRect.top
+			};
+			let virtualCursorPosition: RigVector2 = {
+				x: (cursorPhysicalPosition.x - displayWidth / 2) / scaleUnit,
+				y: (cursorPhysicalPosition.y - displayHeight / 2) / scaleUnit
+			};
+			let fixedMouseVirtualPosition: RigVector2 = {
+				x: 0,
+				y: 0
+			};
+			switch (pageState?.currentVisualEditorTool) {
+				case VisualEditorTools.MOVE:
+					switch (pageState?.selectedNode?.type) {
+						case SelectedNodeType.Root:
+							rigObject.offsets.position = virtualCursorPosition;
+							break;
+						case SelectedNodeType.Group:
+							let selectedGroup = rigObject.groups.find(
+								(g) => g.id === pageState.selectedNode?.name
+							);
+							if (!selectedGroup) return;
+							cursorPhysicalPosition = CalculateNewPhysicalPositionWithParamsInversed(
+								physicalRigCenter,
+								cursorPhysicalPosition,
+								rigObject.offsets.rotation + selectedGroup.offsets.rotation,
+								{
+									x: rigObject.offsets.scale.x * selectedGroup.offsets.scale.x,
+									y: rigObject.offsets.scale.y * selectedGroup.offsets.scale.y
+								},
+								rigObject.offsets.rotation_two + selectedGroup.offsets.rotation_two
+							);
+							cursorPhysicalPosition.x += grabOffset.x;
+							cursorPhysicalPosition.y += grabOffset.y;
+							virtualCursorPosition = {
+								x: (cursorPhysicalPosition.x + displayWidth / 2) / scaleUnit,
+								y: (cursorPhysicalPosition.y + displayHeight / 2) / scaleUnit
+							};
+							fixedMouseVirtualPosition = {
+								x: virtualCursorPosition.x - rigObject.offsets.position.x,
+								y: virtualCursorPosition.y - rigObject.offsets.position.y
+							};
+							selectedGroup.offsets.position = fixedMouseVirtualPosition;
+							break;
+						case SelectedNodeType.Element:
+							let selectedElement = rigObject.elements.find(
+								(e) => e.name === pageState.selectedNode?.name
+							);
+							if (!selectedElement) return;
+							let group = selectedElement.group_id
+								? rigObject.groups.find((g) => g.id === selectedElement.group_id)
+								: null;
+							fixedMouseVirtualPosition = {
+								x:
+									virtualCursorPosition.x -
+									(group?.offsets.position.x ?? 0) -
+									rigObject.offsets.position.x,
+								y:
+									virtualCursorPosition.y -
+									(group?.offsets.position.y ?? 0) -
+									rigObject.offsets.position.y
+							};
+							selectedElement.offsets.position = fixedMouseVirtualPosition;
+							break;
+						case SelectedNodeType.Point:
+							let parentElement = rigObject.elements.find(
+								(e) => e.name === pageState.selectedNode?.name.split('_Point_')[0]
+							);
+							if (!parentElement) return;
+							let parentElementGroup = parentElement.group_id
+								? rigObject.groups.find((g) => g.id === parentElement.group_id)
+								: null;
+							let point = parentElement.points[pageState.selectedNode.index];
+							if (!point) return;
+							fixedMouseVirtualPosition = {
+								x:
+									virtualCursorPosition.x -
+									parentElement.offsets.position.x -
+									(parentElementGroup?.offsets.position.x ?? 0) -
+									rigObject.offsets.position.x,
+								y:
+									virtualCursorPosition.y -
+									parentElement.offsets.position.y -
+									(parentElementGroup?.offsets.position.y ?? 0) -
+									rigObject.offsets.position.y
+							};
+							point.point = fixedMouseVirtualPosition;
+							break;
+						case SelectedNodeType.ControlPoint:
+							break;
+						default:
+							return;
+					}
+					break;
+				default:
+					return;
+			}
+		};
+		let handleVisualEditorDragEnded = function (e: MouseEvent) {
+			e.preventDefault();
+			if (!isDragging) return;
+			console.log('Drag ended');
+			isDragging = false;
+		};
+		canvas.onmousedown = pageState?.visualEditorEnabled ? VisualEditorDragStarted : null;
+		canvas.onmousemove = pageState?.visualEditorEnabled ? handleVisualEditorDrag : null;
+		canvas.onmouseup = pageState?.visualEditorEnabled ? handleVisualEditorDragEnded : null;
 	});
 
 	$effect(() => {

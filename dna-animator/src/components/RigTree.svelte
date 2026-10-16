@@ -401,6 +401,12 @@
 				let newGroup = {
 					id: 'New_Group_' + numberToUse.toString(),
 					visible: true,
+					show_position_point: false,
+    				position_point_color: "#49c998",
+    				position_point_radius: 1.5,
+    				show_origin_point: false,
+    				origin_point_color: "#4d49c9",
+    				origin_point_radius: 1.5,
 					offsets: {
 						position: {
 							x: 0,
@@ -883,6 +889,7 @@
 		class="rig-tree-container"
 		onclick={() => {
 			appState.UpdatePageStateSelectedNode(pageId, null);
+			appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, null);
 		}}
 		ondragover={(e) => e.preventDefault()}
 		ondragenter={(e) => {
@@ -938,8 +945,11 @@
 				onclick={(e) => {
 					e.stopPropagation();
 					if (rigObject)
-						appState.UpdatePageStateSelectedNode(pageId, { name: rigObject.name, type: DNARig.SelectedNodeType.Root, index: 0 });
-						appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
+						appState.UpdatePageStateSelectedNode(pageId, {
+							name: rigObject.name,
+							type: DNARig.SelectedNodeType.Root,
+							index: 0
+						});
 				}}>{rigObject?.name}</button
 			>
 		</div>
@@ -1025,7 +1035,6 @@
 												type: DNARig.SelectedNodeType.Group,
 												index: groupIndex
 											});
-											appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
 									}}>{group.id}</button
 								>
 							</div>
@@ -1144,7 +1153,6 @@
 						type: DNARig.SelectedNodeType.Element,
 						index: elementIndex
 					});
-					appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
 			}}
 		>
 			{element.name}
@@ -1219,7 +1227,6 @@
 								type: DNARig.SelectedNodeType.Point,
 								index: pointIndex
 							});
-							appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
 					}}>Point: {pointIndex}</button
 				>
 			</div>
@@ -1249,7 +1256,6 @@
 										type: DNARig.SelectedNodeType.ControlPoint,
 										index: controlIndex
 									});
-									appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
 							}}
 						>
 							Control: {controlIndex}

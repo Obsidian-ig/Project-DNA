@@ -72,7 +72,7 @@
           "steps": 20,
           "controlPointColor": "#e54343",
           "show_control_points": false,
-          "control_point_color": "#4b00fa",
+          "control_point_color": "#ff0000",
           "control_point_radius": 1.5
         },
         {
@@ -105,7 +105,7 @@
       "filled": true,
       "position_point_color": "#00ff00",
       "origin_point_color": "#fb7304",
-      "show_points": false,
+      "show_points": true,
       "points_color": "#ff00f7",
       "position_point_radius": 1.5,
       "origin_point_radius": 1.5,
@@ -379,7 +379,13 @@
           "x": 0,
           "y": 0
         }
-      }
+      },
+      "show_position_point": false,
+      "position_point_color": "#5eb4d9",
+      "position_point_radius": 1.5,
+      "show_origin_point": false,
+      "origin_point_color": "#d35ac9",
+      "origin_point_radius": 1.5
     },
     {
       "id": "Right_Eye",
@@ -399,7 +405,13 @@
           "x": 0,
           "y": 0
         }
-      }
+      },
+      "show_position_point": false,
+      "show_origin_point": false,
+      "position_point_color": "#5eb4d9",
+      "position_point_radius": 1.5,
+      "origin_point_color": "#d35ac9",
+      "origin_point_radius": 1.5
     }
   ],
   "default_state": {
@@ -419,5 +431,8 @@
     "required": [],
     "optional": []
   },
-  "bindings": []
+  "bindings": [],
+  "show_position_point": false,
+  "position_point_color": "#0e7c34",
+  "position_point_radius": 1.5
 }

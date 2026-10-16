@@ -76,6 +76,7 @@ export class PageState {
     loadedRig: RigObject | null;
     loadedRigFilePath: string | null;
     selectedNode: SelectedNode | null;
+    selectedNodePhysicalPosition: RigVector2 | null;
     expandedNodes: SelectedNode[] | null;
     hideAllGroups: boolean;
     hideAllElements: boolean;
@@ -86,16 +87,16 @@ export class PageState {
     currentVisualEditorTool: VisualEditorTools;
     currentVisualEditorMode: VisualEditorModes;
     visualEditorEnabled: boolean;
-    selectedVisualEditorNode: SelectedNode | null;
     rigErrorMessages: string[];
     watchRules: PageWatchRule[];
 
-    constructor(title: string, id: string, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, currentVisualEditorTool: VisualEditorTools = VisualEditorTools.MOVE, currentVisualEditorMode: VisualEditorModes = VisualEditorModes.VISUAL, visualEditorEnabled: boolean = false, selectedVisualEditorNode: SelectedNode | null = null, rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
+    constructor(title: string, id: string, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, selectedNodePhysicalPosition: RigVector2 | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, currentVisualEditorTool: VisualEditorTools = VisualEditorTools.MOVE, currentVisualEditorMode: VisualEditorModes = VisualEditorModes.VISUAL, visualEditorEnabled: boolean = false, rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
         this.title = title;
         this.id = id;
         this.loadedRig = loadedRig;
         this.loadedRigFilePath = loadedRigFilePath;
         this.selectedNode = selectedNode;
+        this.selectedNodePhysicalPosition = selectedNodePhysicalPosition;
         this.expandedNodes = expandedNodes;
         this.hideAllGroups = hideAllGroups;
         this.hideAllElements = hideAllElements;
@@ -106,7 +107,6 @@ export class PageState {
         this.currentVisualEditorTool = currentVisualEditorTool;
         this.currentVisualEditorMode = currentVisualEditorMode;
         this.visualEditorEnabled = visualEditorEnabled;
-        this.selectedVisualEditorNode = selectedVisualEditorNode;
         this.rigErrorMessages = rigErrorMessages;
         this.watchRules = watchRules;
 
@@ -128,6 +128,7 @@ export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): Page
         overrides.loadedRig ?? null, //loaded rig
         overrides.loadedRigFilePath ?? null, //file path
         overrides.selectedNode ?? null, //selected node
+        overrides.selectedNodePhysicalPosition ?? null,
         overrides.expandedNodes ?? [], //expanded nodes
         overrides.gridColumnsAndRows ?? {
             x: 10,
@@ -137,7 +138,6 @@ export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): Page
         overrides.currentVisualEditorTool ?? VisualEditorTools.MOVE,
         overrides.currentVisualEditorMode ?? VisualEditorModes.MINIMAL,
         overrides.visualEditorEnabled ?? false,
-        overrides.selectedVisualEditorNode ?? null,
         overrides.rigErrorMessages ?? [], //rig errors
         overrides.watchRules ?? [], //watch rules
         overrides.hideAllGroups ?? false,
@@ -215,6 +215,14 @@ class AppState {
         }
         pageState.selectedNode = selectedNode;
     }
+    UpdatePageStateSelectedNodePhysicalPosition(pageStateId: string, position: RigVector2 | null) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.selectedNodePhysicalPosition = position;
+    }
     UpdatePageStateShowGridOverlay(pageStateId: string, showGridOverlay: boolean) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);
         if (!pageState) {
@@ -270,14 +278,6 @@ class AppState {
             return;
         }
         pageState.visualEditorEnabled = visualEditorEnabled;
-    }
-    UpdatePageStateSelectedVisualEditorNode(pageStateId: string, selectedVisualEditorNode: SelectedNode | null) {
-        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
-        if (!pageState) {
-            console.log("Failed to find page state with id: '" + pageStateId + "'!");
-            return;
-        }
-        pageState.selectedVisualEditorNode = selectedVisualEditorNode;
     }
 
 

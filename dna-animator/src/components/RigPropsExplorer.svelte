@@ -118,6 +118,12 @@
 			/>
 			<Boolean label="Hide All Elements" bind:value={pageState.hideAllElements} />
 			<Boolean label="Hide All Groups" bind:value={pageState.hideAllGroups} />
+			<Boolean
+					label="Debug: Show Position Point"
+					bind:value={rigObject.show_position_point}
+				/>
+				<Color label="Position Point Color" bind:value={rigObject.position_point_color} />
+				<Number label="Position Point Radius" bind:value={rigObject.position_point_radius} />
 			<Section label="Base Offsets">
 				<VectorTwo label="Starting Position" bind:value={rigObject.offsets.position} />
 				<Number label="Starting Rotation" bind:value={rigObject.offsets.rotation} />
@@ -189,6 +195,17 @@
 				/>
 				<Boolean label="Node Expanded" bind:value={nodeExpanded} />
 				<Boolean label="Group Visible" bind:value={currentGroup.visible} />
+
+				<Boolean
+					label="Debug: Show Position Point"
+					bind:value={currentGroup.show_position_point}
+				/>
+				<Color label="Position Point Color" bind:value={currentGroup.position_point_color} />
+				<Number label="Position Point Radius" bind:value={currentGroup.position_point_radius} />
+				<Boolean label="Debug: Show Origin Point" bind:value={currentGroup.show_origin_point} />
+				<Color label="Origin Point Color" bind:value={currentGroup.origin_point_color} />
+				<Number label="Origin Point Radius" bind:value={currentGroup.origin_point_radius} />
+
 				<Section label="Offsets">
 					<VectorTwo label="Position" bind:value={currentGroup.offsets.position} />
 					<Number label="Rotation" bind:value={currentGroup.offsets.rotation} />

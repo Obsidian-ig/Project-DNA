@@ -72,6 +72,12 @@ export type RigElementParameters = (typeof RigElementParameters)[keyof typeof Ri
 export interface RigGroup {
     id: string;
     visible: boolean;
+    show_position_point: boolean;
+    position_point_color: string;
+    position_point_radius: number;
+    show_origin_point: boolean;
+    origin_point_color: string;
+    origin_point_radius: number;
     offsets: {
         position: RigVector2;
         rotation: number;
@@ -444,6 +450,9 @@ export interface RigObject {
     author: string;
     author_link: string;
     last_updated_utc: string;
+    show_position_point: boolean;
+    position_point_color: string;
+    position_point_radius: number;
     offsets: {
         // essentially the initial "offsets" of the rig. The initial values everything else is based off of.
         position: RigVector2;
@@ -479,6 +488,9 @@ export const createDefaultRigObject = (overrides: Partial<RigObject> = {}): RigO
         author: "Unknown",
         author_link: "",
         last_updated_utc: new Date().toISOString(),
+        show_position_point: false,
+        position_point_color: "#049133",
+        position_point_radius: 1.5,
         offsets: {
             position: { x: 0, y: 0 },
             rotation: 0,
