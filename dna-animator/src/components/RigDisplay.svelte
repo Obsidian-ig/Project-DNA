@@ -1155,11 +1155,13 @@
 							fixedMouseVirtualPosition = {
 								x:
 									virtualCursorPosition.x -
+									point2.point.x -
 									parentElement2.offsets.position.x -
 									(parentElementGroup2?.offsets.position.x ?? 0) -
 									rigObject.offsets.position.x,
 								y:
 									virtualCursorPosition.y -
+									point2.point.y -
 									parentElement2.offsets.position.y -
 									(parentElementGroup2?.offsets.position.y ?? 0) -
 									rigObject.offsets.position.y
