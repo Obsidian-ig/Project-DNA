@@ -543,6 +543,16 @@ export interface SelectedNode {
     index: number;
 }
 
+export interface NodeFrame {
+    nodeType: SelectedNodeType;
+    nodeId: string;
+    physicalPosition: RigVector2;
+    physicalTransformOrigin: RigVector2;
+    worldX: RigVector2;
+    worldY: RigVector2;
+
+}
+
 export function RemoveKeysFromObject(obj: any, keysToRemove: string[]): any {
     if (obj === null || typeof obj !== "object") {
         return obj;
@@ -563,4 +573,15 @@ export function RemoveKeysFromObject(obj: any, keysToRemove: string[]): any {
         }
     });
     return finishedObj;
+}
+
+export function GetNameIdForElementPoint(elementName: string, pointIndex: number) {
+    return (elementName + "_PIndex_" + pointIndex);
+}
+
+export function GetNameIdForControlPoint(elementName: string, pointIndex: number, controlPointIndex: number) {
+    return (elementName + "_PIndex_" + pointIndex + "_PIndex_" + controlPointIndex);
+
+    //Element_Name_Here_PIndex_0_PIndex_1
+    //.split("_PIndex") returns -> ["Element_Name_Here", "0", "1"]
 }

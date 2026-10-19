@@ -341,7 +341,7 @@
 				<Number label="Control Points Radius" bind:value={currentPoint.control_point_radius} />
 			{/if}
 		{:else if selectedNode?.type === SelectedNodeType.ControlPoint}
-			{let splitName = $derived(selectedNode.name.split('_Point_'))}
+			{let splitName = $derived(selectedNode.name.split('_PIndex_'))}
 			{let elementName = $derived(splitName[0])}
 			{let currentControl = $derived(
 				selectedNode && selectedNode.index !== undefined

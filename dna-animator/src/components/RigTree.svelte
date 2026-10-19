@@ -1223,7 +1223,7 @@
 						e.stopPropagation();
 						if (rigObject)
 							appState.UpdatePageStateSelectedNode(pageId, {
-								name: element.name,
+								name: DNARig.GetNameIdForElementPoint(element.name, pointIndex),
 								type: DNARig.SelectedNodeType.Point,
 								index: pointIndex
 							});
@@ -1252,7 +1252,7 @@
 								e.stopPropagation();
 								if (rigObject)
 									appState.UpdatePageStateSelectedNode(pageId, {
-										name: element.name + '_' + 'Point_' + pointIndex.toString(),
+										name: DNARig.GetNameIdForControlPoint(element.name, pointIndex, controlIndex),
 										type: DNARig.SelectedNodeType.ControlPoint,
 										index: controlIndex
 									});

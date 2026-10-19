@@ -1,6 +1,6 @@
 import { browser } from "$app/environment";
 import { untrack } from "svelte";
-import type { RigObject, RigVector2, SelectedNode } from "./DNARig";
+import type { NodeFrame, RigObject, RigVector2, SelectedNode } from "./DNARig";
 
 //supported themes
 export enum Theme {
@@ -87,10 +87,11 @@ export class PageState {
     currentVisualEditorTool: VisualEditorTools;
     currentVisualEditorMode: VisualEditorModes;
     visualEditorEnabled: boolean;
+    nodeFrames: NodeFrame[];
     rigErrorMessages: string[];
     watchRules: PageWatchRule[];
 
-    constructor(title: string, id: string, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, selectedNodePhysicalPosition: RigVector2 | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, currentVisualEditorTool: VisualEditorTools = VisualEditorTools.MOVE, currentVisualEditorMode: VisualEditorModes = VisualEditorModes.VISUAL, visualEditorEnabled: boolean = false, rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
+    constructor(title: string, id: string, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, selectedNodePhysicalPosition: RigVector2 | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, currentVisualEditorTool: VisualEditorTools = VisualEditorTools.MOVE, currentVisualEditorMode: VisualEditorModes = VisualEditorModes.VISUAL, visualEditorEnabled: boolean = false, nodeFrames: NodeFrame[] = [], rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
         this.title = title;
         this.id = id;
         this.loadedRig = loadedRig;
@@ -107,6 +108,7 @@ export class PageState {
         this.currentVisualEditorTool = currentVisualEditorTool;
         this.currentVisualEditorMode = currentVisualEditorMode;
         this.visualEditorEnabled = visualEditorEnabled;
+        this.nodeFrames = nodeFrames;
         this.rigErrorMessages = rigErrorMessages;
         this.watchRules = watchRules;
 
@@ -138,6 +140,7 @@ export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): Page
         overrides.currentVisualEditorTool ?? VisualEditorTools.MOVE,
         overrides.currentVisualEditorMode ?? VisualEditorModes.MINIMAL,
         overrides.visualEditorEnabled ?? false,
+        overrides.nodeFrames ?? [],
         overrides.rigErrorMessages ?? [], //rig errors
         overrides.watchRules ?? [], //watch rules
         overrides.hideAllGroups ?? false,
@@ -278,6 +281,28 @@ class AppState {
             return;
         }
         pageState.visualEditorEnabled = visualEditorEnabled;
+    }
+    AddOrUpdatePageStateNodeFrame(pageStateId: string, nodeFrame: NodeFrame) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        let frameExists = pageState.nodeFrames.findIndex(n => n.nodeType === nodeFrame.nodeType && n.nodeId === nodeFrame.nodeId);
+        if (frameExists < 0 || frameExists > pageState.nodeFrames.length) {
+            pageState.nodeFrames.push(nodeFrame);
+            return;
+        }
+        pageState.nodeFrames[frameExists] = nodeFrame;
+    }
+    RemovePageStateNodeFrame(pageStateId: string, nodeFrameIndex: number) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        if (pageState.nodeFrames.length - 1 < nodeFrameIndex || nodeFrameIndex < 0) return;
+        pageState.nodeFrames.splice(nodeFrameIndex, 1);
     }
 
 

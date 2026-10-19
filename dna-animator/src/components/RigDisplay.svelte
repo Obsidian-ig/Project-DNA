@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { appState, VisualEditorModes, VisualEditorTools } from '../AppState.svelte';
 	import {
+		GetNameIdForElementPoint,
 		RigLayeringOrderNodeType,
 		RigPointInterpolationType,
 		SelectedNodeType,
@@ -194,7 +195,8 @@
 			element: RigElement,
 			parentPosition: RigVector2,
 			xAxis: RigVector2,
-			yAxis: RigVector2
+			yAxis: RigVector2,
+			elementIndex: number
 		) {
 			if (!rigObject || !ctx || !element.visible) return;
 			let elementVirtualTotalPosition: RigVector2 = {
@@ -251,6 +253,24 @@
 				elementWorldX,
 				elementWorldY
 			);
+
+			let pointFrame = pageState?.nodeFrames.find(
+				(n) => n.nodeType === SelectedNodeType.Element && n.nodeId === element.name
+			);
+			if (
+				!pointFrame ||
+				pointFrame.physicalPosition.x !== elementCalculatedPosition.x ||
+				pointFrame.physicalPosition.y !== elementCalculatedPosition.y
+			) {
+				appState.AddOrUpdatePageStateNodeFrame(pageId, {
+					nodeId: element.name,
+					nodeType: SelectedNodeType.Element,
+					physicalPosition: elementCalculatedPosition,
+					physicalTransformOrigin: { x: 0, y: 0 },
+					worldX: elementWorldX,
+					worldY: elementWorldY
+				});
+			}
 
 			//all calculations are from the current point to the next point, never backwards.
 			ctx.beginPath();
@@ -349,6 +369,25 @@
 						ctx.lineTo(calculatedPathPointPhysical.x, calculatedPathPointPhysical.y);
 					}
 				}
+
+				let id = GetNameIdForElementPoint(element.name, index);
+				let pointFrame = pageState?.nodeFrames.find(
+					(n) => n.nodeType === SelectedNodeType.Point && n.nodeId === id
+				);
+				if (
+					!pointFrame ||
+					pointFrame.physicalPosition.x !== calculatedPointPosition.x ||
+					pointFrame.physicalPosition.y !== calculatedPointPosition.y
+				) {
+					appState.AddOrUpdatePageStateNodeFrame(pageId, {
+						nodeId: id,
+						nodeType: SelectedNodeType.Point,
+						physicalPosition: calculatedPointPosition,
+						physicalTransformOrigin: { x: 0, y: 0 },
+						worldX: elementWorldX,
+						worldY: elementWorldY
+					});
+				}
 			});
 			ctx.closePath();
 			ctx.strokeStyle = element.stroke_color;
@@ -356,9 +395,10 @@
 			ctx.stroke();
 			if (element.filled) ctx.fill();
 
-			let splitSelectedVisualEditorNodeName = pageState?.selectedNode?.name.split('_Point_');
+			let splitSelectedVisualEditorNodeName = pageState?.selectedNode?.name.split('_PIndex_');
 			let isParentElement = element.name === splitSelectedVisualEditorNodeName?.[0];
 
+			//debug/visual editor
 			element.points.forEach((point, pointIndex) => {
 				if (
 					element.show_points ||
@@ -632,11 +672,29 @@
 						y: rigXAxis.y * groupYAxis.x + rigYAxis.y * groupYAxis.y
 					};
 
+					let pointFrame = pageState?.nodeFrames.find(
+						(n) => n.nodeType === SelectedNodeType.Group && n.nodeId === group.id
+					);
+					if (
+						!pointFrame ||
+						pointFrame.physicalPosition.x !== groupCalculatedPosition.x ||
+						pointFrame.physicalPosition.y !== groupCalculatedPosition.y
+					) {
+						appState.AddOrUpdatePageStateNodeFrame(pageId, {
+							nodeId: group.id,
+							nodeType: SelectedNodeType.Group,
+							physicalPosition: groupCalculatedPosition,
+							physicalTransformOrigin: physicalRigCenter,
+							worldX: groupWorldX,
+							worldY: groupWorldY
+						});
+					}
+
 					rigObject.elements
 						.filter((e) => e.group_id === group.id)
 						.slice()
-						.forEach((element) => {
-							DrawElement(element, groupCalculatedPosition, groupWorldX, groupWorldY);
+						.forEach((element, elementIndex) => {
+							DrawElement(element, groupCalculatedPosition, groupWorldX, groupWorldY, elementIndex);
 						});
 
 					if (!pageState.disableAllDebugOptions && group.visible && !pageState.hideAllGroups) {
@@ -688,9 +746,10 @@
 						}
 					}
 				} else if (item.type === RigLayeringOrderNodeType.Element) {
-					let element = rigObject.elements.find((e) => e.name === item.id);
+					let elementIndex = rigObject.elements.findIndex((e) => e.name === item.id);
+					let element = rigObject.elements[elementIndex];
 					if (!element) return;
-					DrawElement(element, physicalRigCenter, rigXAxis, rigYAxis);
+					DrawElement(element, physicalRigCenter, rigXAxis, rigYAxis, elementIndex);
 				} else {
 					return;
 				}
@@ -919,12 +978,12 @@
 							cursorPhysicalPosition = CalculateNewPhysicalPositionWithParamsInversed(
 								physicalRigCenter,
 								cursorPhysicalPosition,
-								rigObject.offsets.rotation,
+								rigObject.offsets.rotation + rigObject.transforms.rotation,
 								{
-									x: rigObject.offsets.scale.x,
-									y: rigObject.offsets.scale.y
+									x: rigObject.offsets.scale.x * rigObject.transforms.scale.x,
+									y: rigObject.offsets.scale.y * rigObject.transforms.scale.y
 								},
-								rigObject.offsets.rotation_two
+								rigObject.offsets.rotation_two + rigObject.transforms.rotation_two
 							);
 							virtualCursorPosition = {
 								x: (cursorPhysicalPosition.x - displayWidth / 2) / scaleUnit,
@@ -944,28 +1003,87 @@
 							let group = selectedElement.group_id
 								? rigObject.groups.find((g) => g.id === selectedElement.group_id)
 								: null;
+
+							let groupNodeFrame = group
+								? pageState.nodeFrames.find(
+										(n) => n.nodeId === group.id && n.nodeType === SelectedNodeType.Group
+									)
+								: null;
+							if (group && !groupNodeFrame) {
+								console.error(
+									"Element has group, but could not find group's NodeFrame inside of the pageState!"
+								);
+								return;
+							}
+
+							cursorPhysicalPosition.x += grabOffset.x;
+							cursorPhysicalPosition.y += grabOffset.y;
+							cursorPhysicalPosition = CalculateNewPhysicalPositionWithParamsInversed(
+								/*WORKING HERE*/
+								group ? groupNodeFrame!.physicalPosition : physicalRigCenter,
+								cursorPhysicalPosition,
+								group ? group.offsets.rotation + group.transforms.rotation : 0,
+								{
+									x: group ? group.offsets.scale.x * group.transforms.scale.x : 1,
+									y: group ? group.offsets.scale.y * group.transforms.scale.y : 1
+								},
+								group ? group.offsets.rotation_two + group.transforms.rotation_two : 0
+							);
+							virtualCursorPosition = {
+								x: (cursorPhysicalPosition.x - displayWidth / 2) / scaleUnit,
+								y: (cursorPhysicalPosition.y - displayHeight / 2) / scaleUnit
+							};
 							fixedMouseVirtualPosition = {
 								x:
 									virtualCursorPosition.x -
-									(group?.offsets.position.x ?? 0) -
-									rigObject.offsets.position.x,
+									rigObject.offsets.position.x -
+									rigObject.transforms.position.x -
+									(group ? group.offsets.position.x + group.transforms.position.x : 0),
 								y:
 									virtualCursorPosition.y -
-									(group?.offsets.position.y ?? 0) -
-									rigObject.offsets.position.y
+									rigObject.offsets.position.y -
+									rigObject.transforms.position.y -
+									(group ? group.offsets.position.y + group.transforms.position.y : 0)
 							};
 							selectedElement.offsets.position = fixedMouseVirtualPosition;
+
 							break;
 						case SelectedNodeType.Point:
 							let parentElement = rigObject.elements.find(
-								(e) => e.name === pageState.selectedNode?.name.split('_Point_')[0]
+								(e) => e.name === pageState.selectedNode?.name.split('_PIndex_')[0]
 							);
 							if (!parentElement) return;
 							let parentElementGroup = parentElement.group_id
-								? rigObject.groups.find((g) => g.id === parentElement.group_id)
+								? rigObject.groups.find((g) => g.id === parentElement!.group_id)
 								: null;
 							let point = parentElement.points[pageState.selectedNode.index];
 							if (!point) return;
+
+							let parentElementFrame = parentElement
+								? pageState.nodeFrames.find(
+										(n) =>
+											n.nodeId === parentElement!.name && n.nodeType === SelectedNodeType.Element
+									)
+								: null;
+							if (!parentElementFrame) return;
+
+							cursorPhysicalPosition.x += grabOffset.x;
+							cursorPhysicalPosition.y += grabOffset.y;
+							cursorPhysicalPosition = CalculateNewPhysicalPositionWithParamsInversed(
+								/*WORKING HERE*/
+								parentElementFrame.physicalPosition,
+								cursorPhysicalPosition,
+								parentElement.offsets.rotation + parentElement.transforms.rotation,
+								{
+									x: parentElement.offsets.scale.x * parentElement.transforms.scale.x,
+									y: parentElement.offsets.scale.y * parentElement.transforms.scale.y
+								},
+								parentElement.offsets.rotation_two + parentElement.transforms.rotation_two
+							);
+							virtualCursorPosition = {
+								x: (cursorPhysicalPosition.x - displayWidth / 2) / scaleUnit,
+								y: (cursorPhysicalPosition.y - displayHeight / 2) / scaleUnit
+							};
 							fixedMouseVirtualPosition = {
 								x:
 									virtualCursorPosition.x -
@@ -981,6 +1099,73 @@
 							point.point = fixedMouseVirtualPosition;
 							break;
 						case SelectedNodeType.ControlPoint:
+							let splitSelectedNodeName = pageState.selectedNode?.name.split('_PIndex_');
+							let parentElement2 = rigObject.elements.find(
+								(e) => e.name === splitSelectedNodeName[0]
+							);
+							if (!parentElement2) {
+								console.error('Unable to find parentElement of control point!');
+								return;
+							}
+							let parentElementGroup2 = parentElement2.group_id
+								? rigObject.groups.find((g) => g.id === parentElement2.group_id)
+								: null;
+							let point2 = parentElement2.points[parseInt(splitSelectedNodeName[1])];
+							if (!point2) {
+								console.error('Unable to find parent point for control point!');
+								return;
+							}
+
+							let parentPointFrame = pageState.nodeFrames.find(
+								(n) =>
+									n.nodeId ===
+										GetNameIdForElementPoint(
+											parentElement2.name,
+											parseInt(splitSelectedNodeName[1])
+										) && n.nodeType === SelectedNodeType.Point
+							);
+							if (!parentPointFrame) {
+								console.error('Unable to find parentPointFrame!');
+								return;
+							}
+
+							let controlPoint = point2.controls?.[pageState.selectedNode.index];
+							if (!controlPoint) {
+								console.error('Unable to find control point in parentPoint!');
+								return;
+							}
+
+							cursorPhysicalPosition.x += grabOffset.x;
+							cursorPhysicalPosition.y += grabOffset.y;
+							cursorPhysicalPosition = CalculateNewPhysicalPositionWithParamsInversed(
+								/*WORKING HERE*/
+								parentPointFrame.physicalPosition,
+								cursorPhysicalPosition,
+								parentElement2.offsets.rotation + parentElement2.transforms.rotation,
+								{
+									x: parentElement2.offsets.scale.x * parentElement2.transforms.scale.x,
+									y: parentElement2.offsets.scale.y * parentElement2.transforms.scale.y
+								},
+								parentElement2.offsets.rotation_two + parentElement2.transforms.rotation_two
+							);
+							virtualCursorPosition = {
+								x: (cursorPhysicalPosition.x - displayWidth / 2) / scaleUnit,
+								y: (cursorPhysicalPosition.y - displayHeight / 2) / scaleUnit
+							};
+							fixedMouseVirtualPosition = {
+								x:
+									virtualCursorPosition.x -
+									parentElement2.offsets.position.x -
+									(parentElementGroup2?.offsets.position.x ?? 0) -
+									rigObject.offsets.position.x,
+								y:
+									virtualCursorPosition.y -
+									parentElement2.offsets.position.y -
+									(parentElementGroup2?.offsets.position.y ?? 0) -
+									rigObject.offsets.position.y
+							};
+							controlPoint.x = fixedMouseVirtualPosition.x;
+							controlPoint.y = fixedMouseVirtualPosition.y;
 							break;
 						default:
 							return;
