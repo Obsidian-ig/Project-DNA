@@ -1129,6 +1129,16 @@
 								return;
 							}
 
+							let parentElement2Frame = pageState.nodeFrames.find(
+								(n) =>
+									n.nodeId ===
+										parentElement2.name && n.nodeType === SelectedNodeType.Element
+							);
+							if (!parentElement2Frame) {
+								console.error("Unable to find nodeFrame for parentElement2 for control point!");
+								return;
+							}
+
 							let controlPoint = point2.controls?.[pageState.selectedNode.index];
 							if (!controlPoint) {
 								console.error('Unable to find control point in parentPoint!');
@@ -1139,7 +1149,7 @@
 							cursorPhysicalPosition.y += grabOffset.y;
 							cursorPhysicalPosition = CalculateNewPhysicalPositionWithParamsInversed(
 								/*WORKING HERE*/
-								parentPointFrame.physicalPosition,
+								parentElement2Frame.physicalPosition,
 								cursorPhysicalPosition,
 								parentElement2.offsets.rotation + parentElement2.transforms.rotation,
 								{
