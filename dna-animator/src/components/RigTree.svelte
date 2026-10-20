@@ -1238,7 +1238,7 @@
 						point-control-node context-target
 						{selectedNode?.type === DNARig.SelectedNodeType.ControlPoint &&
 						selectedNode.index === controlIndex &&
-						selectedNode.name === element.name + '_' + 'Point_' + pointIndex.toString()
+						selectedNode.name === DNARig.GetNameIdForControlPoint(element.name, pointIndex, controlIndex)
 							? 'selected'
 							: ''}"
 						id={element.name + '-point-' + pointIndex + '-controlpoint-' + controlIndex.toString()}

@@ -25,7 +25,8 @@
 	let visualEditingEnabled = $derived(pageState?.visualEditorEnabled ?? false);
 	let isDragging = $state(false);
 	let grabOffset: RigVector2 = $state({ x: 0, y: 0 });
-	let visualEditorDraggingItem = $state(null);
+	let lockHorizontal = $state(false); //whether or not the position can only be changed on the x axis.
+	let lockVertical = $state(false); //whether or not the position can only be changed on the y axis.
 
 	$effect(() => {
 		if (!canvas || !rigObject) return;
@@ -932,17 +933,60 @@
 				cursorPhysicalPosition.x <= pageState.selectedNodePhysicalPosition.x + absoluteBoxStep && //cursor.x <= box_right
 				cursorPhysicalPosition.y >= pageState.selectedNodePhysicalPosition.y - absoluteBoxStep && //cursor.y >= box_top
 				cursorPhysicalPosition.y <= pageState.selectedNodePhysicalPosition.y + absoluteBoxStep; //cursor.y <= box_bottom
+
+			let isCursorInXAxisArrow =
+				cursorPhysicalPosition.x > pageState.selectedNodePhysicalPosition.x + absoluteBoxStep && //on right side of free move box (> to prevent overlapping)
+				cursorPhysicalPosition.x <=
+					pageState.selectedNodePhysicalPosition.x +
+						absoluteBoxStep +
+						absoluteLineLength +
+						absoluteArrowSideLength && //left of the very tip of the arrow
+				cursorPhysicalPosition.y >= pageState.selectedNodePhysicalPosition.y - absoluteBoxStep && // below the top of the free move box
+				cursorPhysicalPosition.y <= pageState.selectedNodePhysicalPosition.y + absoluteBoxStep; // above the bottom of the free move box
+
+			let isCursorInYAxisArrow = 
+				cursorPhysicalPosition.x >= pageState.selectedNodePhysicalPosition.x - absoluteBoxStep && //cursor.x > left of free move box
+				cursorPhysicalPosition.x <= pageState.selectedNodePhysicalPosition.x + absoluteBoxStep && // cursor.x < right of free move box
+				cursorPhysicalPosition.y < pageState.selectedNodePhysicalPosition.y - absoluteBoxStep && // cursor.y above top of free move box
+				cursorPhysicalPosition.y >= pageState.selectedNodePhysicalPosition.y - absoluteBoxStep - absoluteLineLength - absoluteArrowSideLength; // cursor.y below tip of y axis arrow
+
+
+			function setGrabOffset() {
+				grabOffset = {
+					x: (pageState?.selectedNodePhysicalPosition?.x ?? 0) - cursorPhysicalPosition.x,
+					y: (pageState?.selectedNodePhysicalPosition?.y ?? 0) - cursorPhysicalPosition.y
+				};
+			}
 			if (
 				(isCursorInFreeMoveSquare &&
 					pageState.currentVisualEditorTool === VisualEditorTools.MOVE) ||
 				pageState.currentVisualEditorTool === VisualEditorTools.ALL
 			) {
 				//console.log('Drag Started');
-				grabOffset = {
-					x: (pageState?.selectedNodePhysicalPosition?.x ?? 0) - cursorPhysicalPosition.x,
-					y: (pageState?.selectedNodePhysicalPosition?.y ?? 0) - cursorPhysicalPosition.y
-				};
+				setGrabOffset();
 				isDragging = true;
+				lockHorizontal = false;
+				lockVertical = false;
+			}
+
+			if (
+				(isCursorInXAxisArrow && pageState.currentVisualEditorTool === VisualEditorTools.MOVE) ||
+				pageState.currentVisualEditorTool === VisualEditorTools.ALL
+			) {
+				setGrabOffset();
+				isDragging = true;
+				lockHorizontal = true;
+				lockVertical = false;
+			}
+
+			if (
+				(isCursorInYAxisArrow && pageState.currentVisualEditorTool === VisualEditorTools.MOVE) ||
+				pageState.currentVisualEditorTool === VisualEditorTools.ALL
+			) {
+				setGrabOffset();
+				isDragging = true;
+				lockHorizontal = false;
+				lockVertical = true;
 			}
 		};
 		let handleVisualEditorDrag = function (e: MouseEvent) {
@@ -966,7 +1010,16 @@
 				case VisualEditorTools.MOVE:
 					switch (pageState?.selectedNode?.type) {
 						case SelectedNodeType.Root:
-							rigObject.offsets.position = virtualCursorPosition;
+							if (lockHorizontal && !lockVertical) {
+								rigObject.offsets.position.x = virtualCursorPosition.x + grabOffset.x / scaleUnit;
+							} else if (!lockHorizontal && lockVertical) {
+								rigObject.offsets.position.y = virtualCursorPosition.y + grabOffset.y / scaleUnit;
+							} else {
+								rigObject.offsets.position = {
+									x: virtualCursorPosition.x + grabOffset.x / scaleUnit,
+									y: virtualCursorPosition.y + grabOffset.y / scaleUnit
+								};
+							}
 							break;
 						case SelectedNodeType.Group:
 							let selectedGroup = rigObject.groups.find(
@@ -993,7 +1046,13 @@
 								x: virtualCursorPosition.x - rigObject.offsets.position.x,
 								y: virtualCursorPosition.y - rigObject.offsets.position.y
 							};
-							selectedGroup.offsets.position = fixedMouseVirtualPosition;
+							if (lockHorizontal && !lockVertical) {
+								selectedGroup.offsets.position.x = fixedMouseVirtualPosition.x;
+							} else if (!lockHorizontal && lockVertical) {
+								selectedGroup.offsets.position.y = fixedMouseVirtualPosition.y;
+							} else {
+								selectedGroup.offsets.position = fixedMouseVirtualPosition;
+							}
 							break;
 						case SelectedNodeType.Element:
 							let selectedElement = rigObject.elements.find(
@@ -1045,7 +1104,13 @@
 									rigObject.transforms.position.y -
 									(group ? group.offsets.position.y + group.transforms.position.y : 0)
 							};
-							selectedElement.offsets.position = fixedMouseVirtualPosition;
+							if (lockHorizontal && !lockVertical) {
+								selectedElement.offsets.position.x = fixedMouseVirtualPosition.x;
+							} else if (!lockHorizontal && lockVertical) {
+								selectedElement.offsets.position.y = fixedMouseVirtualPosition.y;
+							} else {
+								selectedElement.offsets.position = fixedMouseVirtualPosition;
+							}
 
 							break;
 						case SelectedNodeType.Point:
@@ -1096,7 +1161,13 @@
 									(parentElementGroup?.offsets.position.y ?? 0) -
 									rigObject.offsets.position.y
 							};
-							point.point = fixedMouseVirtualPosition;
+							if (lockHorizontal && !lockVertical) {
+								point.point.x = fixedMouseVirtualPosition.x;
+							} else if (!lockHorizontal && lockVertical) {
+								point.point.y = fixedMouseVirtualPosition.y;
+							} else {
+								point.point = fixedMouseVirtualPosition;
+							}
 							break;
 						case SelectedNodeType.ControlPoint:
 							let splitSelectedNodeName = pageState.selectedNode?.name.split('_PIndex_');
@@ -1130,12 +1201,10 @@
 							}
 
 							let parentElement2Frame = pageState.nodeFrames.find(
-								(n) =>
-									n.nodeId ===
-										parentElement2.name && n.nodeType === SelectedNodeType.Element
+								(n) => n.nodeId === parentElement2.name && n.nodeType === SelectedNodeType.Element
 							);
 							if (!parentElement2Frame) {
-								console.error("Unable to find nodeFrame for parentElement2 for control point!");
+								console.error('Unable to find nodeFrame for parentElement2 for control point!');
 								return;
 							}
 
@@ -1148,7 +1217,6 @@
 							cursorPhysicalPosition.x += grabOffset.x;
 							cursorPhysicalPosition.y += grabOffset.y;
 							cursorPhysicalPosition = CalculateNewPhysicalPositionWithParamsInversed(
-								/*WORKING HERE*/
 								parentElement2Frame.physicalPosition,
 								cursorPhysicalPosition,
 								parentElement2.offsets.rotation + parentElement2.transforms.rotation,
@@ -1176,8 +1244,14 @@
 									(parentElementGroup2?.offsets.position.y ?? 0) -
 									rigObject.offsets.position.y
 							};
-							controlPoint.x = fixedMouseVirtualPosition.x;
-							controlPoint.y = fixedMouseVirtualPosition.y;
+							if (lockHorizontal && !lockVertical) {
+								controlPoint.x = fixedMouseVirtualPosition.x;
+							} else if (!lockHorizontal && lockVertical) {
+								controlPoint.y = fixedMouseVirtualPosition.y;
+							} else {
+								controlPoint.x = fixedMouseVirtualPosition.x;
+								controlPoint.y = fixedMouseVirtualPosition.y;
+							}
 							break;
 						default:
 							return;
