@@ -27,6 +27,7 @@
 	let grabOffset: RigVector2 = $state({ x: 0, y: 0 });
 	let lockHorizontal = $state(false); //whether or not the position can only be changed on the x axis.
 	let lockVertical = $state(false); //whether or not the position can only be changed on the y axis.
+	let cursorStartPosition: RigVector2 = $state({ x: 0, y: 0 });
 
 	$effect(() => {
 		if (!canvas || !rigObject) return;
@@ -42,6 +43,9 @@
 		let absoluteBoxStep = 5 * scaleUnit;
 		let absoluteLineLength = 25 * scaleUnit;
 		let absoluteArrowSideLength = 3 * scaleUnit;
+
+		let absoluteRotationCircleRadius = 30 * scaleUnit;
+		let absoluteRotationTwoCircleRadius = 35 * scaleUnit;
 
 		let virtualRigCenter: RigVector2 = {
 			x: rigObject.offsets.position.x + rigObject.transforms.position.x,
@@ -131,8 +135,11 @@
 		}
 
 		/*VISUAL EDITOR TOOLS*/
-		function DrawMoveTool(physicalPosition: RigVector2) {
+		function DrawMoveTool(physicalPosition: RigVector2, compact: boolean = false) {
 			if (!ctx) return;
+			if (compact) {
+				absoluteLineLength = absoluteLineLength / 2;
+			}
 			ctx.beginPath();
 			ctx.lineWidth = 2;
 			ctx.moveTo(physicalPosition.x - absoluteBoxStep, physicalPosition.y - absoluteBoxStep); //top left
@@ -190,6 +197,24 @@
 			ctx.closePath();
 			ctx.stroke();
 			ctx.fill();
+		}
+		function DrawRotateTool(physicalPosition: RigVector2, compact: boolean = true) {
+			if (!ctx) return;
+			if (compact) {
+				absoluteRotationCircleRadius = absoluteRotationCircleRadius / 3;
+				absoluteRotationTwoCircleRadius = absoluteRotationTwoCircleRadius / 2;
+				ctx.lineWidth = 3;
+			}
+			ctx.beginPath();
+			ctx.arc(physicalPosition.x, physicalPosition.y, absoluteRotationCircleRadius, 0, 360);
+			ctx.strokeStyle = '#21a698';
+			ctx.stroke();
+			ctx.closePath();
+			ctx.beginPath();
+			ctx.arc(physicalPosition.x, physicalPosition.y, absoluteRotationTwoCircleRadius, 0, 360);
+			ctx.strokeStyle = '#9b22a3';
+			ctx.stroke();
+			ctx.closePath();
 		}
 
 		function DrawElement(
@@ -790,6 +815,31 @@
 					if (!pageState.selectedNodePhysicalPosition) return;
 					DrawMoveTool(pageState.selectedNodePhysicalPosition);
 				}
+
+				if (!pageState.selectedNodePhysicalPosition) return;
+				switch (pageState.currentVisualEditorTool) {
+					case VisualEditorTools.ALL:
+						if (
+							pageState.selectedNode?.type === SelectedNodeType.Point ||
+							pageState.selectedNode?.type === SelectedNodeType.ControlPoint
+						) {
+							DrawMoveTool(pageState.selectedNodePhysicalPosition);
+						} else {
+							DrawMoveTool(pageState.selectedNodePhysicalPosition, true);
+							DrawRotateTool(pageState.selectedNodePhysicalPosition, false);
+						}
+						break;
+					case VisualEditorTools.MOVE:
+						DrawMoveTool(pageState.selectedNodePhysicalPosition);
+						break;
+					case VisualEditorTools.ROTATE:
+						DrawRotateTool(pageState.selectedNodePhysicalPosition);
+						break;
+					case VisualEditorTools.SCALE:
+						break;
+					case VisualEditorTools.SELECT:
+						break;
+				}
 			}
 		}
 
@@ -927,6 +977,7 @@
 				x: e.clientX - canvasBoundingRect.left,
 				y: e.clientY - canvasBoundingRect.top
 			};
+			cursorStartPosition = cursorPhysicalPosition;
 			if (!pageState?.selectedNodePhysicalPosition) return;
 			let isCursorInFreeMoveSquare =
 				cursorPhysicalPosition.x >= pageState.selectedNodePhysicalPosition.x - absoluteBoxStep && //cursor.x >= box_left
@@ -944,12 +995,66 @@
 				cursorPhysicalPosition.y >= pageState.selectedNodePhysicalPosition.y - absoluteBoxStep && // below the top of the free move box
 				cursorPhysicalPosition.y <= pageState.selectedNodePhysicalPosition.y + absoluteBoxStep; // above the bottom of the free move box
 
-			let isCursorInYAxisArrow = 
+			let isCursorInYAxisArrow =
 				cursorPhysicalPosition.x >= pageState.selectedNodePhysicalPosition.x - absoluteBoxStep && //cursor.x > left of free move box
 				cursorPhysicalPosition.x <= pageState.selectedNodePhysicalPosition.x + absoluteBoxStep && // cursor.x < right of free move box
 				cursorPhysicalPosition.y < pageState.selectedNodePhysicalPosition.y - absoluteBoxStep && // cursor.y above top of free move box
-				cursorPhysicalPosition.y >= pageState.selectedNodePhysicalPosition.y - absoluteBoxStep - absoluteLineLength - absoluteArrowSideLength; // cursor.y below tip of y axis arrow
+				cursorPhysicalPosition.y >=
+					pageState.selectedNodePhysicalPosition.y -
+						absoluteBoxStep -
+						absoluteLineLength -
+						absoluteArrowSideLength; // cursor.y below tip of y axis arrow
 
+			function getDistanceBetweenTwoPoints(point: RigVector2, point_two: RigVector2): number {
+				return Math.sqrt(Math.pow(point_two.x - point.x, 2) + Math.pow(point_two.y - point.y, 2));
+			}
+			let distanceFromCenter = getDistanceBetweenTwoPoints(
+				cursorPhysicalPosition,
+				pageState.selectedNodePhysicalPosition
+			);
+			let rotationCircleRadius =
+				pageState.currentVisualEditorTool === VisualEditorTools.ROTATE
+					? absoluteRotationCircleRadius / 3
+					: absoluteRotationCircleRadius;
+			let rotationCircleMaxDistance =
+				(pageState.currentVisualEditorTool === VisualEditorTools.ROTATE ? 7 : 0.5) * scaleUnit;
+			let rotationCircleMinDistance =
+				(pageState.currentVisualEditorTool === VisualEditorTools.ROTATE ? 3 : -3) * scaleUnit;
+			let isCursorInRotationCircle = //pain in my fucking ass trying to hone in the distance values.
+				distanceFromCenter <= rotationCircleRadius + rotationCircleMaxDistance &&
+				distanceFromCenter > rotationCircleRadius + rotationCircleMinDistance;
+
+			let rotationTwoCircleRadius =
+				pageState.currentVisualEditorTool === VisualEditorTools.ROTATE
+					? absoluteRotationTwoCircleRadius / 2
+					: absoluteRotationTwoCircleRadius;
+
+
+
+
+
+
+			/// DIALING IN THE MAX/MIN DISTANCES FOR THE ALL TOOL (THE ROTATE TOOL IS ALREADY DIALED IN)
+			let rotationTwoCircleMaxDistance =
+				(pageState.currentVisualEditorTool === VisualEditorTools.ROTATE ? 11 : 15) * scaleUnit;
+			let rotationTwoCircleMinDistance =
+				rotationCircleRadius + (pageState.currentVisualEditorTool === VisualEditorTools.ROTATE ? 1.5 : -3) * scaleUnit;
+
+
+
+
+
+
+
+
+
+
+
+			let isCursorInRotationTwoCircle =
+				distanceFromCenter <= rotationTwoCircleRadius + rotationTwoCircleMaxDistance &&
+				distanceFromCenter > rotationTwoCircleRadius + rotationTwoCircleMinDistance;
+
+			console.log(isCursorInRotationTwoCircle, distanceFromCenter);
 
 			function setGrabOffset() {
 				grabOffset = {
@@ -957,6 +1062,8 @@
 					y: (pageState?.selectedNodePhysicalPosition?.y ?? 0) - cursorPhysicalPosition.y
 				};
 			}
+
+			/*MOVE TOOL STUFF/ALL TOOL*/
 			if (
 				(isCursorInFreeMoveSquare &&
 					pageState.currentVisualEditorTool === VisualEditorTools.MOVE) ||
@@ -988,6 +1095,8 @@
 				lockHorizontal = false;
 				lockVertical = true;
 			}
+
+			/*ROTATE TOOL STUFF/ALL TOOL*/
 		};
 		let handleVisualEditorDrag = function (e: MouseEvent) {
 			e.preventDefault();
