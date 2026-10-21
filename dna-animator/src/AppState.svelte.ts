@@ -70,7 +70,7 @@ export const VisualEditorModes = {
 } as const;
 export type VisualEditorModes = (typeof VisualEditorModes)[keyof typeof VisualEditorModes];
 
-export class PageState {
+export interface PageState {
     title: string; //the page title that should be displayed
     id: string; //the constant id of the page for identification.
     loadedRig: RigObject | null;
@@ -92,68 +92,36 @@ export class PageState {
     nodeFrames: NodeFrame[];
     rigErrorMessages: string[];
     watchRules: PageWatchRule[];
-
-    constructor(title: string, id: string, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, selectedNodePhysicalPosition: RigVector2 | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, currentVisualEditorTool: VisualEditorTools = VisualEditorTools.MOVE, lastVisualEditorTool: VisualEditorTools = VisualEditorTools.MOVE,  clickedOnPoint: boolean = false, currentVisualEditorMode: VisualEditorModes = VisualEditorModes.VISUAL, visualEditorEnabled: boolean = false, nodeFrames: NodeFrame[] = [], rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
-        this.title = title;
-        this.id = id;
-        this.loadedRig = loadedRig;
-        this.loadedRigFilePath = loadedRigFilePath;
-        this.selectedNode = selectedNode;
-        this.selectedNodePhysicalPosition = selectedNodePhysicalPosition;
-        this.expandedNodes = expandedNodes;
-        this.hideAllGroups = hideAllGroups;
-        this.hideAllElements = hideAllElements;
-        this.disableAllDebugOptions = disableAllDebugOptions;
-        this.showGridOverlay = showGridOverlay;
-        this.gridColumnsAndRows = gridColumnsAndRows;
-        this.gridStrokeColor = gridStrokeColor;
-        this.currentVisualEditorTool = currentVisualEditorTool;
-        this.lastVisualEditorTool = lastVisualEditorTool;
-        this.clickedOnPoint = clickedOnPoint;
-        this.currentVisualEditorMode = currentVisualEditorMode;
-        this.visualEditorEnabled = visualEditorEnabled;
-        this.nodeFrames = nodeFrames;
-        this.rigErrorMessages = rigErrorMessages;
-        this.watchRules = watchRules;
-
-        for (const rule of watchRules) {
-            $effect(() => {
-                rule.watch(this);
-                untrack(() => {
-                    rule.handler(this);
-                });
-            });
-        }
-    }
 }
 
 export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): PageState => {
-    return new PageState(
-        overrides.title ?? "Title",
-        overrides.id ?? "id",
-        overrides.loadedRig ?? null, //loaded rig
-        overrides.loadedRigFilePath ?? null, //file path
-        overrides.selectedNode ?? null, //selected node
-        overrides.selectedNodePhysicalPosition ?? null,
-        overrides.expandedNodes ?? [], //expanded nodes
-        overrides.gridColumnsAndRows ?? {
+    return {
+        title: "Title",
+        id: "id",
+        loadedRig: null,
+        loadedRigFilePath: null,
+        selectedNode: null,
+        selectedNodePhysicalPosition: null,
+        expandedNodes: [],
+        gridColumnsAndRows: {
             x: 10,
             y: 10
-        }, //grid columns and rows
-        overrides.gridStrokeColor ?? "strokecolor", //grid stroke color
-        overrides.currentVisualEditorTool ?? VisualEditorTools.MOVE,
-        overrides.lastVisualEditorTool ?? VisualEditorTools.MOVE,
-        overrides.clickedOnPoint ?? false,
-        overrides.currentVisualEditorMode ?? VisualEditorModes.MINIMAL,
-        overrides.visualEditorEnabled ?? false,
-        overrides.nodeFrames ?? [],
-        overrides.rigErrorMessages ?? [], //rig errors
-        overrides.watchRules ?? [], //watch rules
-        overrides.hideAllGroups ?? false,
-        overrides.hideAllElements ?? false,
-        overrides.disableAllDebugOptions ?? false,
-        overrides.showGridOverlay ?? false
-    );
+        },
+        gridStrokeColor: "#FFFFFF",
+        currentVisualEditorTool: VisualEditorTools.MOVE,
+        lastVisualEditorTool: VisualEditorTools.MOVE,
+        clickedOnPoint: false,
+        currentVisualEditorMode: VisualEditorModes.VISUAL,
+        visualEditorEnabled: false,
+        nodeFrames: [],
+        rigErrorMessages: [],
+        watchRules: [],
+        hideAllGroups: false,
+        hideAllElements: false, 
+        disableAllDebugOptions: false,
+        showGridOverlay: false,
+        ...overrides
+    };
 };
 
 
@@ -172,19 +140,12 @@ class AppState {
     ImportConfig(config: AppConfig) {
         this.config = config;
     }
-
-    ImportPageStates(states: PageState[]) {
-        if (states?.length) {
-            this.pageStates = states;
-        }
-    }
-
-    /*
+    
     ImportPageStates(states: PageState[]) {
         if (states?.length) {
             this.pageStates = states.map(state => CreateDefaultPageState(state));
         }
-    }*/
+    }
 
     CreatePageStatesInLocalStorage() {
         localStorage.setItem("pageStates", JSON.stringify(this.pageStates));
