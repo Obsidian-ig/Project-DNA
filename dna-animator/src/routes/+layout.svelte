@@ -6,6 +6,13 @@
 	import { page } from '$app/state';
 
 	let { children } = $props();
+
+	$effect(() => {
+		console.log('Saved pageStates to local storage!');
+		localStorage.setItem('pageStates', JSON.stringify(appState.pageStates));
+		localStorage.setItem('appConfig', JSON.stringify(appState.config));
+		appState.UpdateTheme();
+	});
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
@@ -17,7 +24,7 @@
 {:else}
 	<div class="loading-screen">
 		<h1>Loading</h1>
-		<h2 class="loading-error-message">{appState.loadingErrorMessage ?? ""}</h2>
+		<h2 class="loading-error-message">{appState.loadingErrorMessage ?? ''}</h2>
 	</div>
 {/if}
 

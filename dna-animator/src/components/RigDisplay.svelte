@@ -23,11 +23,14 @@
 	let gridColumnsAndRows: RigVector2 = $derived(pageState?.gridColumnsAndRows ?? { x: 10, y: 10 });
 	let gridStrokeColor: string = $derived(pageState?.gridStrokeColor ?? '#ffffff');
 	let visualEditingEnabled = $derived(pageState?.visualEditorEnabled ?? false);
+	let currentVisualEditorTool = $derived(pageState?.currentVisualEditorTool);
 	let isDragging = $state(false);
 	let grabOffset: RigVector2 = $state({ x: 0, y: 0 });
 	let lockHorizontal = $state(false); //whether or not the position can only be changed on the x axis.
 	let lockVertical = $state(false); //whether or not the position can only be changed on the y axis.
 	let cursorStartPosition: RigVector2 = $state({ x: 0, y: 0 });
+	let isRotating = $state(false);
+	let rotationCircle = $state('One'); //'One' or 'Two'
 
 	$effect(() => {
 		if (!canvas || !rigObject) return;
@@ -810,24 +813,17 @@
 				if (
 					pageState.selectedNode?.type === SelectedNodeType.Point ||
 					pageState.selectedNode?.type === SelectedNodeType.ControlPoint ||
-					pageState.currentVisualEditorTool === VisualEditorTools.MOVE
+					currentVisualEditorTool === VisualEditorTools.MOVE
 				) {
 					if (!pageState.selectedNodePhysicalPosition) return;
 					DrawMoveTool(pageState.selectedNodePhysicalPosition);
 				}
 
 				if (!pageState.selectedNodePhysicalPosition) return;
-				switch (pageState.currentVisualEditorTool) {
+				switch (currentVisualEditorTool) {
 					case VisualEditorTools.ALL:
-						if (
-							pageState.selectedNode?.type === SelectedNodeType.Point ||
-							pageState.selectedNode?.type === SelectedNodeType.ControlPoint
-						) {
-							DrawMoveTool(pageState.selectedNodePhysicalPosition);
-						} else {
-							DrawMoveTool(pageState.selectedNodePhysicalPosition, true);
-							DrawRotateTool(pageState.selectedNodePhysicalPosition, false);
-						}
+						DrawMoveTool(pageState.selectedNodePhysicalPosition, true);
+						DrawRotateTool(pageState.selectedNodePhysicalPosition, false);
 						break;
 					case VisualEditorTools.MOVE:
 						DrawMoveTool(pageState.selectedNodePhysicalPosition);
@@ -860,114 +856,6 @@
 					-Scale Mode: You can only mess with position points, dragging left/right changes the scale of the rig/group/element on the X axis, Up/Down modifies the Y axis.
 					-Rotate Mode: Again, only position points. Dragging left rotates the rig/group/element counter clockwise, dragging right does clockwise.
 		*/
-		// function handleVisualEditorMouseDown(e: MouseEvent) {
-		// 	if (!rigObject) return;
-		// 	if (pageState?.visualEditorEnabled) {
-		// 		//find the selected node.
-		// 		if (
-		// 			!pageState?.selectedNode &&
-		// 			pageState?.currentVisualEditorTool != VisualEditorTools.SELECT
-		// 		)
-		// 			return;
-		// 		switch (pageState?.selectedNode?.type) {
-		// 			case SelectedNodeType.Root:
-		// 				break;
-		// 			case SelectedNodeType.Group:
-		// 				break;
-		// 			case SelectedNodeType.Element:
-		// 				break;
-		// 			case SelectedNodeType.Point:
-		// 				break;
-		// 			case SelectedNodeType.ControlPoint:
-		// 				let splitSelectedNodeName = pageState.selectedNode.name.split('_Point_'); //will look like "Element_Name_Here", 0, "controlpoint-0"
-		// 				let parentElement = rigObject.elements.find((e) => e.name === splitSelectedNodeName[0]);
-		// 				if (!parentElement) {
-		// 					console.error(
-		// 						"Unable to find parent element for control point! Element Name: '" +
-		// 							splitSelectedNodeName[0] +
-		// 							"', Control Point Index: " +
-		// 							pageState.selectedNode.index
-		// 					);
-		// 					return;
-		// 				}
-		// 				let parentGroup = parentElement.group_id
-		// 					? rigObject.groups.find((g) => g.id === parentElement.group_id)
-		// 					: null;
-		// 				let groupVirtualLocalPosition: RigVector2 = {
-		// 					x: parentGroup
-		// 						? parentGroup.offsets.position.x + parentGroup.transforms.position.x
-		// 						: 0,
-		// 					y: parentGroup
-		// 						? parentGroup.offsets.position.y + parentGroup.transforms.position.y
-		// 						: 0
-		// 				};
-		// 				let parentPoint = parentElement.points[parseInt(splitSelectedNodeName[1])];
-		// 				if (!parentPoint) {
-		// 					console.error(
-		// 						'Unable to find parent point for control point! Point Index: ' +
-		// 							splitSelectedNodeName[1] +
-		// 							', Control Point Index: ' +
-		// 							pageState.selectedNode.index
-		// 					);
-		// 					return;
-		// 				}
-		// 				let controlPoint = parentPoint?.controls?.[pageState.selectedNode.index];
-		// 				if (!controlPoint) {
-		// 					console.error('Unable to find control point!');
-		// 					return;
-		// 				}
-		// 				//need to check if the cursor is within the "active range" to render to move tool on the control point.
-		// 				if (!canvas) return;
-		// 				let canvasRect = canvas.getBoundingClientRect();
-		// 				if (!canvasRect) return;
-		// 				let mouseVirtualPosition: RigVector2 = {
-		// 					//might need to multiply by scaleUnit idk yet
-		// 					x: (e.clientX - canvasRect.left - displayWidth / 2) / scaleUnit,
-		// 					y: (e.clientY - canvasRect.top - displayHeight / 2) / scaleUnit
-		// 				};
-		// 				let controlPointVirtualPosition: RigVector2 = {
-		// 					x:
-		// 						rigObject.offsets.position.x +
-		// 						rigObject.transforms.position.x +
-		// 						groupVirtualLocalPosition.x +
-		// 						parentElement.offsets.position.x +
-		// 						parentElement.transforms.position.x +
-		// 						parentPoint.point.x +
-		// 						controlPoint.x,
-		// 					y:
-		// 						rigObject.offsets.position.y +
-		// 						rigObject.transforms.position.y +
-		// 						groupVirtualLocalPosition.y +
-		// 						parentElement.offsets.position.y +
-		// 						parentElement.transforms.position.y +
-		// 						parentPoint.point.y +
-		// 						controlPoint.y
-		// 				};
-		// 				let distance = Math.sqrt(
-		// 					Math.pow(mouseVirtualPosition.x - controlPointVirtualPosition.x, 2) +
-		// 						Math.pow(mouseVirtualPosition.y - controlPointVirtualPosition.y, 2)
-		// 				);
-		// 				/*
-		// 				if (distance <= 10) {
-		// 					appState.UpdatePageStateSelectedVisualEditorNode(pageId, pageState.selectedNode);
-		// 				} else {
-		// 					appState.UpdatePageStateSelectedVisualEditorNode(pageId, null);
-		// 				}
-		// 				*/
-
-		// 				break;
-		// 			default:
-		// 				console.error(
-		// 					"SelectedNode.type was null or invalid! '" +
-		// 						pageState.selectedNode?.type.toString() +
-		// 						"'."
-		// 				);
-		// 				return;
-		// 		}
-		// 	}
-		// }
-		// document.removeEventListener('mousedown', handleVisualEditorMouseDown);
-		// document.addEventListener('mousedown', handleVisualEditorMouseDown);
 
 		let VisualEditorDragStarted = function (e: MouseEvent) {
 			e.preventDefault();
@@ -1013,48 +901,31 @@
 				pageState.selectedNodePhysicalPosition
 			);
 			let rotationCircleRadius =
-				pageState.currentVisualEditorTool === VisualEditorTools.ROTATE
+				currentVisualEditorTool === VisualEditorTools.ROTATE
 					? absoluteRotationCircleRadius / 3
 					: absoluteRotationCircleRadius;
 			let rotationCircleMaxDistance =
-				(pageState.currentVisualEditorTool === VisualEditorTools.ROTATE ? 7 : 0.5) * scaleUnit;
+				(currentVisualEditorTool === VisualEditorTools.ROTATE ? 7 : 0.5) * scaleUnit;
 			let rotationCircleMinDistance =
-				(pageState.currentVisualEditorTool === VisualEditorTools.ROTATE ? 3 : -3) * scaleUnit;
+				(currentVisualEditorTool === VisualEditorTools.ROTATE ? 3 : -3) * scaleUnit;
 			let isCursorInRotationCircle = //pain in my fucking ass trying to hone in the distance values.
 				distanceFromCenter <= rotationCircleRadius + rotationCircleMaxDistance &&
 				distanceFromCenter > rotationCircleRadius + rotationCircleMinDistance;
 
 			let rotationTwoCircleRadius =
-				pageState.currentVisualEditorTool === VisualEditorTools.ROTATE
+				currentVisualEditorTool === VisualEditorTools.ROTATE
 					? absoluteRotationTwoCircleRadius / 2
 					: absoluteRotationTwoCircleRadius;
 
-
-
-
-
-
-			/// DIALING IN THE MAX/MIN DISTANCES FOR THE ALL TOOL (THE ROTATE TOOL IS ALREADY DIALED IN)
 			let rotationTwoCircleMaxDistance =
-				(pageState.currentVisualEditorTool === VisualEditorTools.ROTATE ? 11 : 15) * scaleUnit;
+				(currentVisualEditorTool === VisualEditorTools.ROTATE ? 11 : 3) * scaleUnit;
 			let rotationTwoCircleMinDistance =
-				rotationCircleRadius + (pageState.currentVisualEditorTool === VisualEditorTools.ROTATE ? 1.5 : -3) * scaleUnit;
-
-
-
-
-
-
-
-
-
-
+				rotationCircleRadius +
+				(currentVisualEditorTool === VisualEditorTools.ROTATE ? 1.5 : -31) * scaleUnit;
 
 			let isCursorInRotationTwoCircle =
 				distanceFromCenter <= rotationTwoCircleRadius + rotationTwoCircleMaxDistance &&
 				distanceFromCenter > rotationTwoCircleRadius + rotationTwoCircleMinDistance;
-
-			console.log(isCursorInRotationTwoCircle, distanceFromCenter);
 
 			function setGrabOffset() {
 				grabOffset = {
@@ -1065,35 +936,51 @@
 
 			/*MOVE TOOL STUFF/ALL TOOL*/
 			if (
-				(isCursorInFreeMoveSquare &&
-					pageState.currentVisualEditorTool === VisualEditorTools.MOVE) ||
-				pageState.currentVisualEditorTool === VisualEditorTools.ALL
+				(isCursorInFreeMoveSquare && currentVisualEditorTool === VisualEditorTools.MOVE) ||
+				currentVisualEditorTool === VisualEditorTools.ALL
 			) {
 				//console.log('Drag Started');
 				setGrabOffset();
 				isDragging = true;
+				isRotating = false;
 				lockHorizontal = false;
 				lockVertical = false;
 			}
 
 			if (
-				(isCursorInXAxisArrow && pageState.currentVisualEditorTool === VisualEditorTools.MOVE) ||
-				pageState.currentVisualEditorTool === VisualEditorTools.ALL
+				(isCursorInXAxisArrow && currentVisualEditorTool === VisualEditorTools.MOVE) ||
+				currentVisualEditorTool === VisualEditorTools.ALL
 			) {
 				setGrabOffset();
 				isDragging = true;
+				isRotating = false;
 				lockHorizontal = true;
 				lockVertical = false;
 			}
 
 			if (
-				(isCursorInYAxisArrow && pageState.currentVisualEditorTool === VisualEditorTools.MOVE) ||
-				pageState.currentVisualEditorTool === VisualEditorTools.ALL
+				(isCursorInYAxisArrow && currentVisualEditorTool === VisualEditorTools.MOVE) ||
+				currentVisualEditorTool === VisualEditorTools.ALL
 			) {
 				setGrabOffset();
 				isDragging = true;
+				isRotating = false;
 				lockHorizontal = false;
 				lockVertical = true;
+			}
+
+			if (
+				((isCursorInRotationCircle || isCursorInRotationTwoCircle) &&
+					currentVisualEditorTool === VisualEditorTools.ROTATE) ||
+				currentVisualEditorTool === VisualEditorTools.ALL
+			) {
+				setGrabOffset();
+				isDragging = true;
+				isRotating = true;
+				lockHorizontal = false;
+				lockVertical = false;
+				if (isCursorInRotationCircle && !isCursorInRotationTwoCircle) rotationCircle = 'One';
+				else if (!isCursorInRotationCircle && isCursorInRotationTwoCircle) rotationCircle = 'Two';
 			}
 
 			/*ROTATE TOOL STUFF/ALL TOOL*/
@@ -1115,7 +1002,8 @@
 				x: 0,
 				y: 0
 			};
-			switch (pageState?.currentVisualEditorTool) {
+			if (!pageState) return;
+			switch (currentVisualEditorTool) {
 				case VisualEditorTools.MOVE:
 					switch (pageState?.selectedNode?.type) {
 						case SelectedNodeType.Root:
@@ -1366,6 +1254,46 @@
 							return;
 					}
 					break;
+				case VisualEditorTools.ROTATE:
+					if (!isRotating || !pageState.selectedNodePhysicalPosition || !pageState.selectedNode)
+						return;
+					let startVector: RigVector2 = {
+						x: cursorStartPosition.x - pageState.selectedNodePhysicalPosition.x,
+						y: cursorStartPosition.y - pageState.selectedNodePhysicalPosition.y
+					};
+					let currentVector: RigVector2 = {
+						x: cursorPhysicalPosition.x - pageState.selectedNodePhysicalPosition.x,
+						y: cursorPhysicalPosition.y - pageState.selectedNodePhysicalPosition.y
+					};
+					let startAngle = Math.atan2(startVector.x, startVector.y);
+					let currentAngle = Math.atan2(currentVector.x, currentVector.y);
+					let angleDelta = -(currentAngle - startAngle); //-output to make it so it rotates correctly with the mouse
+					let degreesRotation = angleDelta * (180 / Math.PI);
+					degreesRotation = ((degreesRotation % 360) + 360) % 360; //first gets the remainder then add 360 to keep it positve then if it was already positive do % 360 to lock it between 0 and 360 again.
+					switch (pageState?.selectedNode?.type) {
+						case SelectedNodeType.Root:
+							if (rotationCircle === 'One') rigObject.offsets.rotation = degreesRotation;
+							else if (rotationCircle === 'Two') rigObject.offsets.rotation_two = degreesRotation;
+							break;
+						case SelectedNodeType.Group:
+							let currentGroup = rigObject.groups.find(
+								(g) => g.id === pageState.selectedNode?.name
+							);
+							if (!currentGroup) return;
+							if (rotationCircle === 'One') currentGroup.offsets.rotation = degreesRotation;
+							else if (rotationCircle === 'Two')
+								currentGroup.offsets.rotation_two = degreesRotation;
+							break;
+						case SelectedNodeType.Element:
+							let currentElement = rigObject.elements.find(
+								(e) => e.name === pageState.selectedNode?.name
+							);
+							if (!currentElement) return;
+							if (rotationCircle === 'One') currentElement.offsets.rotation = degreesRotation;
+							else if (rotationCircle === 'Two')
+								currentElement.offsets.rotation_two = degreesRotation;
+							break;
+					}
 				default:
 					return;
 			}
@@ -1373,12 +1301,29 @@
 		let handleVisualEditorDragEnded = function (e: MouseEvent) {
 			e.preventDefault();
 			if (!isDragging) return;
-			console.log('Drag ended');
 			isDragging = false;
+			isRotating = false;
+			lockHorizontal = false;
+			lockVertical = false;
+			cursorStartPosition = { x: 0, y: 0 };
+			rotationCircle = 'One';
 		};
 		canvas.onmousedown = pageState?.visualEditorEnabled ? VisualEditorDragStarted : null;
 		canvas.onmousemove = pageState?.visualEditorEnabled ? handleVisualEditorDrag : null;
 		canvas.onmouseup = pageState?.visualEditorEnabled ? handleVisualEditorDragEnded : null;
+	});
+
+	$effect(() => {
+		if (
+			pageState?.selectedNode &&
+			(pageState.selectedNode.type === SelectedNodeType.Point ||
+				pageState.selectedNode.type === SelectedNodeType.ControlPoint) &&
+			pageState.currentVisualEditorTool !== VisualEditorTools.MOVE
+		) {
+			//force points and control points to use the move tool
+			appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.MOVE);
+			return;
+		}
 	});
 
 	$effect(() => {
@@ -1395,7 +1340,7 @@
 			<div class="display-toolbar-container">
 				<div class="toolbar-transform-tools">
 					<button
-						class="toolbar-button {pageState?.currentVisualEditorTool === VisualEditorTools.ALL
+						class="toolbar-button {currentVisualEditorTool === VisualEditorTools.ALL
 							? 'selected'
 							: ''}"
 						title="Transform Tool"
@@ -1423,7 +1368,7 @@
 						>
 					</button>
 					<button
-						class="toolbar-button {pageState?.currentVisualEditorTool === VisualEditorTools.MOVE
+						class="toolbar-button {currentVisualEditorTool === VisualEditorTools.MOVE
 							? 'selected'
 							: ''}"
 						title="Move Tool"
@@ -1449,7 +1394,7 @@
 						>
 					</button>
 					<button
-						class="toolbar-button {pageState?.currentVisualEditorTool === VisualEditorTools.ROTATE
+						class="toolbar-button {currentVisualEditorTool === VisualEditorTools.ROTATE
 							? 'selected'
 							: ''}"
 						title="Rotate Tool"
@@ -1477,7 +1422,7 @@
 						>
 					</button>
 					<button
-						class="toolbar-button {pageState?.currentVisualEditorTool === VisualEditorTools.SCALE
+						class="toolbar-button {currentVisualEditorTool === VisualEditorTools.SCALE
 							? 'selected'
 							: ''}"
 						title="Scale Tool"
@@ -1503,7 +1448,7 @@
 						>
 					</button>
 					<button
-						class="toolbar-button {pageState?.currentVisualEditorTool === VisualEditorTools.SELECT
+						class="toolbar-button {currentVisualEditorTool === VisualEditorTools.SELECT
 							? 'selected'
 							: ''}"
 						title="Select Tool"

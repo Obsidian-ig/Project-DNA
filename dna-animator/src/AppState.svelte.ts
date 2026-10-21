@@ -85,13 +85,15 @@ export class PageState {
     gridColumnsAndRows: RigVector2;
     gridStrokeColor: string;
     currentVisualEditorTool: VisualEditorTools;
+    lastVisualEditorTool: VisualEditorTools;
+    clickedOnPoint: boolean;
     currentVisualEditorMode: VisualEditorModes;
     visualEditorEnabled: boolean;
     nodeFrames: NodeFrame[];
     rigErrorMessages: string[];
     watchRules: PageWatchRule[];
 
-    constructor(title: string, id: string, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, selectedNodePhysicalPosition: RigVector2 | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, currentVisualEditorTool: VisualEditorTools = VisualEditorTools.MOVE, currentVisualEditorMode: VisualEditorModes = VisualEditorModes.VISUAL, visualEditorEnabled: boolean = false, nodeFrames: NodeFrame[] = [], rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
+    constructor(title: string, id: string, loadedRig: RigObject | null, loadedRigFilePath: string | null, selectedNode: SelectedNode | null, selectedNodePhysicalPosition: RigVector2 | null, expandedNodes: SelectedNode[], gridColumnsAndRows: RigVector2, gridStrokeColor: string, currentVisualEditorTool: VisualEditorTools = VisualEditorTools.MOVE, lastVisualEditorTool: VisualEditorTools = VisualEditorTools.MOVE,  clickedOnPoint: boolean = false, currentVisualEditorMode: VisualEditorModes = VisualEditorModes.VISUAL, visualEditorEnabled: boolean = false, nodeFrames: NodeFrame[] = [], rigErrorMessages: string[], watchRules: PageWatchRule[] = [], hideAllGroups: boolean = false, hideAllElements: boolean = false, disableAllDebugOptions: boolean = false, showGridOverlay: boolean = false) {
         this.title = title;
         this.id = id;
         this.loadedRig = loadedRig;
@@ -106,6 +108,8 @@ export class PageState {
         this.gridColumnsAndRows = gridColumnsAndRows;
         this.gridStrokeColor = gridStrokeColor;
         this.currentVisualEditorTool = currentVisualEditorTool;
+        this.lastVisualEditorTool = lastVisualEditorTool;
+        this.clickedOnPoint = clickedOnPoint;
         this.currentVisualEditorMode = currentVisualEditorMode;
         this.visualEditorEnabled = visualEditorEnabled;
         this.nodeFrames = nodeFrames;
@@ -138,6 +142,8 @@ export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): Page
         }, //grid columns and rows
         overrides.gridStrokeColor ?? "strokecolor", //grid stroke color
         overrides.currentVisualEditorTool ?? VisualEditorTools.MOVE,
+        overrides.lastVisualEditorTool ?? VisualEditorTools.MOVE,
+        overrides.clickedOnPoint ?? false,
         overrides.currentVisualEditorMode ?? VisualEditorModes.MINIMAL,
         overrides.visualEditorEnabled ?? false,
         overrides.nodeFrames ?? [],
@@ -160,16 +166,7 @@ class AppState {
         CreateDefaultPageState({ title: "Rig Playground", id: "rig_playground" })
     ]);
 
-    constructor() {
-        $effect.root(() => {
-            $effect(() => {
-                console.log("Saved pageStates to local storage!");
-                localStorage.setItem('pageStates', JSON.stringify(this.pageStates));
-                localStorage.setItem('appConfig', JSON.stringify(this.config));
-                this.UpdateTheme();
-            });
-        });
-    }
+    constructor() {}
 
 
     ImportConfig(config: AppConfig) {
@@ -177,8 +174,17 @@ class AppState {
     }
 
     ImportPageStates(states: PageState[]) {
-        if (states && states.length > 0) this.pageStates = states;
+        if (states?.length) {
+            this.pageStates = states;
+        }
     }
+
+    /*
+    ImportPageStates(states: PageState[]) {
+        if (states?.length) {
+            this.pageStates = states.map(state => CreateDefaultPageState(state));
+        }
+    }*/
 
     CreatePageStatesInLocalStorage() {
         localStorage.setItem("pageStates", JSON.stringify(this.pageStates));
