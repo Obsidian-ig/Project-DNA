@@ -1321,8 +1321,17 @@
 			pageState.currentVisualEditorTool !== VisualEditorTools.MOVE
 		) {
 			//force points and control points to use the move tool
+			pageState.clickedOnPoint = true;
+			pageState.lastVisualEditorTool = pageState.currentVisualEditorTool;
 			appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.MOVE);
 			return;
+		} else {
+			if (!pageState?.selectedNode) return;
+			if (pageState.clickedOnPoint && pageState.selectedNode.type !== SelectedNodeType.Point &&
+				pageState.selectedNode.type !== SelectedNodeType.ControlPoint) {
+				pageState.clickedOnPoint = false;
+				appState.UpdatePageStateVisualEditorTool(pageId, pageState.lastVisualEditorTool);
+			}
 		}
 	});
 
