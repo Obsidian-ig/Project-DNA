@@ -80,21 +80,9 @@ Ideas/Plans:
 					}
 					let fileData = await window.electronAPI.readFile(rigFilePath);
 					let rigObject: RigObject | null = JSON.parse(fileData) as RigObject;
+					rigObject = createDefaultRigObject(rigObject);
 					if (rigObject) {
 						//create the runtime transforms in the object.
-						rigObject.transforms = {
-							position: {
-								x: 0,
-								y: 0
-							},
-							rotation: 0,
-							scale: {
-								x: 1,
-								y: 1
-							},
-							rotation_two: 0
-						};
-
 						rigObject.groups.forEach((group) => {
 							group.transforms = {
 								position: {
