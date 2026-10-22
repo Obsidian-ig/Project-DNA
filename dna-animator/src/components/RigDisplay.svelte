@@ -31,6 +31,10 @@
 	let cursorStartPosition: RigVector2 = $state({ x: 0, y: 0 });
 	let isRotating = $state(false);
 	let rotationCircle = $state('One'); //'One' or 'Two'
+	let isScaling = $state(false);
+	let scalingAxis = $state('X'); //'X' or 'Y'
+	let scaleStep = $state(0.001);
+	let lastScaleDistance: number | null = $state(null);
 
 	$effect(() => {
 		if (!canvas || !rigObject) return;
@@ -49,6 +53,9 @@
 
 		let absoluteRotationCircleRadius = 30 * scaleUnit;
 		let absoluteRotationTwoCircleRadius = 35 * scaleUnit;
+
+		let absoluteScaleArrowDistance = 40 * scaleUnit;
+		let absoluteScaleArrowSideLength = 4 * scaleUnit;
 
 		let virtualRigCenter: RigVector2 = {
 			x: rigObject.offsets.position.x + rigObject.transforms.position.x,
@@ -218,6 +225,43 @@
 			ctx.strokeStyle = '#9b22a3';
 			ctx.stroke();
 			ctx.closePath();
+		}
+		function DrawScaleTool(physicalPosition: RigVector2, compact: boolean = true) {
+			if (!ctx) return;
+			let arrowDistance = compact ? absoluteScaleArrowDistance / 3 : absoluteScaleArrowDistance;
+			ctx.lineWidth = 1.5 * scaleUnit;
+			//y axis arrow
+			ctx.beginPath();
+			ctx.moveTo(
+				physicalPosition.x - absoluteScaleArrowSideLength,
+				physicalPosition.y - arrowDistance
+			);
+			ctx.lineTo(
+				physicalPosition.x,
+				physicalPosition.y - arrowDistance - absoluteScaleArrowSideLength
+			);
+			ctx.lineTo(
+				physicalPosition.x + absoluteScaleArrowSideLength,
+				physicalPosition.y - arrowDistance
+			);
+			ctx.strokeStyle = '#d19a04';
+			ctx.stroke();
+			//x axis arrow
+			ctx.beginPath();
+			ctx.moveTo(
+				physicalPosition.x + arrowDistance,
+				physicalPosition.y - absoluteScaleArrowSideLength
+			);
+			ctx.lineTo(
+				physicalPosition.x + arrowDistance + absoluteScaleArrowSideLength,
+				physicalPosition.y
+			);
+			ctx.lineTo(
+				physicalPosition.x + arrowDistance,
+				physicalPosition.y + absoluteScaleArrowSideLength
+			);
+			ctx.strokeStyle = '#0551a3';
+			ctx.stroke();
 		}
 
 		function DrawElement(
@@ -824,6 +868,7 @@
 					case VisualEditorTools.ALL:
 						DrawMoveTool(pageState.selectedNodePhysicalPosition, true);
 						DrawRotateTool(pageState.selectedNodePhysicalPosition, false);
+						DrawScaleTool(pageState.selectedNodePhysicalPosition, false);
 						break;
 					case VisualEditorTools.MOVE:
 						DrawMoveTool(pageState.selectedNodePhysicalPosition);
@@ -832,6 +877,7 @@
 						DrawRotateTool(pageState.selectedNodePhysicalPosition);
 						break;
 					case VisualEditorTools.SCALE:
+						DrawScaleTool(pageState.selectedNodePhysicalPosition);
 						break;
 					case VisualEditorTools.SELECT:
 						break;
@@ -927,6 +973,36 @@
 				distanceFromCenter <= rotationTwoCircleRadius + rotationTwoCircleMaxDistance &&
 				distanceFromCenter > rotationTwoCircleRadius + rotationTwoCircleMinDistance;
 
+
+			let scaleArrowDistance = (pageState.currentVisualEditorTool === VisualEditorTools.SCALE ? absoluteScaleArrowDistance / 3 : absoluteScaleArrowDistance);
+			let isCursorInScaleYAxisArrow =
+				cursorPhysicalPosition.x >=
+					pageState.selectedNodePhysicalPosition.x - absoluteScaleArrowSideLength &&
+				cursorPhysicalPosition.x <=
+					pageState.selectedNodePhysicalPosition.x + absoluteScaleArrowSideLength &&
+				cursorPhysicalPosition.y >=
+					pageState.selectedNodePhysicalPosition.y -
+						scaleArrowDistance -
+						absoluteScaleArrowSideLength &&
+				cursorPhysicalPosition.y <=
+					pageState.selectedNodePhysicalPosition.y -
+						scaleArrowDistance +
+						absoluteScaleArrowSideLength;
+
+			let isCursorInScaleXAxisArrow =
+				cursorPhysicalPosition.x <=
+					pageState.selectedNodePhysicalPosition.x +
+						scaleArrowDistance +
+						absoluteScaleArrowSideLength &&
+				cursorPhysicalPosition.x >=
+					pageState.selectedNodePhysicalPosition.x +
+						scaleArrowDistance -
+						absoluteScaleArrowSideLength &&
+				cursorPhysicalPosition.y <=
+					pageState.selectedNodePhysicalPosition.y + absoluteScaleArrowSideLength &&
+				cursorPhysicalPosition.y >=
+					pageState.selectedNodePhysicalPosition.y - absoluteScaleArrowSideLength;
+
 			function setGrabOffset() {
 				grabOffset = {
 					x: (pageState?.selectedNodePhysicalPosition?.x ?? 0) - cursorPhysicalPosition.x,
@@ -979,8 +1055,21 @@
 				isRotating = true;
 				lockHorizontal = false;
 				lockVertical = false;
-				if (isCursorInRotationCircle && !isCursorInRotationTwoCircle) rotationCircle = 'One';
-				else if (!isCursorInRotationCircle && isCursorInRotationTwoCircle) rotationCircle = 'Two';
+				rotationCircle = isCursorInRotationCircle ? 'One' : 'Two';
+			}
+
+			if (
+				((isCursorInScaleYAxisArrow || isCursorInScaleXAxisArrow) &&
+					currentVisualEditorTool === VisualEditorTools.SCALE) ||
+				currentVisualEditorTool === VisualEditorTools.ALL
+			) {
+				setGrabOffset();
+				isDragging = true;
+				isRotating = false;
+				isScaling = true;
+				lockHorizontal = false;
+				lockVertical = false;
+				scalingAxis = isCursorInScaleYAxisArrow ? "Y" : "X";
 			}
 
 			/*ROTATE TOOL STUFF/ALL TOOL*/
@@ -1294,6 +1383,59 @@
 								currentElement.offsets.rotation_two = degreesRotation;
 							break;
 					}
+					break;
+				case VisualEditorTools.SCALE:
+					console.log("scale drag");
+					if (!pageState.selectedNodePhysicalPosition || !isScaling || (scalingAxis !== "X" && scalingAxis !== "Y")) return;
+					let scaleDistance = scalingAxis === "X" ? cursorPhysicalPosition.x - cursorStartPosition.x : cursorPhysicalPosition.y - cursorStartPosition.y;
+					let scaleDelta = (scaleDistance * scaleStep) * scaleUnit;
+					let scaleArrowDistance = (pageState.currentVisualEditorTool === VisualEditorTools.SCALE ? absoluteScaleArrowDistance / 3 : absoluteScaleArrowDistance);
+					if (lastScaleDistance === null) lastScaleDistance = scaleDistance;
+					switch (pageState?.selectedNode?.type) {
+						case SelectedNodeType.Root:
+							if (scalingAxis === "X") {
+								scaleDelta = cursorPhysicalPosition.x < pageState.selectedNodePhysicalPosition.x + scaleArrowDistance + absoluteScaleArrowSideLength / 2 ? -scaleDelta : scaleDelta;
+								if (scaleDistance < lastScaleDistance) rigObject.offsets.scale.x -= scaleDelta;
+								if (scaleDistance > lastScaleDistance) rigObject.offsets.scale.x += scaleDelta;
+							} else {
+								scaleDelta = cursorPhysicalPosition.y > pageState.selectedNodePhysicalPosition.y - scaleArrowDistance - absoluteScaleArrowSideLength / 2 ? -scaleDelta : scaleDelta;
+								if (scaleDistance < lastScaleDistance) rigObject.offsets.scale.y -= scaleDelta;
+								if (scaleDistance > lastScaleDistance) rigObject.offsets.scale.y += scaleDelta;
+							}
+							lastScaleDistance = scaleDistance;
+							break;
+						case SelectedNodeType.Group:
+							let currentGroup = rigObject.groups.find(g => g.id === pageState.selectedNode?.name);
+							if (!currentGroup) return;
+							if (scalingAxis === "X") {
+								scaleDelta = cursorPhysicalPosition.x < pageState.selectedNodePhysicalPosition.x + scaleArrowDistance + absoluteScaleArrowSideLength / 2 ? -scaleDelta : scaleDelta;
+								console.log(lastScaleDistance, scaleDistance);
+								if (scaleDistance < lastScaleDistance) currentGroup.offsets.scale.x -= scaleDelta;
+								if (scaleDistance > lastScaleDistance) currentGroup.offsets.scale.x += scaleDelta;
+							} else {
+								scaleDelta = cursorPhysicalPosition.y > pageState.selectedNodePhysicalPosition.y - scaleArrowDistance - absoluteScaleArrowSideLength / 2 ? -scaleDelta : scaleDelta;
+								if (scaleDistance < lastScaleDistance) currentGroup.offsets.scale.y -= scaleDelta;
+								if (scaleDistance > lastScaleDistance) currentGroup.offsets.scale.y += scaleDelta;
+							}
+							lastScaleDistance = scaleDistance;
+							break;
+						case SelectedNodeType.Element:
+							let currentElement = rigObject.elements.find(e => e.name === pageState.selectedNode?.name);
+							if (!currentElement) return;
+							if (scalingAxis === "X") {
+								scaleDelta = cursorPhysicalPosition.x < pageState.selectedNodePhysicalPosition.x + scaleArrowDistance + absoluteScaleArrowSideLength / 2 ? -scaleDelta : scaleDelta;
+								console.log(lastScaleDistance, scaleDistance);
+								if (scaleDistance < lastScaleDistance) currentElement.offsets.scale.x -= scaleDelta;
+								if (scaleDistance > lastScaleDistance) currentElement.offsets.scale.x += scaleDelta;
+							} else {
+								scaleDelta = cursorPhysicalPosition.y > pageState.selectedNodePhysicalPosition.y - scaleArrowDistance - absoluteScaleArrowSideLength / 2 ? -scaleDelta : scaleDelta;
+								if (scaleDistance < lastScaleDistance) currentElement.offsets.scale.y -= scaleDelta;
+								if (scaleDistance > lastScaleDistance) currentElement.offsets.scale.y += scaleDelta;
+							}
+							lastScaleDistance = scaleDistance;
+							break;
+					}
+					break;
 				default:
 					return;
 			}
@@ -1303,10 +1445,13 @@
 			if (!isDragging) return;
 			isDragging = false;
 			isRotating = false;
+			isScaling = false;
 			lockHorizontal = false;
 			lockVertical = false;
 			cursorStartPosition = { x: 0, y: 0 };
 			rotationCircle = 'One';
+			scalingAxis = 'X';
+			lastScaleDistance = null;
 		};
 		canvas.onmousedown = pageState?.visualEditorEnabled ? VisualEditorDragStarted : null;
 		canvas.onmousemove = pageState?.visualEditorEnabled ? handleVisualEditorDrag : null;
@@ -1327,8 +1472,11 @@
 			return;
 		} else {
 			if (!pageState?.selectedNode) return;
-			if (pageState.clickedOnPoint && pageState.selectedNode.type !== SelectedNodeType.Point &&
-				pageState.selectedNode.type !== SelectedNodeType.ControlPoint) {
+			if (
+				pageState.clickedOnPoint &&
+				pageState.selectedNode.type !== SelectedNodeType.Point &&
+				pageState.selectedNode.type !== SelectedNodeType.ControlPoint
+			) {
 				pageState.clickedOnPoint = false;
 				appState.UpdatePageStateVisualEditorTool(pageId, pageState.lastVisualEditorTool);
 			}
