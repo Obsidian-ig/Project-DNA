@@ -1,6 +1,6 @@
 import { browser } from "$app/environment";
 import { untrack } from "svelte";
-import type { NodeFrame, RigObject, RigVector2, SelectedNode } from "./DNARig";
+import { createDefaultRigObject, type NodeFrame, type RigObject, type RigVector2, type SelectedNode } from "./DNARig";
 
 //supported themes
 export enum Theme {
@@ -170,6 +170,17 @@ class AppState {
             return;
         }
         pageState.loadedRig = rig;
+    }
+    UpdatePageStateLoadedRigFromRestorePoint(pageStateId: string, restorePoint: RigObject) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log(this.pageStates);
+            console.log(pageState);
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        if (!pageState.loadedRig) pageState.loadedRig = createDefaultRigObject();
+        Object.assign(pageState.loadedRig, restorePoint);
     }
     UpdatePageStateLoadedRigFilePath(pageStateId: string, filePath: string | null) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);

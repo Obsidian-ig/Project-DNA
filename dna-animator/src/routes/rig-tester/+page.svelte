@@ -140,7 +140,7 @@ Ideas/Plans:
 						return;
 					}
 					//cut the runtime properties out of the rig object.
-					let cleanedRigObject: RigObject = RemoveKeysFromObject(rigObject, ['transforms']);
+					let cleanedRigObject: RigObject = RemoveKeysFromObject(rigObject, ['transforms', 'previewRender']);
 					if (!pageState.loadedRigFilePath) {
 						console.log('Unable to save rig as the file path is invalid!');
 						console.log('Save Rig As!');
@@ -183,7 +183,7 @@ Ideas/Plans:
 						return;
 					}
 					//cut the runtime properties out of the rig object.
-					let cleanedRigObject: RigObject = RemoveKeysFromObject(rigObject, ['transforms']);
+					let cleanedRigObject: RigObject = RemoveKeysFromObject(rigObject, ['transforms', 'previewRender']);
 					let result = await window.electronAPI.saveNewFile(
 						'Save New Rig',
 						'DNA Rig Files',
@@ -229,7 +229,9 @@ Ideas/Plans:
 			},
 			{
 				id: 'loadRigRestorePoint',
-				action: () => {}
+				action: () => {
+					showRigRestorePoints = true;
+				}
 			}
 		],
 		edit: [
@@ -404,48 +406,78 @@ Ideas/Plans:
 		</Pane>
 	</Splitpanes>
 
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="rig-restore-point-container" onclick={() => {
-		
-	}} title="Load Restore Point">
-		<div class="rrp-header">
-			<p>Rig Restore Points</p>
-			<button
-				class="rrp-close-button"
-				onclick={() => {
-					showRigRestorePoints = false;
-				}}
-			>
-				X
-			</button>
+	{#if showRigRestorePoints}
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="rig-restore-point-container" onclick={() => {}}>
+			<div class="rrp-header">
+				<p>Rig Restore Points</p>
+				<button
+					class="rrp-close-button"
+					onclick={() => {
+						showRigRestorePoints = false;
+					}}
+				>
+					X
+				</button>
+			</div>
+			<div class="rrp-divider"></div>
+			<div class="rrp-body">
+				<!--All rig restore points should be listed here-->
+				{#each pageState?.rigRestorePoints as restorePoint, restorePointIndex}
+					{@render RigRestorePoint(restorePoint, restorePointIndex)}
+				{/each}
+			</div>
 		</div>
-		<div class="rrp-divider"></div>
-		<div class="rrp-body">
-			<!--All rig restore points should be listed here-->
-			{#each pageState?.rigRestorePoints as restorePoint, restorePointIndex}
-				{@render RigRestorePoint(restorePoint, restorePointIndex)}
-			{/each}
-		</div>
-	</div>
+	{/if}
 </div>
 
 {#snippet RigRestorePoint(restorePoint: RigObject, index: number)}
-	<div class="restore-point-item">
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		class="restore-point-item"
+		title="Load Restore Point"
+		onclick={() => {
+			appState.UpdatePageStateLoadedRigFromRestorePoint(pageId, $state.snapshot(restorePoint));
+			showRigRestorePoints = false;
+		}}
+	>
 		<div class="rpi-preview-image-container">
 			<img class="rpi-preview-image" src={restorePoint.previewRender} alt="Preview" />
 		</div>
 		<div class="rpi-info-container">
-			<p><strong style="font-size: 17px; text-decoration: underline;">{restorePoint.name}</strong></p>
+			<p>
+				<strong style="font-size: 17px; text-decoration: underline;">{restorePoint.name}</strong>
+			</p>
 			<p><strong>Last Updated:</strong> {restorePoint.last_updated_utc}</p>
 			<p><strong>Total Groups:</strong> {restorePoint.groups.length}</p>
 			<p><strong>Total Elements:</strong> {restorePoint.elements.length}</p>
 			<p><strong>Total States:</strong> {restorePoint.state_enum.allowed_values.length}</p>
 		</div>
-		<button class="rpi-delete-button" onclick={() => {
-			pageState?.rigRestorePoints.splice(index, 1);
-		}} title="Delete Restore Point">
-			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash preview-icon"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+		<button
+			class="rpi-delete-button"
+			onclick={(e) => {
+				e.stopPropagation();
+				pageState?.rigRestorePoints.splice(index, 1);
+			}}
+			title="Delete Restore Point"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="24"
+				height="24"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="#ffffff"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				class="lucide lucide-trash preview-icon"
+				><path d="M10 11v6" /><path d="M14 11v6" /><path
+					d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"
+				/><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg
+			>
 		</button>
 	</div>
 {/snippet}
@@ -489,7 +521,7 @@ Ideas/Plans:
 		width: max-content;
 		max-width: 400px;
 		height: 70%;
-		z-index: 1;
+		z-index: 2;
 		background-color: var(--bg-dark);
 		border-color: var(--border);
 		border-width: 1px;
@@ -538,8 +570,12 @@ Ideas/Plans:
 		border-color: var(--border-muted);
 		border-width: 1px;
 		position: relative;
+		transition: ease-in-out 0.2s;
+		will-change: transform;
+
 		&:hover {
 			cursor: pointer;
+			scale: 1.02;
 		}
 
 		.rpi-preview-image-container {
@@ -552,6 +588,7 @@ Ideas/Plans:
 			background-size: 10px 10px;
 			padding: 5px;
 			border-radius: 12px;
+			aspect-ratio: 1;
 		}
 
 		.rpi-preview-image {
@@ -559,11 +596,16 @@ Ideas/Plans:
 			border-radius: 50%;
 			width: 100%;
 			height: 100%;
+			aspect-ratio: 1;
 		}
 
 		.rpi-info-container {
 			display: flex;
 			flex-direction: column;
+
+			p {
+				font-size: clamp(0.7rem, 1vw, 3rem);
+			}
 		}
 
 		.rpi-delete-button {
@@ -574,7 +616,7 @@ Ideas/Plans:
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			
+
 			svg {
 				filter: var(--img-filter);
 			}
@@ -582,7 +624,7 @@ Ideas/Plans:
 			&:hover {
 				svg {
 					stroke: red;
-					filter: none;
+					filter: drop-shadow(0px 0px 10px orangered);
 				}
 			}
 		}

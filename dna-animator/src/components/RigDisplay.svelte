@@ -622,6 +622,7 @@
 		}
 		function Draw() {
 			if (!rigObject || !ctx) return;
+			ctx.lineWidth = 1;
 			ctx.clearRect(0, 0, displayWidth, displayHeight);
 			let totalRigRotation = rigObject.offsets.rotation + rigObject.transforms.rotation;
 			let rigScale: RigVector2 = {
