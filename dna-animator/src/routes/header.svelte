@@ -219,4 +219,8 @@
 			}
 		}
 	}
+
+	.click-off-container {
+		z-index: 2;
+	}
 </style>

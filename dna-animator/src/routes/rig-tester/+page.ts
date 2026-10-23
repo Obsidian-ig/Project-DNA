@@ -18,7 +18,9 @@ export function load(): PageConfig {
                             {label: "New Rig", id: "newRig", type: HeaderPanelOptionType.Default},
                             {label: "Save Rig", id: "saveRig", type: HeaderPanelOptionType.Default},
                             {label: "Save Rig As", id: "saveRigAs", type: HeaderPanelOptionType.Default},
-                            {label: "Open In File Explorer", id: "openInFileExplorer", type: HeaderPanelOptionType.Default}
+                            {label: "Open In File Explorer", id: "openInFileExplorer", type: HeaderPanelOptionType.Default},
+                            {label: "Create Rig Restore Point", id: "createRigRestorePoint", type: HeaderPanelOptionType.Default},
+                            {label: "Load Rig Restore Point", id: "loadRigRestorePoint", type: HeaderPanelOptionType.Default}
                         ]
                     },
                     {

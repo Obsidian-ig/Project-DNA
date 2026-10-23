@@ -1456,6 +1456,11 @@
 		canvas.onmousedown = pageState?.visualEditorEnabled ? VisualEditorDragStarted : null;
 		canvas.onmousemove = pageState?.visualEditorEnabled ? handleVisualEditorDrag : null;
 		canvas.onmouseup = pageState?.visualEditorEnabled ? handleVisualEditorDragEnded : null;
+
+		//save preview render to rigObject on every change
+		if (rigObject) {
+			rigObject.previewRender = canvas.toDataURL();
+		}
 	});
 
 	$effect(() => {

@@ -42,6 +42,7 @@ Ideas/Plans:
 		RigLayeringOrderNodeType,
 		SelectedNodeType
 	} from '../../DNARig.ts';
+	import trashIcon from '../../lib/assets/trash-icon-white.png';
 
 	registerHeaderActions({
 		file: [
@@ -214,6 +215,21 @@ Ideas/Plans:
 					console.log(joinedFolderPath);
 					window.electronAPI.openFileExplorer(joinedFolderPath);
 				}
+			},
+			{
+				id: 'createRigRestorePoint',
+				action: () => {
+					if (!rigObject || !pageState) {
+						//popup notification saying restore point failed
+						return;
+					}
+					pageState.rigRestorePoints.push($state.snapshot(rigObject));
+					//popup notification saying restore point created
+				}
+			},
+			{
+				id: 'loadRigRestorePoint',
+				action: () => {}
 			}
 		],
 		edit: [
@@ -304,6 +320,7 @@ Ideas/Plans:
 	let savedChanges = $state(true);
 	let pageState = $derived(appState.pageStates.find((ps) => ps.id === pageId));
 	let rigObject: RigObject | null | undefined = $derived(pageState?.loadedRig);
+	let showRigRestorePoints = $state(false);
 
 	$effect(() => {
 		let config = {
@@ -386,7 +403,52 @@ Ideas/Plans:
 			</Splitpanes>
 		</Pane>
 	</Splitpanes>
+
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="rig-restore-point-container" onclick={() => {
+		
+	}} title="Load Restore Point">
+		<div class="rrp-header">
+			<p>Rig Restore Points</p>
+			<button
+				class="rrp-close-button"
+				onclick={() => {
+					showRigRestorePoints = false;
+				}}
+			>
+				X
+			</button>
+		</div>
+		<div class="rrp-divider"></div>
+		<div class="rrp-body">
+			<!--All rig restore points should be listed here-->
+			{#each pageState?.rigRestorePoints as restorePoint, restorePointIndex}
+				{@render RigRestorePoint(restorePoint, restorePointIndex)}
+			{/each}
+		</div>
+	</div>
 </div>
+
+{#snippet RigRestorePoint(restorePoint: RigObject, index: number)}
+	<div class="restore-point-item">
+		<div class="rpi-preview-image-container">
+			<img class="rpi-preview-image" src={restorePoint.previewRender} alt="Preview" />
+		</div>
+		<div class="rpi-info-container">
+			<p><strong style="font-size: 17px; text-decoration: underline;">{restorePoint.name}</strong></p>
+			<p><strong>Last Updated:</strong> {restorePoint.last_updated_utc}</p>
+			<p><strong>Total Groups:</strong> {restorePoint.groups.length}</p>
+			<p><strong>Total Elements:</strong> {restorePoint.elements.length}</p>
+			<p><strong>Total States:</strong> {restorePoint.state_enum.allowed_values.length}</p>
+		</div>
+		<button class="rpi-delete-button" onclick={() => {
+			pageState?.rigRestorePoints.splice(index, 1);
+		}} title="Delete Restore Point">
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash preview-icon"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+		</button>
+	</div>
+{/snippet}
 
 <style>
 	.app {
@@ -411,6 +473,118 @@ Ideas/Plans:
 		& .splitpanes__splitter {
 			background-color: var(--primary) !important;
 			border: none !important;
+		}
+	}
+
+	.rig-restore-point-container {
+		display: flex;
+		flex-direction: column;
+		position: fixed;
+		left: 0;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		margin: auto;
+		min-width: 60%;
+		width: max-content;
+		max-width: 400px;
+		height: 70%;
+		z-index: 1;
+		background-color: var(--bg-dark);
+		border-color: var(--border);
+		border-width: 1px;
+		box-shadow: rgba(0, 0, 0, 0.3) 0px 3px 10px 5px;
+
+		.rrp-header {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding-bottom: 3px;
+
+			p {
+				margin-left: auto;
+			}
+
+			.rrp-close-button {
+				margin-left: auto;
+				margin-right: 5px;
+			}
+		}
+
+		.rrp-divider {
+			width: 100%;
+			height: 1px;
+			background-color: var(--border-muted);
+		}
+
+		.rrp-body {
+			padding: 20px;
+			display: flex;
+			flex-direction: column;
+			gap: 15px;
+			overflow-y: auto;
+			scrollbar-color: var(--primary) transparent;
+		}
+	}
+
+	.restore-point-item {
+		width: 100%;
+		height: 150px;
+		background-color: var(--bg);
+		display: flex;
+		gap: 20px;
+		padding: 10px;
+		border-radius: 12px;
+		border-color: var(--border-muted);
+		border-width: 1px;
+		position: relative;
+		&:hover {
+			cursor: pointer;
+		}
+
+		.rpi-preview-image-container {
+			background-color: #d9d9d9;
+			background-image:
+				linear-gradient(45deg, #9c9b9b 25%, transparent 25%),
+				linear-gradient(-45deg, #9c9b9b 25%, transparent 25%),
+				linear-gradient(45deg, transparent 75%, #9c9b9b 75%),
+				linear-gradient(-45deg, transparent 75%, #9c9b9b 75%);
+			background-size: 10px 10px;
+			padding: 5px;
+			border-radius: 12px;
+		}
+
+		.rpi-preview-image {
+			background-color: black;
+			border-radius: 50%;
+			width: 100%;
+			height: 100%;
+		}
+
+		.rpi-info-container {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.rpi-delete-button {
+			width: 20px;
+			height: 20px;
+			position: absolute;
+			left: calc(100% - 30px);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			
+			svg {
+				filter: var(--img-filter);
+			}
+
+			&:hover {
+				svg {
+					stroke: red;
+					filter: none;
+				}
+			}
 		}
 	}
 </style>

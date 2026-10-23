@@ -478,6 +478,7 @@ export interface RigObject {
         optional: HardwareSensors[];
     };
     bindings: RigBinding[];
+    previewRender: string; //the canvas converted to a data url.
 }
 
 export const createDefaultRigObject = (overrides: Partial<RigObject> = {}): RigObject => {
@@ -524,6 +525,7 @@ export const createDefaultRigObject = (overrides: Partial<RigObject> = {}): RigO
             optional: []
         },
         bindings: [],
+        previewRender: "",
         ...overrides,
     };
 };

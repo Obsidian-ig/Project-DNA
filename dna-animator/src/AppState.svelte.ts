@@ -92,6 +92,7 @@ export interface PageState {
     nodeFrames: NodeFrame[];
     rigErrorMessages: string[];
     watchRules: PageWatchRule[];
+    rigRestorePoints: RigObject[];
 }
 
 export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): PageState => {
@@ -120,6 +121,7 @@ export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): Page
         hideAllElements: false, 
         disableAllDebugOptions: false,
         showGridOverlay: false,
+        rigRestorePoints: [],
         ...overrides
     };
 };
