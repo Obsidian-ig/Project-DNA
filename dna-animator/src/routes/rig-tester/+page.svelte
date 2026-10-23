@@ -61,6 +61,7 @@ Ideas/Plans:
 					appState.UpdatePageStateLoadedRigFilePath(pageId, null);
 					appState.UpdatePageStateSelectedNode(pageId, null);
 					appState.UpdatePageStateExpandedNodes(pageId, []);
+					appState.ResetPageStateRestorePoints(pageId);
 				}
 			},
 			{
@@ -117,6 +118,8 @@ Ideas/Plans:
 					appState.UpdatePageStateExpandedNodes(pageId, []);
 					appState.UpdatePageStateLoadedRig(pageId, rigObject);
 					appState.UpdatePageStateLoadedRigFilePath(pageId, rigFilePath);
+					appState.ResetPageStateRestorePoints(pageId);
+					pageState.rigRestorePoints.push(rigObject);
 				}
 			},
 			{
@@ -127,6 +130,7 @@ Ideas/Plans:
 					appState.UpdatePageStateLoadedRig(pageId, createDefaultRigObject());
 					appState.UpdatePageStateLoadedRigFilePath(pageId, null);
 					appState.UpdatePageStateSelectedNode(pageId, null);
+					appState.ResetPageStateRestorePoints(pageId);
 					console.log('New Rig!');
 				}
 			},

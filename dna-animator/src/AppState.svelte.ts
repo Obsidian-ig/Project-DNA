@@ -284,6 +284,14 @@ class AppState {
         if (pageState.nodeFrames.length - 1 < nodeFrameIndex || nodeFrameIndex < 0) return;
         pageState.nodeFrames.splice(nodeFrameIndex, 1);
     }
+    ResetPageStateRestorePoints(pageStateId: string) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.rigRestorePoints = [];
+    }
 
 
     MarkAsDoneLoading() {
