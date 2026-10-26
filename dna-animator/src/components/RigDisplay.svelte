@@ -35,6 +35,14 @@
 	let scalingAxis = $state('X'); //'X' or 'Y'
 	let scaleStep = $state(0.001);
 	let lastScaleDistance: number | null = $state(null);
+	let camera = $state({
+		x: 0,
+		y: 0,
+		zoom: 1
+	});
+	const zoomStep = 0.05;
+	const maxZoom = 20;
+	const minZoom = 0.1;
 
 	$effect(() => {
 		if (!canvas || !rigObject) return;

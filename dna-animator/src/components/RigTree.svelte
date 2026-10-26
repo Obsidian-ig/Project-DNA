@@ -1305,6 +1305,7 @@
 		padding-top: 5px;
 		height: 100%;
 		overflow: auto;
+		scrollbar-color: var(--primary) transparent;
 	}
 
 	.rig-node {
