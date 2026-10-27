@@ -515,7 +515,8 @@
 					fill_color: '#FFFFFF',
 					stroke_color: '#FFFFFF',
 					closed: true,
-					filled: true
+					filled: true,
+					stroke_width: 1
 				};
 				if (!groupId) {
 					rigObject.layering_order.push({
@@ -664,6 +665,8 @@
 									pageState.expandedNodes?.findIndex(
 										(n) => n.type === DNARig.SelectedNodeType.Group && n.name === group.id
 									) ?? -1;
+								let groupNodeFrameIndex = pageState.nodeFrames.findIndex(nf => nf.nodeId === group.id && nf.nodeType === DNARig.SelectedNodeType.Group);
+								if (groupNodeFrameIndex >= 0) pageState.nodeFrames.splice(groupNodeFrameIndex, 1); 
 								if (expandedIndex && expandedIndex !== -1) {
 									console.log('deleted expanded node at index: ' + expandedIndex.toString());
 									pageState.expandedNodes?.splice(expandedIndex, 1);
@@ -676,6 +679,12 @@
 										),
 										1
 									);
+									pageState.nodeFrames.slice().forEach((nf, nfIndex) => {
+										let shouldDelete = false;
+										if (nf.nodeId === e.name && nf.nodeType === DNARig.SelectedNodeType.Element) shouldDelete = true;
+										if (nf.nodeId === DNARig.GetNameIdForElementPoint(e.name, parseInt(nf.nodeId.split("_PIndex_")[1]))) shouldDelete = true;
+										if (shouldDelete) pageState.nodeFrames.splice(nfIndex, 1);
+									});
 								});
 								rigObject.groups.splice(
 									rigObject.groups.findIndex((g) => g.id === group.id),
@@ -1166,7 +1175,7 @@
 					: 'second-node'} point-node context-target {selectedNode?.type ===
 					DNARig.SelectedNodeType.Point &&
 				selectedNode.index === pointIndex &&
-				selectedNode.name === element.name
+				selectedNode.name.split("_PIndex_")[0] === element.name
 					? 'selected'
 					: ''}"
 				id={element.name + '-' + 'point-' + pointIndex.toString()}

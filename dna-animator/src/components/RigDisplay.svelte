@@ -354,7 +354,7 @@
 			}
 
 			//all calculations are from the current point to the next point, never backwards.
-			ctx.beginPath();
+			if (element.closed) ctx.beginPath();
 			element.points.slice().forEach((point, index) => {
 				let calculatedPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
 					point.point,
@@ -365,6 +365,7 @@
 				let nextPointIndex = index >= element.points.length - 1 ? 0 : index + 1;
 				let nextPoint = element.points[nextPointIndex];
 				if (!nextPoint) return;
+				if (nextPointIndex === 0 && !element.closed) return;
 				let calculatedNextPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
 					nextPoint.point,
 					elementCalculatedPosition,
@@ -470,11 +471,12 @@
 					});
 				}
 			});
-			ctx.closePath();
+			if (element.closed) {ctx.closePath();}
 			ctx.strokeStyle = element.stroke_color;
+			ctx.lineWidth = element.stroke_width;
 			ctx.fillStyle = element.fill_color;
 			ctx.stroke();
-			if (element.filled) ctx.fill();
+			if (element.filled && element.closed) ctx.fill();
 
 			let splitSelectedVisualEditorNodeName = pageState?.selectedNode?.name.split('_PIndex_');
 			let isParentElement = element.name === splitSelectedVisualEditorNodeName?.[0];
@@ -632,6 +634,14 @@
 			if (!rigObject || !ctx) return;
 			ctx.lineWidth = 1;
 			ctx.clearRect(0, 0, displayWidth, displayHeight);
+			ctx.beginPath();
+			ctx.arc(displayWidth / 2, displayHeight / 2, 100 * scaleUnit, 0, Math.PI * 2);
+			ctx.closePath();
+			ctx.strokeStyle = "#000000";
+			ctx.fillStyle = "#000000";
+			ctx.fill();
+			ctx.stroke();
+
 			let totalRigRotation = rigObject.offsets.rotation + rigObject.transforms.rotation;
 			let rigScale: RigVector2 = {
 				x: rigObject.offsets.scale.x * rigObject.transforms.scale.x,
@@ -862,7 +872,7 @@
 			}
 
 			//visual editor tools & stuff
-			if (pageState?.visualEditorEnabled) {
+			if (pageState?.visualEditorEnabled && pageState?.currentVisualEditorMode === VisualEditorModes.VISUAL) {
 				if (
 					pageState.selectedNode?.type === SelectedNodeType.Point ||
 					pageState.selectedNode?.type === SelectedNodeType.ControlPoint ||
@@ -1732,7 +1742,6 @@
 	</div>
 
 	<div class="screen-container">
-		<div class="display-background"></div>
 		<canvas
 			id="rig-display"
 			bind:this={canvas}
@@ -1884,13 +1893,6 @@
 		align-items: center;
 		justify-content: center;
 		height: 100%;
-	}
-
-	.display-background {
-		background-color: black;
-		width: 100%;
-		aspect-ratio: 1;
-		border-radius: 50%;
 	}
 
 	#rig-display {

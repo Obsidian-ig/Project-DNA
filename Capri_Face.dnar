@@ -1,0 +1,1099 @@
+{
+  "name": "Capri",
+  "rig_version": "1.0.0",
+  "rig_structure_version": "2.8",
+  "author": "ObsidianDev",
+  "author_link": "https://github.com/Obsidian-ig",
+  "last_updated_utc": "2026-10-27T20:22:52.045Z",
+  "show_position_point": true,
+  "position_point_color": "#ff0000",
+  "position_point_radius": 7,
+  "offsets": {
+    "position": {
+      "x": -0.37593984962406,
+      "y": -3.7593984962406015
+    },
+    "rotation": 0,
+    "scale": {
+      "x": 1,
+      "y": 1
+    },
+    "rotation_two": 0
+  },
+  "layering_order": [
+    {
+      "type": "element",
+      "id": "Face_Background"
+    },
+    {
+      "type": "group",
+      "id": "Left_Eye"
+    },
+    {
+      "type": "group",
+      "id": "Right_Eye"
+    },
+    {
+      "type": "element",
+      "id": "Mouth"
+    }
+  ],
+  "elements": [
+    {
+      "name": "Face_Background",
+      "group_id": "",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "position_point_color": "#00fc22",
+      "position_point_radius": 1.5,
+      "show_origin_point": false,
+      "origin_point_color": "#ed6f26",
+      "origin_point_radius": 1.5,
+      "show_points": false,
+      "points_color": "#03e3fc",
+      "points_radius": 1.5,
+      "offsets": {
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -77,
+            "y": -33
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 77,
+            "y": -33
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 73,
+            "y": 34
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": -73,
+            "y": 34
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        }
+      ],
+      "fill_color": "#15f919",
+      "stroke_color": "#ffffff",
+      "closed": true,
+      "filled": true,
+      "stroke_width": 1
+    },
+    {
+      "name": "Left_Eye_Background",
+      "group_id": "Left_Eye",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "position_point_color": "#00fc22",
+      "position_point_radius": 1.5,
+      "show_origin_point": false,
+      "origin_point_color": "#ed6f26",
+      "origin_point_radius": 1.5,
+      "show_points": false,
+      "points_color": "#03e3fc",
+      "points_radius": 1.5,
+      "offsets": {
+        "position": {
+          "x": -2.117647058823529,
+          "y": -0.026143790849676662
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 10,
+          "y": 36
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -25,
+            "y": -5
+          },
+          "interpolation_type": "Quadratic",
+          "controls": [
+            {
+              "x": 30.209150326797385,
+              "y": -3.6797385620915044
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 13.751633986928113,
+            "y": -2.366013071895427
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 30.424836601307188,
+            "y": -11.019607843137255
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 22.405228758169937,
+            "y": 2.941176470588225
+          },
+          "interpolation_type": "Quadratic",
+          "controls": [
+            {
+              "x": 7.8627450980392055,
+              "y": 7.3790849673202565
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 31,
+            "y": 44
+          },
+          "interpolation_type": "Quadratic",
+          "controls": [
+            {
+              "x": -27.777777777777814,
+              "y": 0.6535947712418135
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": -6.209150326797378,
+            "y": 36.92810457516339
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": -16.993464052287585,
+            "y": 44.77124183006535
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": -12.745098039215677,
+            "y": 32.35294117647058
+          },
+          "interpolation_type": "Quadratic",
+          "controls": [
+            {
+              "x": -12.418300653594777,
+              "y": -7.5163398692810475
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        }
+      ],
+      "fill_color": "#000000",
+      "stroke_color": "#000000",
+      "closed": true,
+      "filled": true,
+      "stroke_width": 1
+    },
+    {
+      "name": "Left_Eye_Iris_Outline",
+      "group_id": "Left_Eye",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "position_point_color": "#00fc22",
+      "position_point_radius": 1.5,
+      "show_origin_point": false,
+      "origin_point_color": "#ed6f26",
+      "origin_point_radius": 1.5,
+      "show_points": false,
+      "points_color": "#03e3fc",
+      "points_radius": 1.5,
+      "offsets": {
+        "position": {
+          "x": 7.88094852265975,
+          "y": 18.88942904985685
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -12.091503267973856,
+            "y": -7.516339869281044
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 9.16075190406741,
+              "y": -12.062010479122783
+            },
+            {
+              "x": 29.682427182849366,
+              "y": 1.3778775247956219
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 8.823529411764703,
+            "y": 9.15032679738562
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": -7.8431372549019684,
+              "y": 18.627450980392158
+            },
+            {
+              "x": -36.27450980392153,
+              "y": -1.9607843137254903
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        }
+      ],
+      "fill_color": "#FFFFFF",
+      "stroke_color": "#15f919",
+      "closed": true,
+      "filled": false,
+      "stroke_width": 4
+    },
+    {
+      "name": "Left_Eye_Iris",
+      "group_id": "Left_Eye",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "position_point_color": "#00fc22",
+      "position_point_radius": 1.5,
+      "show_origin_point": false,
+      "origin_point_color": "#ed6f26",
+      "origin_point_radius": 1.5,
+      "show_points": false,
+      "points_color": "#03e3fc",
+      "points_radius": 1.5,
+      "offsets": {
+        "position": {
+          "x": 6.779020148004115,
+          "y": 19.440393237184676
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -12.091503267973856,
+            "y": -7.516339869281044
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 9.16075190406741,
+              "y": -12.062010479122783
+            },
+            {
+              "x": 29.682427182849366,
+              "y": 1.3778775247956219
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 8.823529411764703,
+            "y": 9.15032679738562
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": -7.8431372549019684,
+              "y": 18.627450980392158
+            },
+            {
+              "x": -36.27450980392153,
+              "y": -1.9607843137254903
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        }
+      ],
+      "fill_color": "#054aeb",
+      "stroke_color": "#1543f9",
+      "closed": true,
+      "filled": true,
+      "stroke_width": 0
+    },
+    {
+      "name": "Left_Eye_Pupil",
+      "group_id": "Left_Eye",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "position_point_color": "#00fc22",
+      "position_point_radius": 1.5,
+      "show_origin_point": false,
+      "origin_point_color": "#ed6f26",
+      "origin_point_radius": 1.5,
+      "show_points": false,
+      "points_color": "#03e3fc",
+      "points_radius": 1.5,
+      "offsets": {
+        "position": {
+          "x": 6.779020148004115,
+          "y": 19.9913574245125
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 0.3,
+          "y": 0.3
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -12.091503267973856,
+            "y": -7.516339869281044
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 9.16075190406741,
+              "y": -12.062010479122783
+            },
+            {
+              "x": 29.682427182849366,
+              "y": 1.3778775247956219
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 8.823529411764703,
+            "y": 9.15032679738562
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": -7.8431372549019684,
+              "y": 18.627450980392158
+            },
+            {
+              "x": -36.27450980392153,
+              "y": -1.9607843137254903
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        }
+      ],
+      "fill_color": "#ffffff",
+      "stroke_color": "#1543f9",
+      "closed": true,
+      "filled": true,
+      "stroke_width": 0
+    },
+    {
+      "name": "Right_Eye_Background",
+      "group_id": "Right_Eye",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "position_point_color": "#00fc22",
+      "position_point_radius": 1.5,
+      "show_origin_point": false,
+      "origin_point_color": "#ed6f26",
+      "origin_point_radius": 1.5,
+      "show_points": false,
+      "points_color": "#03e3fc",
+      "points_radius": 1.5,
+      "offsets": {
+        "position": {
+          "x": -2.117647058823529,
+          "y": -0.026143790849676662
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 10,
+          "y": 36
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -25,
+            "y": -5
+          },
+          "interpolation_type": "Quadratic",
+          "controls": [
+            {
+              "x": 30.209150326797385,
+              "y": -3.6797385620915044
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 13.751633986928113,
+            "y": -2.366013071895427
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 30.424836601307188,
+            "y": -11.019607843137255
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 22.405228758169937,
+            "y": 2.941176470588225
+          },
+          "interpolation_type": "Quadratic",
+          "controls": [
+            {
+              "x": 7.8627450980392055,
+              "y": 7.3790849673202565
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 31,
+            "y": 44
+          },
+          "interpolation_type": "Quadratic",
+          "controls": [
+            {
+              "x": -27.777777777777814,
+              "y": 0.6535947712418135
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": -6.209150326797378,
+            "y": 36.92810457516339
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": -16.993464052287585,
+            "y": 44.77124183006535
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": -12.745098039215677,
+            "y": 32.35294117647058
+          },
+          "interpolation_type": "Quadratic",
+          "controls": [
+            {
+              "x": -12.418300653594777,
+              "y": -7.5163398692810475
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        }
+      ],
+      "fill_color": "#000000",
+      "stroke_color": "#000000",
+      "closed": true,
+      "filled": true,
+      "stroke_width": 1
+    },
+    {
+      "name": "Right_Eye_Iris_Outline",
+      "group_id": "Right_Eye",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "position_point_color": "#00fc22",
+      "position_point_radius": 1.5,
+      "show_origin_point": false,
+      "origin_point_color": "#ed6f26",
+      "origin_point_radius": 1.5,
+      "show_points": false,
+      "points_color": "#03e3fc",
+      "points_radius": 1.5,
+      "offsets": {
+        "position": {
+          "x": 8.9828768973154,
+          "y": 19.440393237184676
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -12.091503267973856,
+            "y": -7.516339869281044
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 9.16075190406741,
+              "y": -12.062010479122783
+            },
+            {
+              "x": 29.682427182849366,
+              "y": 1.3778775247956219
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 8.823529411764703,
+            "y": 9.15032679738562
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": -7.8431372549019684,
+              "y": 18.627450980392158
+            },
+            {
+              "x": -36.27450980392153,
+              "y": -1.9607843137254903
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        }
+      ],
+      "fill_color": "#FFFFFF",
+      "stroke_color": "#15f919",
+      "closed": true,
+      "filled": false,
+      "stroke_width": 4
+    },
+    {
+      "name": "Right_Eye_Iris",
+      "group_id": "Right_Eye",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "position_point_color": "#00fc22",
+      "position_point_radius": 1.5,
+      "show_origin_point": false,
+      "origin_point_color": "#ed6f26",
+      "origin_point_radius": 1.5,
+      "show_points": false,
+      "points_color": "#03e3fc",
+      "points_radius": 1.5,
+      "offsets": {
+        "position": {
+          "x": 8.431912709987579,
+          "y": 20.542321611840322
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -12.091503267973856,
+            "y": -7.516339869281044
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 9.16075190406741,
+              "y": -12.062010479122783
+            },
+            {
+              "x": 29.682427182849366,
+              "y": 1.3778775247956219
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 8.823529411764703,
+            "y": 9.15032679738562
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": -7.8431372549019684,
+              "y": 18.627450980392158
+            },
+            {
+              "x": -36.27450980392153,
+              "y": -1.9607843137254903
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        }
+      ],
+      "fill_color": "#054aeb",
+      "stroke_color": "#1543f9",
+      "closed": true,
+      "filled": true,
+      "stroke_width": 0
+    },
+    {
+      "name": "Right_Eye_Pupil",
+      "group_id": "Right_Eye",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "position_point_color": "#00fc22",
+      "position_point_radius": 1.5,
+      "show_origin_point": false,
+      "origin_point_color": "#ed6f26",
+      "origin_point_radius": 1.5,
+      "show_points": false,
+      "points_color": "#03e3fc",
+      "points_radius": 1.5,
+      "offsets": {
+        "position": {
+          "x": 7.329984335331929,
+          "y": 21.093285799168147
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 0.3,
+          "y": 0.3
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -12.091503267973856,
+            "y": -7.516339869281044
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": 9.16075190406741,
+              "y": -12.062010479122783
+            },
+            {
+              "x": 29.682427182849366,
+              "y": 1.3778775247956219
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 8.823529411764703,
+            "y": 9.15032679738562
+          },
+          "interpolation_type": "Cubic",
+          "controls": [
+            {
+              "x": -7.8431372549019684,
+              "y": 18.627450980392158
+            },
+            {
+              "x": -36.27450980392153,
+              "y": -1.9607843137254903
+            }
+          ],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        }
+      ],
+      "fill_color": "#ffffff",
+      "stroke_color": "#1543f9",
+      "closed": true,
+      "filled": true,
+      "stroke_width": 0
+    },
+    {
+      "name": "Mouth",
+      "group_id": "",
+      "expanded": false,
+      "visible": true,
+      "show_position_point": false,
+      "position_point_color": "#00fc22",
+      "position_point_radius": 1.5,
+      "show_origin_point": false,
+      "origin_point_color": "#ed6f26",
+      "origin_point_radius": 1.5,
+      "show_points": false,
+      "points_color": "#03e3fc",
+      "points_radius": 1.5,
+      "offsets": {
+        "position": {
+          "x": 4.958677685950414,
+          "y": 51.69421487603305
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "points": [
+        {
+          "point": {
+            "x": -47.93388429752066,
+            "y": -2.7548209366391134
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": -30.85399449035813,
+            "y": 4.958677685950406
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": -22.58953168044077,
+            "y": -1.1019283746556496
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": -7.162534435261708,
+            "y": 6.060606060606055
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 0,
+            "y": 2.7548209366391134
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        },
+        {
+          "point": {
+            "x": 19.834710743801654,
+            "y": 8.815426997245176
+          },
+          "interpolation_type": "Linear",
+          "controls": [],
+          "steps": 20,
+          "show_control_points": false,
+          "control_point_color": "#ed263a",
+          "control_point_radius": 1.5
+        }
+      ],
+      "fill_color": "#FFFFFF",
+      "stroke_color": "#FFFFFF",
+      "closed": false,
+      "filled": false,
+      "stroke_width": 1
+    }
+  ],
+  "groups": [
+    {
+      "id": "Left_Eye",
+      "visible": true,
+      "show_position_point": false,
+      "position_point_color": "#49c998",
+      "position_point_radius": 1.5,
+      "show_origin_point": false,
+      "origin_point_color": "#4d49c9",
+      "origin_point_radius": 1.5,
+      "offsets": {
+        "position": {
+          "x": -44.44444444444444,
+          "y": -19.281045751633986
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": "Right_Eye",
+      "visible": true,
+      "show_position_point": false,
+      "position_point_color": "#49c998",
+      "position_point_radius": 1.5,
+      "show_origin_point": false,
+      "origin_point_color": "#4d49c9",
+      "origin_point_radius": 1.5,
+      "offsets": {
+        "position": {
+          "x": 43.70982552800737,
+          "y": -19.281045751633986
+        },
+        "rotation": 0,
+        "scale": {
+          "x": -1,
+          "y": 1
+        },
+        "rotation_two": 0,
+        "transform_origin": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    }
+  ],
+  "default_state": {
+    "state": "Default"
+  },
+  "state_enum": {
+    "id": "state_enum",
+    "allowed_values": [
+      "Default"
+    ]
+  },
+  "state_rules": [],
+  "events": [],
+  "poses": [],
+  "animations": [],
+  "sensors": {
+    "required": [],
+    "optional": []
+  },
+  "bindings": []
+}

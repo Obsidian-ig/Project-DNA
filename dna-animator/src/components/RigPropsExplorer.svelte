@@ -5,7 +5,10 @@
 		RigPointInterpolationTypeEnum,
 		RigLayeringOrderNodeType,
 
-		RigPointInterpolationType
+		RigPointInterpolationType,
+
+		GetNameIdForElementPoint
+
 
 	} from '../DNARig';
 	import GroupEditor from './PropertiesExplorerComponents/GroupEditor.svelte';
@@ -82,7 +85,9 @@
 					let expandedRootNode = pageState.expandedNodes?.find(
 						(n) => n.type === SelectedNodeType.Root
 					);
+					let rootNodeFrame = pageState.nodeFrames.find(n => n.nodeId === rigObject.name && n.nodeType === SelectedNodeType.Root);
 					if (expandedRootNode) expandedRootNode.name = value;
+					if (rootNodeFrame) rootNodeFrame.nodeId = value;
 					rigObject.name = value;
 				}}
 				currentErrors={nameErrors}
@@ -128,6 +133,7 @@
 				<VectorTwo label="Starting Position" bind:value={rigObject.offsets.position} />
 				<Number label="Starting Rotation" bind:value={rigObject.offsets.rotation} />
 				<VectorTwo label="Starting Scale" bind:value={rigObject.offsets.scale} />
+				<Number label="Starting Rotation Two" bind:value={rigObject.offsets.rotation_two} />
 			</Section>
 			{#if showLiveTransforms}
 			<Section label="Rig Transforms">
@@ -188,6 +194,8 @@
 						rigObject.elements.forEach((element) => {
 							if (element.group_id === currentGroup.id) element.group_id = value;
 						});
+						let nodeFrame = pageState.nodeFrames.find(n => n.nodeId === currentGroup.id && n.nodeType === SelectedNodeType.Group);
+						if (nodeFrame) nodeFrame.nodeId = value;
 						selectedNode.name = value;
 						currentGroup.id = value;
 					}}
@@ -262,6 +270,14 @@
 							(n) => n.id === currentElement.name && n.type === RigLayeringOrderNodeType.Element
 						);
 						if (layerNode) layerNode.id = value;
+						let nodeFrame = pageState.nodeFrames.find(n => n.nodeId === currentElement.name && n.nodeType === SelectedNodeType.Element);
+						if (nodeFrame) nodeFrame.nodeId = value
+						pageState.nodeFrames.forEach((nf, nfIndex) => {
+							if (nf.nodeId === GetNameIdForElementPoint(currentElement.name, parseInt(nf.nodeId.split("_PIndex_")[1]))) {
+								//point of this element.
+								nf.nodeId === value + "_PIndex_" + nf.nodeId.split("_PIndex_")[1]; //rename all nodeFrames of the point of this element.
+							}
+						});
 						currentElement.name = value;
 						selectedNode.name = value;
 					}}
@@ -305,14 +321,16 @@
 				</Section>
 				{/if}
 				<Boolean label="Closed Shape" bind:value={currentElement.closed} />
+				<Boolean label="Filled Shape" bind:value={currentElement.filled} />
 				<Color label="Fill Color" bind:value={currentElement.fill_color} />
 				<Color label="Stroke Color" bind:value={currentElement.stroke_color} />
+				<Number label="Stroke Width" bind:value={currentElement.stroke_width} />
 			{/if}
 		{:else if selectedNode?.type === SelectedNodeType.Point}
 			<!--Point Node-->
 			{let currentPoint = $derived(
 				selectedNode && selectedNode.index !== undefined
-					? rigObject.elements.find((e) => e.name === selectedNode.name)?.points[selectedNode.index]
+					? rigObject.elements.find((e) => e.name === selectedNode.name.split("_PIndex_")[0])?.points[selectedNode.index]
 					: null
 			)}
 			{#if currentPoint}

@@ -20,7 +20,8 @@ export function load(): PageConfig {
                             {label: "Save Rig As", id: "saveRigAs", type: HeaderPanelOptionType.Default},
                             {label: "Open In File Explorer", id: "openInFileExplorer", type: HeaderPanelOptionType.Default},
                             {label: "Create Rig Restore Point", id: "createRigRestorePoint", type: HeaderPanelOptionType.Default},
-                            {label: "Load Rig Restore Point", id: "loadRigRestorePoint", type: HeaderPanelOptionType.Default}
+                            {label: "Load Rig Restore Point", id: "loadRigRestorePoint", type: HeaderPanelOptionType.Default},
+                            {label: "Export Preview", id: "exportPreviewAsImage", type: HeaderPanelOptionType.Default}
                         ]
                     },
                     {

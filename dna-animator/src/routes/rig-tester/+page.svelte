@@ -236,6 +236,25 @@ Ideas/Plans:
 				action: () => {
 					showRigRestorePoints = true;
 				}
+			},
+			{
+				id: 'exportPreviewAsImage',
+				action: () => {
+					let canvas = document.getElementById("rig-display") as HTMLCanvasElement;
+					if (!canvas) {
+						console.error("Unable to get canvas element!");
+						return;
+					}
+					canvas.toBlob((blob) => {
+						if (!blob) return;
+						const url = URL.createObjectURL(blob);
+						const link = document.createElement('a');
+						link.download = url;
+						link.href = url;
+						link.click();
+						URL.revokeObjectURL(url);
+					}, "image/png");
+				}
 			}
 		],
 		edit: [

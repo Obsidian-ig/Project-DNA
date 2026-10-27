@@ -53,6 +53,7 @@ export interface RigElement {
     filled: boolean;
     fill_color: string;
     stroke_color: string;
+    stroke_width: number;
 };
 export const RigElementParameters = {
     visible: 'visible',
