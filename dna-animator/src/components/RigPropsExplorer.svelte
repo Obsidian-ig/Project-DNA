@@ -270,12 +270,18 @@
 							(n) => n.id === currentElement.name && n.type === RigLayeringOrderNodeType.Element
 						);
 						if (layerNode) layerNode.id = value;
-						let nodeFrame = pageState.nodeFrames.find(n => n.nodeId === currentElement.name && n.nodeType === SelectedNodeType.Element);
-						if (nodeFrame) nodeFrame.nodeId = value
+						//let nodeFrame = pageState.nodeFrames.find(n => n.nodeId === currentElement.name && n.nodeType === SelectedNodeType.Element);
+						//if (nodeFrame) nodeFrame.nodeId = value
 						pageState.nodeFrames.forEach((nf, nfIndex) => {
-							if (nf.nodeId === GetNameIdForElementPoint(currentElement.name, parseInt(nf.nodeId.split("_PIndex_")[1]))) {
+							if (nf.nodeId.includes(currentElement.name)) {
 								//point of this element.
-								nf.nodeId = value + "_PIndex_" + nf.nodeId.split("_PIndex_")[1]; //rename all nodeFrames of the point of this element.
+								let splitId = nf.nodeId.split("_PIndex_");
+								if (splitId.length > 1) {
+									splitId[0] = value;
+									nf.nodeId = splitId.join("_PIndex_");
+								} else {
+									nf.nodeId = value;
+								}
 							}
 						});
 						currentElement.name = value;

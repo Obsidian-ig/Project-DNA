@@ -929,10 +929,10 @@
       "points_radius": 1.5,
       "offsets": {
         "position": {
-          "x": 4.958677685950414,
-          "y": 51.69421487603305
+          "x": 2.327098738581989,
+          "y": 58.46113216926613
         },
-        "rotation": 0,
+        "rotation": 9.439626487862085,
         "scale": {
           "x": 1,
           "y": 1
@@ -1021,7 +1021,7 @@
       "stroke_color": "#FFFFFF",
       "closed": false,
       "filled": false,
-      "stroke_width": 1
+      "stroke_width": 2
     }
   ],
   "groups": [

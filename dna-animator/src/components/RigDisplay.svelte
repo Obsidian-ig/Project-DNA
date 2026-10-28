@@ -2,6 +2,7 @@
 	import { appState, VisualEditorModes, VisualEditorTools } from '../AppState.svelte';
 	import {
 		GetNameIdForElementPoint,
+		GetNameIdForPathPoint,
 		RigLayeringOrderNodeType,
 		RigPointInterpolationType,
 		SelectedNodeType,
@@ -150,6 +151,73 @@
 			physicalPoint.x += physicalOrigin.x;
 			physicalPoint.y += physicalOrigin.y;
 			return physicalPoint;
+		}
+
+		function IsPhysicalPointWithinElement(
+			physicalPoint: RigVector2,
+			elementPointsPhysicalPositions: RigVector2[]
+		) {
+			//using the even-odd rule
+			let crossCounter = 0;
+			elementPointsPhysicalPositions.slice().forEach((p, pIndex) => {
+				let nextIndex = pIndex === elementPointsPhysicalPositions.length - 1 ? 0 : pIndex + 1;
+				let np = elementPointsPhysicalPositions[nextIndex];
+				if (
+					(p.y > physicalPoint.y && np.y > physicalPoint.y) ||
+					(p.y < physicalPoint.y && np.y < physicalPoint.y) ||
+					(physicalPoint.x > p.x && physicalPoint.x > np.x)
+				)
+					return; //skip it
+				let lineMinX = 0;
+				let lineMaxX = 0;
+				let lineMinY = 0;
+				let lineMaxY = 0;
+				if (p.x < np.x) {
+					lineMinX = p.x;
+					lineMaxX = np.x;
+				} else if (p.x === np.x) {
+					lineMinX = p.x;
+					lineMaxX = p.x;
+				} else if (p.x > np.x) {
+					lineMinX = np.x;
+					lineMaxX = p.x;
+				}
+				if (p.y < np.y) {
+					lineMinY = p.y;
+					lineMaxY = np.y;
+				} else if (p.y === np.y) {
+					lineMinY = p.y;
+					lineMaxY = p.y;
+				} else if (p.y > np.y) {
+					lineMinY = np.y;
+					lineMaxY = p.y;
+				}
+
+				//NOT WORKING!!
+				//This includes lines that are behind the point, but the maxX is greater than the point's x.
+				//Like a triangle
+				//													 *B
+				//
+				//
+				//
+				//
+				//								o
+				//
+				//
+				//
+				//
+				//*A												   *C
+				//line AB will count as a cross.
+				if (
+					physicalPoint.x <= lineMaxX &&
+					physicalPoint.y >= lineMinY &&
+					physicalPoint.y <= lineMaxY
+				) {
+					crossCounter += 1;
+				}
+			});
+
+			return crossCounter % 2 !== 0; //return true if odd, false if even.
 		}
 
 		/*VISUAL EDITOR TOOLS*/
@@ -366,6 +434,24 @@
 				let nextPoint = element.points[nextPointIndex];
 				if (!nextPoint) return;
 				if (nextPointIndex === 0 && !element.closed) return;
+				let id = GetNameIdForElementPoint(element.name, index);
+				let pointFrame = pageState?.nodeFrames.find(
+					(n) => n.nodeType === SelectedNodeType.Point && n.nodeId === id
+				);
+				if (
+					!pointFrame ||
+					pointFrame.physicalPosition.x !== calculatedPointPosition.x ||
+					pointFrame.physicalPosition.y !== calculatedPointPosition.y
+				) {
+					appState.AddOrUpdatePageStateNodeFrame(pageId, {
+						nodeId: id,
+						nodeType: SelectedNodeType.Point,
+						physicalPosition: calculatedPointPosition,
+						physicalTransformOrigin: { x: 0, y: 0 },
+						worldX: elementWorldX,
+						worldY: elementWorldY
+					});
+				}
 				let calculatedNextPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
 					nextPoint.point,
 					elementCalculatedPosition,
@@ -411,6 +497,18 @@
 							elementWorldY
 						);
 						ctx.lineTo(calculatedPathPointPhysical.x, calculatedPathPointPhysical.y);
+						let name = GetNameIdForPathPoint(element.name, index, i);
+						let frame = pageState?.nodeFrames.find(nf => nf.nodeId === name && nf.nodeType === SelectedNodeType.PathPoint);
+						if (!frame || frame.physicalPosition.x !== calculatedPathPointPhysical.x || frame.physicalPosition.y !== calculatedPathPointPhysical.y) {
+							appState.AddOrUpdatePageStateNodeFrame(pageId, {
+								nodeId: name,
+								nodeType: SelectedNodeType.PathPoint,
+								physicalPosition: calculatedPathPointPhysical,
+								physicalTransformOrigin: {x: 0, y: 0},
+								worldX: elementWorldX,
+								worldY: elementWorldY
+							});
+						}
 					}
 				} else if (
 					point.interpolation_type === RigPointInterpolationType.CubicBezierCurve &&
@@ -449,29 +547,26 @@
 							elementWorldY
 						);
 						ctx.lineTo(calculatedPathPointPhysical.x, calculatedPathPointPhysical.y);
+						let name = GetNameIdForPathPoint(element.name, index, i);
+						let frame = pageState?.nodeFrames.find(nf => nf.nodeId === name && nf.nodeType === SelectedNodeType.PathPoint);
+						if (!frame || frame.physicalPosition.x !== calculatedPathPointPhysical.x || frame.physicalPosition.y !== calculatedPathPointPhysical.y) {
+							appState.AddOrUpdatePageStateNodeFrame(pageId, {
+								nodeId: name,
+								nodeType: SelectedNodeType.PathPoint,
+								physicalPosition: calculatedPathPointPhysical,
+								physicalTransformOrigin: {x: 0, y: 0},
+								worldX: elementWorldX,
+								worldY: elementWorldY
+							});
+						}
 					}
 				}
 
-				let id = GetNameIdForElementPoint(element.name, index);
-				let pointFrame = pageState?.nodeFrames.find(
-					(n) => n.nodeType === SelectedNodeType.Point && n.nodeId === id
-				);
-				if (
-					!pointFrame ||
-					pointFrame.physicalPosition.x !== calculatedPointPosition.x ||
-					pointFrame.physicalPosition.y !== calculatedPointPosition.y
-				) {
-					appState.AddOrUpdatePageStateNodeFrame(pageId, {
-						nodeId: id,
-						nodeType: SelectedNodeType.Point,
-						physicalPosition: calculatedPointPosition,
-						physicalTransformOrigin: { x: 0, y: 0 },
-						worldX: elementWorldX,
-						worldY: elementWorldY
-					});
-				}
+				
 			});
-			if (element.closed) {ctx.closePath();}
+			if (element.closed) {
+				ctx.closePath();
+			}
 			ctx.strokeStyle = element.stroke_color;
 			ctx.lineWidth = element.stroke_width;
 			ctx.fillStyle = element.fill_color;
@@ -637,8 +732,8 @@
 			ctx.beginPath();
 			ctx.arc(displayWidth / 2, displayHeight / 2, 100 * scaleUnit, 0, Math.PI * 2);
 			ctx.closePath();
-			ctx.strokeStyle = "#000000";
-			ctx.fillStyle = "#000000";
+			ctx.strokeStyle = '#000000';
+			ctx.fillStyle = '#000000';
 			ctx.fill();
 			ctx.stroke();
 
@@ -872,7 +967,10 @@
 			}
 
 			//visual editor tools & stuff
-			if (pageState?.visualEditorEnabled && pageState?.currentVisualEditorMode === VisualEditorModes.VISUAL) {
+			if (
+				pageState?.visualEditorEnabled &&
+				pageState?.currentVisualEditorMode === VisualEditorModes.VISUAL
+			) {
 				if (
 					pageState.selectedNode?.type === SelectedNodeType.Point ||
 					pageState.selectedNode?.type === SelectedNodeType.ControlPoint ||
@@ -992,8 +1090,10 @@
 				distanceFromCenter <= rotationTwoCircleRadius + rotationTwoCircleMaxDistance &&
 				distanceFromCenter > rotationTwoCircleRadius + rotationTwoCircleMinDistance;
 
-
-			let scaleArrowDistance = (pageState.currentVisualEditorTool === VisualEditorTools.SCALE ? absoluteScaleArrowDistance / 3 : absoluteScaleArrowDistance);
+			let scaleArrowDistance =
+				pageState.currentVisualEditorTool === VisualEditorTools.SCALE
+					? absoluteScaleArrowDistance / 3
+					: absoluteScaleArrowDistance;
 			let isCursorInScaleYAxisArrow =
 				cursorPhysicalPosition.x >=
 					pageState.selectedNodePhysicalPosition.x - absoluteScaleArrowSideLength &&
@@ -1088,10 +1188,54 @@
 				isScaling = true;
 				lockHorizontal = false;
 				lockVertical = false;
-				scalingAxis = isCursorInScaleYAxisArrow ? "Y" : "X";
+				scalingAxis = isCursorInScaleYAxisArrow ? 'Y' : 'X';
 			}
 
 			/*ROTATE TOOL STUFF/ALL TOOL*/
+
+			if (pageState.currentVisualEditorTool === VisualEditorTools.SELECT) {
+				rigObject.layering_order.forEach((lo, loIndex) => {
+					if (lo.type === RigLayeringOrderNodeType.Element) {
+						let elementPointsNodeFrames = pageState.nodeFrames.filter(
+							(nf) =>
+								nf.nodeId.includes(lo.id) && nf.nodeType !== SelectedNodeType.ControlPoint
+						);
+						if (
+							IsPhysicalPointWithinElement(
+								cursorPhysicalPosition,
+								elementPointsNodeFrames.map((pnf) => {
+									return pnf.physicalPosition;
+								})
+							)
+						) {
+							console.log("Cusor is inside of element '" + lo.id + "'!");
+						} else {
+							console.log("Cursor is not inside of element '" + lo.id + "'!");
+						}
+					} else {
+						rigObject.elements
+							.filter((e) => e.group_id === lo.id)
+							.forEach((e, eIndex) => {
+								let elementPointsNodeFrames = pageState.nodeFrames.filter(
+									(nf) =>
+										nf.nodeId.includes(lo.id) && nf.nodeType !== SelectedNodeType.ControlPoint
+								);
+								if (
+									IsPhysicalPointWithinElement(
+										cursorPhysicalPosition,
+										elementPointsNodeFrames.map((pnf) => {
+											return pnf.physicalPosition;
+										})
+									)
+								) {
+									console.log("Cusor is inside of element '" + e.name + "'!");
+								} else {
+									console.log("Cursor is not inside of element '" + e.name + "'!");
+								}
+							});
+					}
+				});
+			}
 		};
 		let handleVisualEditorDrag = function (e: MouseEvent) {
 			e.preventDefault();
@@ -1404,50 +1548,101 @@
 					}
 					break;
 				case VisualEditorTools.SCALE:
-					console.log("scale drag");
-					if (!pageState.selectedNodePhysicalPosition || !isScaling || (scalingAxis !== "X" && scalingAxis !== "Y")) return;
-					let scaleDistance = scalingAxis === "X" ? cursorPhysicalPosition.x - cursorStartPosition.x : cursorPhysicalPosition.y - cursorStartPosition.y;
-					let scaleDelta = (scaleDistance * scaleStep) * scaleUnit;
-					let scaleArrowDistance = (pageState.currentVisualEditorTool === VisualEditorTools.SCALE ? absoluteScaleArrowDistance / 3 : absoluteScaleArrowDistance);
+					console.log('scale drag');
+					if (
+						!pageState.selectedNodePhysicalPosition ||
+						!isScaling ||
+						(scalingAxis !== 'X' && scalingAxis !== 'Y')
+					)
+						return;
+					let scaleDistance =
+						scalingAxis === 'X'
+							? cursorPhysicalPosition.x - cursorStartPosition.x
+							: cursorPhysicalPosition.y - cursorStartPosition.y;
+					let scaleDelta = scaleDistance * scaleStep * scaleUnit;
+					let scaleArrowDistance =
+						pageState.currentVisualEditorTool === VisualEditorTools.SCALE
+							? absoluteScaleArrowDistance / 3
+							: absoluteScaleArrowDistance;
 					if (lastScaleDistance === null) lastScaleDistance = scaleDistance;
 					switch (pageState?.selectedNode?.type) {
 						case SelectedNodeType.Root:
-							if (scalingAxis === "X") {
-								scaleDelta = cursorPhysicalPosition.x < pageState.selectedNodePhysicalPosition.x + scaleArrowDistance + absoluteScaleArrowSideLength / 2 ? -scaleDelta : scaleDelta;
+							if (scalingAxis === 'X') {
+								scaleDelta =
+									cursorPhysicalPosition.x <
+									pageState.selectedNodePhysicalPosition.x +
+										scaleArrowDistance +
+										absoluteScaleArrowSideLength / 2
+										? -scaleDelta
+										: scaleDelta;
 								if (scaleDistance < lastScaleDistance) rigObject.offsets.scale.x -= scaleDelta;
 								if (scaleDistance > lastScaleDistance) rigObject.offsets.scale.x += scaleDelta;
 							} else {
-								scaleDelta = cursorPhysicalPosition.y > pageState.selectedNodePhysicalPosition.y - scaleArrowDistance - absoluteScaleArrowSideLength / 2 ? -scaleDelta : scaleDelta;
+								scaleDelta =
+									cursorPhysicalPosition.y >
+									pageState.selectedNodePhysicalPosition.y -
+										scaleArrowDistance -
+										absoluteScaleArrowSideLength / 2
+										? -scaleDelta
+										: scaleDelta;
 								if (scaleDistance < lastScaleDistance) rigObject.offsets.scale.y -= scaleDelta;
 								if (scaleDistance > lastScaleDistance) rigObject.offsets.scale.y += scaleDelta;
 							}
 							lastScaleDistance = scaleDistance;
 							break;
 						case SelectedNodeType.Group:
-							let currentGroup = rigObject.groups.find(g => g.id === pageState.selectedNode?.name);
+							let currentGroup = rigObject.groups.find(
+								(g) => g.id === pageState.selectedNode?.name
+							);
 							if (!currentGroup) return;
-							if (scalingAxis === "X") {
-								scaleDelta = cursorPhysicalPosition.x < pageState.selectedNodePhysicalPosition.x + scaleArrowDistance + absoluteScaleArrowSideLength / 2 ? -scaleDelta : scaleDelta;
+							if (scalingAxis === 'X') {
+								scaleDelta =
+									cursorPhysicalPosition.x <
+									pageState.selectedNodePhysicalPosition.x +
+										scaleArrowDistance +
+										absoluteScaleArrowSideLength / 2
+										? -scaleDelta
+										: scaleDelta;
 								console.log(lastScaleDistance, scaleDistance);
 								if (scaleDistance < lastScaleDistance) currentGroup.offsets.scale.x -= scaleDelta;
 								if (scaleDistance > lastScaleDistance) currentGroup.offsets.scale.x += scaleDelta;
 							} else {
-								scaleDelta = cursorPhysicalPosition.y > pageState.selectedNodePhysicalPosition.y - scaleArrowDistance - absoluteScaleArrowSideLength / 2 ? -scaleDelta : scaleDelta;
+								scaleDelta =
+									cursorPhysicalPosition.y >
+									pageState.selectedNodePhysicalPosition.y -
+										scaleArrowDistance -
+										absoluteScaleArrowSideLength / 2
+										? -scaleDelta
+										: scaleDelta;
 								if (scaleDistance < lastScaleDistance) currentGroup.offsets.scale.y -= scaleDelta;
 								if (scaleDistance > lastScaleDistance) currentGroup.offsets.scale.y += scaleDelta;
 							}
 							lastScaleDistance = scaleDistance;
 							break;
 						case SelectedNodeType.Element:
-							let currentElement = rigObject.elements.find(e => e.name === pageState.selectedNode?.name);
+							let currentElement = rigObject.elements.find(
+								(e) => e.name === pageState.selectedNode?.name
+							);
 							if (!currentElement) return;
-							if (scalingAxis === "X") {
-								scaleDelta = cursorPhysicalPosition.x < pageState.selectedNodePhysicalPosition.x + scaleArrowDistance + absoluteScaleArrowSideLength / 2 ? -scaleDelta : scaleDelta;
+							if (scalingAxis === 'X') {
+								scaleDelta =
+									cursorPhysicalPosition.x <
+									pageState.selectedNodePhysicalPosition.x +
+										scaleArrowDistance +
+										absoluteScaleArrowSideLength / 2
+										? -scaleDelta
+										: scaleDelta;
 								console.log(lastScaleDistance, scaleDistance);
 								if (scaleDistance < lastScaleDistance) currentElement.offsets.scale.x -= scaleDelta;
 								if (scaleDistance > lastScaleDistance) currentElement.offsets.scale.x += scaleDelta;
 							} else {
-								scaleDelta = cursorPhysicalPosition.y > pageState.selectedNodePhysicalPosition.y - scaleArrowDistance - absoluteScaleArrowSideLength / 2 ? -scaleDelta : scaleDelta;
+								scaleDelta =
+									cursorPhysicalPosition.y >
+									pageState.selectedNodePhysicalPosition.y -
+										scaleArrowDistance -
+										absoluteScaleArrowSideLength / 2
+										? -scaleDelta
+										: scaleDelta;
 								if (scaleDistance < lastScaleDistance) currentElement.offsets.scale.y -= scaleDelta;
 								if (scaleDistance > lastScaleDistance) currentElement.offsets.scale.y += scaleDelta;
 							}

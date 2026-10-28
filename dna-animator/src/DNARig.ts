@@ -537,6 +537,7 @@ export const SelectedNodeType = {
     Element: 'Element',
     Point: 'Point',
     ControlPoint: 'ControlPoint',
+    PathPoint: 'PathPoint', //all of the points in between two points when quadratic or cubic interpolation is used.
     None: 'None'
 } as const;
 export type SelectedNodeType = (typeof SelectedNodeType)[keyof typeof SelectedNodeType];
@@ -584,7 +585,8 @@ export function GetNameIdForElementPoint(elementName: string, pointIndex: number
 
 export function GetNameIdForControlPoint(elementName: string, pointIndex: number, controlPointIndex: number) {
     return (elementName + "_PIndex_" + pointIndex + "_PIndex_" + controlPointIndex);
+}
 
-    //Element_Name_Here_PIndex_0_PIndex_1
-    //.split("_PIndex") returns -> ["Element_Name_Here", "0", "1"]
+export function GetNameIdForPathPoint(elementName: string, pointIndex: number, pathPointIndex: number) {
+    return (elementName + "_PIndex_" + pointIndex + "_PIndex_" + pathPointIndex);
 }
