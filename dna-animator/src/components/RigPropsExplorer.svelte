@@ -275,7 +275,7 @@
 						pageState.nodeFrames.forEach((nf, nfIndex) => {
 							if (nf.nodeId === GetNameIdForElementPoint(currentElement.name, parseInt(nf.nodeId.split("_PIndex_")[1]))) {
 								//point of this element.
-								nf.nodeId === value + "_PIndex_" + nf.nodeId.split("_PIndex_")[1]; //rename all nodeFrames of the point of this element.
+								nf.nodeId = value + "_PIndex_" + nf.nodeId.split("_PIndex_")[1]; //rename all nodeFrames of the point of this element.
 							}
 						});
 						currentElement.name = value;

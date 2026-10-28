@@ -62,6 +62,7 @@ Ideas/Plans:
 					appState.UpdatePageStateSelectedNode(pageId, null);
 					appState.UpdatePageStateExpandedNodes(pageId, []);
 					appState.ResetPageStateRestorePoints(pageId);
+					pageState.nodeFrames = [];
 				}
 			},
 			{
@@ -120,6 +121,7 @@ Ideas/Plans:
 					appState.UpdatePageStateLoadedRigFilePath(pageId, rigFilePath);
 					appState.ResetPageStateRestorePoints(pageId);
 					pageState.rigRestorePoints.push(rigObject);
+					pageState.nodeFrames = [];
 				}
 			},
 			{
@@ -132,6 +134,7 @@ Ideas/Plans:
 					appState.UpdatePageStateSelectedNode(pageId, null);
 					appState.ResetPageStateRestorePoints(pageId);
 					console.log('New Rig!');
+					pageState.nodeFrames = [];
 				}
 			},
 			{
