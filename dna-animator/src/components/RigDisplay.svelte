@@ -201,17 +201,22 @@
 				//
 				//
 				//
-				//								o
+				//									o
 				//
 				//
 				//
 				//
 				//*A												   *C
 				//line AB will count as a cross.
+
+				let M = (np.y - p.y) / (np.x - p.x);
+				let xIntercept = p.x + ((physicalPoint.y - p.y) / M);
+				console.log(physicalPoint.x, xIntercept);
 				if (
 					physicalPoint.x <= lineMaxX &&
 					physicalPoint.y >= lineMinY &&
-					physicalPoint.y <= lineMaxY
+					physicalPoint.y <= lineMaxY &&
+					xIntercept >= physicalPoint.x
 				) {
 					crossCounter += 1;
 				}
@@ -1198,7 +1203,7 @@
 					if (lo.type === RigLayeringOrderNodeType.Element) {
 						let elementPointsNodeFrames = pageState.nodeFrames.filter(
 							(nf) =>
-								nf.nodeId.includes(lo.id) && nf.nodeType !== SelectedNodeType.ControlPoint
+								nf.nodeId.includes(lo.id) && nf.nodeType !== SelectedNodeType.ControlPoint && nf.nodeType !== SelectedNodeType.Element
 						);
 						if (
 							IsPhysicalPointWithinElement(
