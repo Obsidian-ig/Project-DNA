@@ -211,11 +211,9 @@
 
 				let M = (np.y - p.y) / (np.x - p.x);
 				let xIntercept = p.x + ((physicalPoint.y - p.y) / M);
-				console.log(physicalPoint.x, xIntercept);
 				if (
-					physicalPoint.x <= lineMaxX &&
 					physicalPoint.y >= lineMinY &&
-					physicalPoint.y <= lineMaxY &&
+					physicalPoint.y < lineMaxY &&
 					xIntercept >= physicalPoint.x
 				) {
 					crossCounter += 1;
@@ -1027,14 +1025,16 @@
 
 		let VisualEditorDragStarted = function (e: MouseEvent) {
 			e.preventDefault();
-			if (isDragging) return;
+			if (isDragging || !pageState) return;
 			let canvasBoundingRect = canvas.getBoundingClientRect();
 			let cursorPhysicalPosition: RigVector2 = {
 				x: e.clientX - canvasBoundingRect.left,
 				y: e.clientY - canvasBoundingRect.top
 			};
 			cursorStartPosition = cursorPhysicalPosition;
-			if (!pageState?.selectedNodePhysicalPosition) return;
+
+			if (!pageState.selectedNodePhysicalPosition) pageState.selectedNodePhysicalPosition = {x: 0, y: 0};
+
 			let isCursorInFreeMoveSquare =
 				cursorPhysicalPosition.x >= pageState.selectedNodePhysicalPosition.x - absoluteBoxStep && //cursor.x >= box_left
 				cursorPhysicalPosition.x <= pageState.selectedNodePhysicalPosition.x + absoluteBoxStep && //cursor.x <= box_right
@@ -1203,7 +1203,7 @@
 					if (lo.type === RigLayeringOrderNodeType.Element) {
 						let elementPointsNodeFrames = pageState.nodeFrames.filter(
 							(nf) =>
-								nf.nodeId.includes(lo.id) && nf.nodeType !== SelectedNodeType.ControlPoint && nf.nodeType !== SelectedNodeType.Element
+								nf.nodeId.includes(lo.id + "_PIndex_") && nf.nodeType !== SelectedNodeType.ControlPoint && nf.nodeType !== SelectedNodeType.Element
 						);
 						if (
 							IsPhysicalPointWithinElement(
@@ -1213,9 +1213,9 @@
 								})
 							)
 						) {
-							console.log("Cusor is inside of element '" + lo.id + "'!");
+							console.log("inside of element '" + lo.id + "'!");
 						} else {
-							console.log("Cursor is not inside of element '" + lo.id + "'!");
+							console.log("not inside of element '" + lo.id + "'!");
 						}
 					} else {
 						rigObject.elements
@@ -1223,7 +1223,7 @@
 							.forEach((e, eIndex) => {
 								let elementPointsNodeFrames = pageState.nodeFrames.filter(
 									(nf) =>
-										nf.nodeId.includes(lo.id) && nf.nodeType !== SelectedNodeType.ControlPoint
+										nf.nodeId.includes(e.name + "_PIndex_") && nf.nodeType !== SelectedNodeType.ControlPoint
 								);
 								if (
 									IsPhysicalPointWithinElement(
