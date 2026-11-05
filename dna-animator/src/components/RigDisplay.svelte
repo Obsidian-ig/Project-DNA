@@ -1231,9 +1231,14 @@
 								})
 							)
 						) {
-							console.log("inside of element '" + lo.id + "'!");
+							//console.log("inside of element '" + lo.id + "'!");
+							appState.UpdatePageStateSelectedNode(pageId, {
+								name: lo.id,
+								index: rigObject.elements.findIndex((e) => e.name === lo.id) ?? 0,
+								type: SelectedNodeType.Element
+							});
 						} else {
-							console.log("not inside of element '" + lo.id + "'!");
+							//console.log("not inside of element '" + lo.id + "'!");
 						}
 					} else {
 						if (
@@ -1271,11 +1276,16 @@
 									{ x: mostRightPoint, y: lowestPoint } //bottomRight
 								])
 							) {
-								console.log("Cursor is inside of group '" + lo.id + "'!");
+								//console.log("Cursor is inside of group '" + lo.id + "'!");
+								appState.UpdatePageStateSelectedNode(pageId, {
+									name: lo.id,
+									index: rigObject.groups.findIndex((g) => g.id === lo.id) ?? 0,
+									type: SelectedNodeType.Group
+								});
 							} else {
-								console.log("Cursor is not inside of group '" + lo.id + "'!");
+								//console.log("Cursor is not inside of group '" + lo.id + "'!");
 							}
-							console.log(mostLeftPoint, mostRightPoint, highestPoint, lowestPoint);
+							//console.log(mostLeftPoint, mostRightPoint, highestPoint, lowestPoint);
 						} else {
 							rigObject.elements
 								.filter((e) => e.group_id === lo.id)
@@ -1293,9 +1303,14 @@
 											})
 										)
 									) {
-										console.log("Cusor is inside of element '" + e.name + "'!");
+										//console.log("Cusor is inside of element '" + e.name + "'!");
+										appState.UpdatePageStateSelectedNode(pageId, {
+											name: e.name,
+											index: rigObject.elements.findIndex((e) => e.name === lo.id) ?? 0,
+											type: SelectedNodeType.Element
+										});
 									} else {
-										console.log("Cursor is not inside of element '" + e.name + "'!");
+										//console.log("Cursor is not inside of element '" + e.name + "'!");
 									}
 								});
 						}
