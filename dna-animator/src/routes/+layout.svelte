@@ -4,14 +4,36 @@
 	import { appState, HeaderType, type PageConfig } from '../AppState.svelte';
 	import Header from './header.svelte';
 	import { page } from '$app/state';
+	import { untrack } from 'svelte';
 
 	let { children } = $props();
+	let debounce = false;
+	let debounceTimer: any;
 
 	$effect(() => {
-		console.log('Saved pageStates to local storage!');
-		localStorage.setItem('pageStates', JSON.stringify(appState.pageStates));
-		localStorage.setItem('appConfig', JSON.stringify(appState.config));
-		appState.UpdateTheme();
+		//const states = $state.snapshot(appState.pageStates);
+		//const config = $state.snapshot(appState.config);
+		console.log("update");
+		untrack(() => {
+			if (debounceTimer) clearTimeout(debounceTimer);
+			debounceTimer = setTimeout(() => {
+				if (!debounce) {
+					debounce = true;
+					console.log('Started debounce!');
+				} else {
+					//console.log(window.Date.now(), debounceStart, window.Date.now() - debounceStart);
+					//localStorage.setItem('pageStates', JSON.stringify(states));
+					//localStorage.setItem('appConfig', JSON.stringify(config));
+					//appState.UpdateTheme();
+					debounce = false;
+					console.log('Ended debounce!');
+					console.log('Saved pageStates to local storage!');
+				}
+			}, 1000);
+		});
+		return () => {
+			if (debounceTimer) clearTimeout(debounceTimer);
+		};
 	});
 </script>
 

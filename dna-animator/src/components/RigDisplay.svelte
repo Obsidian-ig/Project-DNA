@@ -631,6 +631,7 @@
 							calculatedPointPosition.x !== pageState.selectedNodePhysicalPosition?.x ||
 							calculatedPointPosition.y !== pageState.selectedNodePhysicalPosition.y
 						) {
+							console.log("up 1");
 							appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, calculatedPointPosition);
 						}
 					}
@@ -920,21 +921,6 @@
 							ctx.closePath();
 							ctx.fillStyle = group.position_point_color;
 							ctx.fill();
-							if (
-								pageState?.visualEditorEnabled &&
-								pageState.selectedNode?.type === SelectedNodeType.Group &&
-								group.id === pageState.selectedNode.name
-							) {
-								if (
-									groupCalculatedPosition.x !== pageState.selectedNodePhysicalPosition?.x ||
-									groupCalculatedPosition.y !== pageState.selectedNodePhysicalPosition.y
-								) {
-									appState.UpdatePageStateSelectedNodePhysicalPosition(
-										pageId,
-										groupCalculatedPosition
-									);
-								}
-							}
 						}
 						if (group.show_origin_point) {
 							ctx.beginPath();
@@ -948,6 +934,21 @@
 							ctx.closePath();
 							ctx.fillStyle = group.origin_point_color;
 							ctx.fill();
+						}
+					}
+
+					if (
+						pageState.selectedNodePhysicalPosition &&
+						pageState?.visualEditorEnabled &&
+						pageState.selectedNode?.type === SelectedNodeType.Group &&
+						group.id === pageState.selectedNode.name
+					) {
+						if (
+							groupCalculatedPosition.x !== pageState.selectedNodePhysicalPosition.x ||
+							groupCalculatedPosition.y !== pageState.selectedNodePhysicalPosition.y
+						) {
+							console.log($state.snapshot(groupCalculatedPosition), $state.snapshot(pageState.selectedNodePhysicalPosition));
+							appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, groupCalculatedPosition);
 						}
 					}
 				} else if (item.type === RigLayeringOrderNodeType.Element) {
@@ -1018,9 +1019,11 @@
 						break;
 				}
 			}
+			requestAnimationFrame(Draw);
 		}
 
-		Draw();
+		//Draw();
+		requestAnimationFrame(Draw);
 
 		/*
 		TODO:

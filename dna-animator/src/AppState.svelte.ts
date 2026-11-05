@@ -125,7 +125,7 @@ export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): Page
         rigErrorMessages: [],
         watchRules: [],
         hideAllGroups: false,
-        hideAllElements: false, 
+        hideAllElements: false,
         disableAllDebugOptions: false,
         showGridOverlay: false,
         rigRestorePoints: [],
@@ -143,13 +143,13 @@ class AppState {
         CreateDefaultPageState({ title: "Rig Playground", id: "rig_playground" })
     ]);
 
-    constructor() {}
+    constructor() { }
 
 
     ImportConfig(config: AppConfig) {
         this.config = config;
     }
-    
+
     ImportPageStates(states: PageState[]) {
         if (states?.length) {
             this.pageStates = states.map(state => CreateDefaultPageState(state));
@@ -177,6 +177,7 @@ class AppState {
             return;
         }
         pageState.loadedRig = rig;
+        console.log("Update pageState loadedRig!");
     }
     UpdatePageStateLoadedRigFromRestorePoint(pageStateId: string, restorePoint: RigObject) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);
@@ -188,6 +189,7 @@ class AppState {
         }
         if (!pageState.loadedRig) pageState.loadedRig = createDefaultRigObject();
         Object.assign(pageState.loadedRig, restorePoint);
+        console.log("Update pageState loadedRig from restore point!");
     }
     UpdatePageStateLoadedRigFilePath(pageStateId: string, filePath: string | null) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);
@@ -196,6 +198,7 @@ class AppState {
             return;
         }
         pageState.loadedRigFilePath = filePath;
+        console.log("Update pageState loadedRigFilePath!");
     }
     UpdatePageStateSelectedNode(pageStateId: string, selectedNode: SelectedNode | null) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);
@@ -204,6 +207,7 @@ class AppState {
             return;
         }
         pageState.selectedNode = selectedNode;
+        console.log("Update pageState selectedNode!");
     }
     UpdatePageStateSelectedNodePhysicalPosition(pageStateId: string, position: RigVector2 | null) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);
@@ -212,6 +216,7 @@ class AppState {
             return;
         }
         pageState.selectedNodePhysicalPosition = position;
+        console.log("Update pageState selectedNodePhysicalPosition!");
     }
     UpdatePageStateShowGridOverlay(pageStateId: string, showGridOverlay: boolean) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);
@@ -311,20 +316,23 @@ class AppState {
         this.config.theme = theme;
     }
     UpdateTheme() {
-        const body = document.body;
-        if (body) {
-            switch (appState.config.theme) {
-                case Theme.Device:
-                    body.className = "device";
-                    break;
-                case Theme.Light:
-                    body.className = "light";
-                    break;
-                case Theme.Dark:
-                    body.className = "";
-                    break;
+        untrack(() => {
+            const body = document.body;
+            if (body) {
+                switch (appState.config.theme) {
+                    case Theme.Device:
+                        body.className = "device";
+                        break;
+                    case Theme.Light:
+                        body.className = "light";
+                        break;
+                    case Theme.Dark:
+                        body.className = "";
+                        break;
+                }
             }
-        }
+        });
+
     }
 }
 
