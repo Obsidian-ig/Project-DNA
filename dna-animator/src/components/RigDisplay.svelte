@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { appState, VisualEditorModes, VisualEditorTools } from '../AppState.svelte';
+	import {
+		appState,
+		VisualEditorModes,
+		VisualEditorSelectToolModes,
+		VisualEditorTools
+	} from '../AppState.svelte';
 	import {
 		GetNameIdForElementPoint,
 		GetNameIdForPathPoint,
@@ -210,7 +215,7 @@
 				//line AB will count as a cross.
 
 				let M = (np.y - p.y) / (np.x - p.x);
-				let xIntercept = p.x + ((physicalPoint.y - p.y) / M);
+				let xIntercept = p.x + (physicalPoint.y - p.y) / M;
 				if (
 					physicalPoint.y >= lineMinY &&
 					physicalPoint.y < lineMaxY &&
@@ -501,13 +506,19 @@
 						);
 						ctx.lineTo(calculatedPathPointPhysical.x, calculatedPathPointPhysical.y);
 						let name = GetNameIdForPathPoint(element.name, index, i);
-						let frame = pageState?.nodeFrames.find(nf => nf.nodeId === name && nf.nodeType === SelectedNodeType.PathPoint);
-						if (!frame || frame.physicalPosition.x !== calculatedPathPointPhysical.x || frame.physicalPosition.y !== calculatedPathPointPhysical.y) {
+						let frame = pageState?.nodeFrames.find(
+							(nf) => nf.nodeId === name && nf.nodeType === SelectedNodeType.PathPoint
+						);
+						if (
+							!frame ||
+							frame.physicalPosition.x !== calculatedPathPointPhysical.x ||
+							frame.physicalPosition.y !== calculatedPathPointPhysical.y
+						) {
 							appState.AddOrUpdatePageStateNodeFrame(pageId, {
 								nodeId: name,
 								nodeType: SelectedNodeType.PathPoint,
 								physicalPosition: calculatedPathPointPhysical,
-								physicalTransformOrigin: {x: 0, y: 0},
+								physicalTransformOrigin: { x: 0, y: 0 },
 								worldX: elementWorldX,
 								worldY: elementWorldY
 							});
@@ -551,21 +562,25 @@
 						);
 						ctx.lineTo(calculatedPathPointPhysical.x, calculatedPathPointPhysical.y);
 						let name = GetNameIdForPathPoint(element.name, index, i);
-						let frame = pageState?.nodeFrames.find(nf => nf.nodeId === name && nf.nodeType === SelectedNodeType.PathPoint);
-						if (!frame || frame.physicalPosition.x !== calculatedPathPointPhysical.x || frame.physicalPosition.y !== calculatedPathPointPhysical.y) {
+						let frame = pageState?.nodeFrames.find(
+							(nf) => nf.nodeId === name && nf.nodeType === SelectedNodeType.PathPoint
+						);
+						if (
+							!frame ||
+							frame.physicalPosition.x !== calculatedPathPointPhysical.x ||
+							frame.physicalPosition.y !== calculatedPathPointPhysical.y
+						) {
 							appState.AddOrUpdatePageStateNodeFrame(pageId, {
 								nodeId: name,
 								nodeType: SelectedNodeType.PathPoint,
 								physicalPosition: calculatedPathPointPhysical,
-								physicalTransformOrigin: {x: 0, y: 0},
+								physicalTransformOrigin: { x: 0, y: 0 },
 								worldX: elementWorldX,
 								worldY: elementWorldY
 							});
 						}
 					}
 				}
-
-				
 			});
 			if (element.closed) {
 				ctx.closePath();
@@ -1033,7 +1048,8 @@
 			};
 			cursorStartPosition = cursorPhysicalPosition;
 
-			if (!pageState.selectedNodePhysicalPosition) pageState.selectedNodePhysicalPosition = {x: 0, y: 0};
+			if (!pageState.selectedNodePhysicalPosition)
+				pageState.selectedNodePhysicalPosition = { x: 0, y: 0 };
 
 			let isCursorInFreeMoveSquare =
 				cursorPhysicalPosition.x >= pageState.selectedNodePhysicalPosition.x - absoluteBoxStep && //cursor.x >= box_left
@@ -1203,7 +1219,9 @@
 					if (lo.type === RigLayeringOrderNodeType.Element) {
 						let elementPointsNodeFrames = pageState.nodeFrames.filter(
 							(nf) =>
-								nf.nodeId.includes(lo.id + "_PIndex_") && nf.nodeType !== SelectedNodeType.ControlPoint && nf.nodeType !== SelectedNodeType.Element
+								nf.nodeId.includes(lo.id + '_PIndex_') &&
+								nf.nodeType !== SelectedNodeType.ControlPoint &&
+								nf.nodeType !== SelectedNodeType.Element
 						);
 						if (
 							IsPhysicalPointWithinElement(
@@ -1218,26 +1236,69 @@
 							console.log("not inside of element '" + lo.id + "'!");
 						}
 					} else {
-						rigObject.elements
-							.filter((e) => e.group_id === lo.id)
-							.forEach((e, eIndex) => {
-								let elementPointsNodeFrames = pageState.nodeFrames.filter(
-									(nf) =>
-										nf.nodeId.includes(e.name + "_PIndex_") && nf.nodeType !== SelectedNodeType.ControlPoint
-								);
-								if (
-									IsPhysicalPointWithinElement(
-										cursorPhysicalPosition,
-										elementPointsNodeFrames.map((pnf) => {
-											return pnf.physicalPosition;
-										})
-									)
-								) {
-									console.log("Cusor is inside of element '" + e.name + "'!");
-								} else {
-									console.log("Cursor is not inside of element '" + e.name + "'!");
-								}
-							});
+						if (
+							pageState.currentVisualEditorSelectToolMode ===
+							VisualEditorSelectToolModes.PRIORITIZE_GROUPS
+						) {
+							let lowestPoint = -Infinity;
+							let highestPoint = Infinity;
+							let mostLeftPoint = Infinity;
+							let mostRightPoint = -Infinity;
+							rigObject.elements
+								.filter((e) => e.group_id === lo.id)
+								.forEach((e, eIndex) => {
+									let elementNodeFrames = pageState.nodeFrames.filter(
+										(nf) =>
+											nf.nodeId.includes(e.name + '_PIndex_') &&
+											nf.nodeType !== SelectedNodeType.ControlPoint &&
+											nf.nodeType !== SelectedNodeType.Element
+									);
+									elementNodeFrames.forEach((nf) => {
+										//console.log($state.snapshot(nf));
+										if (nf.physicalPosition.x < mostLeftPoint)
+											mostLeftPoint = nf.physicalPosition.x;
+										if (nf.physicalPosition.x > mostRightPoint)
+											mostRightPoint = nf.physicalPosition.x;
+										if (nf.physicalPosition.y < highestPoint) highestPoint = nf.physicalPosition.y;
+										if (nf.physicalPosition.y > lowestPoint) lowestPoint = nf.physicalPosition.y;
+									});
+								});
+							if (
+								IsPhysicalPointWithinElement(cursorPhysicalPosition, [
+									{ x: mostLeftPoint, y: lowestPoint }, //bottomLeft
+									{ x: mostLeftPoint, y: highestPoint }, //topLeft
+									{ x: mostRightPoint, y: highestPoint }, //topRight
+									{ x: mostRightPoint, y: lowestPoint } //bottomRight
+								])
+							) {
+								console.log("Cursor is inside of group '" + lo.id + "'!");
+							} else {
+								console.log("Cursor is not inside of group '" + lo.id + "'!");
+							}
+							console.log(mostLeftPoint, mostRightPoint, highestPoint, lowestPoint);
+						} else {
+							rigObject.elements
+								.filter((e) => e.group_id === lo.id)
+								.forEach((e, eIndex) => {
+									let elementPointsNodeFrames = pageState.nodeFrames.filter(
+										(nf) =>
+											nf.nodeId.includes(e.name + '_PIndex_') &&
+											nf.nodeType !== SelectedNodeType.ControlPoint
+									);
+									if (
+										IsPhysicalPointWithinElement(
+											cursorPhysicalPosition,
+											elementPointsNodeFrames.map((pnf) => {
+												return pnf.physicalPosition;
+											})
+										)
+									) {
+										console.log("Cusor is inside of element '" + e.name + "'!");
+									} else {
+										console.log("Cursor is not inside of element '" + e.name + "'!");
+									}
+								});
+						}
 					}
 				});
 			}

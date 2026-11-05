@@ -69,6 +69,11 @@ export const VisualEditorModes = {
     MINIMAL: "MINIMAL"
 } as const;
 export type VisualEditorModes = (typeof VisualEditorModes)[keyof typeof VisualEditorModes];
+export const VisualEditorSelectToolModes = {
+    PRIORITIZE_GROUPS: "GROUPS",
+    PRIORITIZE_ELEMENTS: "ELEMENTS"
+} as const;
+export type VisualEditorSelectToolModes = (typeof VisualEditorSelectToolModes)[keyof typeof VisualEditorSelectToolModes];
 
 export interface PageState {
     title: string; //the page title that should be displayed
@@ -88,6 +93,7 @@ export interface PageState {
     lastVisualEditorTool: VisualEditorTools;
     clickedOnPoint: boolean;
     currentVisualEditorMode: VisualEditorModes;
+    currentVisualEditorSelectToolMode: VisualEditorSelectToolModes;
     visualEditorEnabled: boolean;
     nodeFrames: NodeFrame[];
     rigErrorMessages: string[];
@@ -113,6 +119,7 @@ export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): Page
         lastVisualEditorTool: VisualEditorTools.MOVE,
         clickedOnPoint: false,
         currentVisualEditorMode: VisualEditorModes.VISUAL,
+        currentVisualEditorSelectToolMode: VisualEditorSelectToolModes.PRIORITIZE_GROUPS,
         visualEditorEnabled: false,
         nodeFrames: [],
         rigErrorMessages: [],
