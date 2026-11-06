@@ -971,14 +971,14 @@
 				}
 
 				if (
-					pageState.selectedNodePhysicalPosition &&
 					pageState?.visualEditorEnabled &&
 					pageState.selectedNode?.type === SelectedNodeType.Group &&
 					group.id === pageState.selectedNode.name
 				) {
 					if (
-						groupCalculatedPosition.x !== pageState.selectedNodePhysicalPosition.x ||
-						groupCalculatedPosition.y !== pageState.selectedNodePhysicalPosition.y
+						!pageState.selectedNodePhysicalPosition || 
+						(groupCalculatedPosition.x !== pageState.selectedNodePhysicalPosition.x ||
+						groupCalculatedPosition.y !== pageState.selectedNodePhysicalPosition.y)
 					) {
 						appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, groupCalculatedPosition);
 					}
