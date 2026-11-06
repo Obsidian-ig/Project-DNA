@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import {
 		appState,
 		VisualEditorModes,
@@ -1050,16 +1051,27 @@
 					break;
 			}
 		}
-		return () => cancelAnimationFrame(frameId);
 	}
+
+	let canvasDataUrlDebounce = false;
+	let canvasDataUrlDebounceTimer: any;
+	$effect(() => {
+		//save preview render to rigObject on every change
+		const rigPosition = $state.snapshot(rigObject);
+		if (rigObject) {
+			if (canvasDataUrlDebounceTimer) clearTimeout(canvasDataUrlDebounceTimer);
+			canvasDataUrlDebounceTimer = setTimeout(() => {
+				rigObject.previewRender = canvas.toDataURL();
+				console.log("Saved rig preview");
+			}, 1000);
+			
+		}
+	});
 
 	$effect(() => {
 		if (!canvas || !rigObject) return;
 		const ctx = canvas.getContext('2d');
 		if (!ctx) return;
-
-		//Draw();
-		frameId = requestAnimationFrame(Draw);
 
 		let VisualEditorDragStarted = function (e: MouseEvent) {
 			e.preventDefault();
@@ -1783,13 +1795,9 @@
 		canvas.onmousedown = pageState?.visualEditorEnabled ? VisualEditorDragStarted : null;
 		canvas.onmousemove = pageState?.visualEditorEnabled ? handleVisualEditorDrag : null;
 		canvas.onmouseup = pageState?.visualEditorEnabled ? handleVisualEditorDragEnded : null;
-
-		//save preview render to rigObject on every change
-		if (rigObject) {
-			rigObject.previewRender = canvas.toDataURL();
-		}
 	});
 
+	/*Switch The selected visual editor tool back to what it was beforeselecting a point node*/
 	$effect(() => {
 		if (
 			pageState?.selectedNode &&
@@ -1814,12 +1822,17 @@
 			}
 		}
 	});
-
+	/*Update Page State Automatically When Rig Display Settings Changed*/
 	$effect(() => {
 		appState.UpdatePageStateShowGridOverlay(pageId, gridOverlay);
 		appState.UpdatePageStateGridColumnsAndRows(pageId, gridColumnsAndRows);
 		appState.UpdatePageStateGridStrokeColor(pageId, gridStrokeColor);
 		appState.UpdatePageStateVisualEditingEnabled(pageId, visualEditingEnabled);
+	});
+
+	onMount(() => {
+		frameId = requestAnimationFrame(Draw);
+		return () => cancelAnimationFrame(frameId);
 	});
 </script>
 

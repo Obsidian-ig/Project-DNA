@@ -13,7 +13,6 @@
 	$effect(() => {
 		const states = $state.snapshot(appState.pageStates);
 		const config = $state.snapshot(appState.config);
-		console.log("update");
 		untrack(() => {
 			if (debounceTimer) clearTimeout(debounceTimer);
 			debounceTimer = setTimeout(() => {
