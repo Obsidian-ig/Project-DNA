@@ -29,6 +29,8 @@
 		y: displayHeight / 2
 	});
 
+	let frameId = 0;
+
 	let { pageId }: { pageId: string } = $props();
 	let pageState = $derived(appState.pageStates.find((ps) => ps.id === pageId));
 	let rigObject = $derived(pageState?.loadedRig);
@@ -760,6 +762,7 @@
 		}
 	}
 	function Draw() {
+		frameId = requestAnimationFrame(Draw);
 		const ctx = canvas.getContext('2d');
 		if (!rigObject || !ctx) return;
 
@@ -1047,7 +1050,7 @@
 					break;
 			}
 		}
-		requestAnimationFrame(Draw);
+		return () => cancelAnimationFrame(frameId);
 	}
 
 	$effect(() => {
@@ -1056,7 +1059,7 @@
 		if (!ctx) return;
 
 		//Draw();
-		requestAnimationFrame(Draw);
+		frameId = requestAnimationFrame(Draw);
 
 		let VisualEditorDragStarted = function (e: MouseEvent) {
 			e.preventDefault();

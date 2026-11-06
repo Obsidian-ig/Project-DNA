@@ -167,7 +167,7 @@ class AppState {
             console.log("Failed to find page state with id: '" + pageStateId + "'!");
             return;
         }
-        console.log("Updating page state!");
+        //console.log("Updating page state!");
         Object.assign(pageState, changes);
     }
     UpdatePageStateLoadedRig(pageStateId: string, rig: RigObject | null) {
