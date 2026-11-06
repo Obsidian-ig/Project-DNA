@@ -177,7 +177,7 @@ class AppState {
             return;
         }
         pageState.loadedRig = rig;
-        console.log("Update pageState loadedRig!");
+        //console.log("Update pageState loadedRig!");
     }
     UpdatePageStateLoadedRigFromRestorePoint(pageStateId: string, restorePoint: RigObject) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);
@@ -189,7 +189,7 @@ class AppState {
         }
         if (!pageState.loadedRig) pageState.loadedRig = createDefaultRigObject();
         Object.assign(pageState.loadedRig, restorePoint);
-        console.log("Update pageState loadedRig from restore point!");
+        //console.log("Update pageState loadedRig from restore point!");
     }
     UpdatePageStateLoadedRigFilePath(pageStateId: string, filePath: string | null) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);
@@ -198,7 +198,7 @@ class AppState {
             return;
         }
         pageState.loadedRigFilePath = filePath;
-        console.log("Update pageState loadedRigFilePath!");
+        //console.log("Update pageState loadedRigFilePath!");
     }
     UpdatePageStateSelectedNode(pageStateId: string, selectedNode: SelectedNode | null) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);
@@ -207,7 +207,7 @@ class AppState {
             return;
         }
         pageState.selectedNode = selectedNode;
-        console.log("Update pageState selectedNode!");
+        //console.log("Update pageState selectedNode!");
     }
     UpdatePageStateSelectedNodePhysicalPosition(pageStateId: string, position: RigVector2 | null) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);
@@ -216,7 +216,7 @@ class AppState {
             return;
         }
         pageState.selectedNodePhysicalPosition = position;
-        console.log("Update pageState selectedNodePhysicalPosition!");
+        //console.log("Update pageState selectedNodePhysicalPosition!");
     }
     UpdatePageStateShowGridOverlay(pageStateId: string, showGridOverlay: boolean) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);

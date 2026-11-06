@@ -11,8 +11,8 @@
 	let debounceTimer: any;
 
 	$effect(() => {
-		//const states = $state.snapshot(appState.pageStates);
-		//const config = $state.snapshot(appState.config);
+		const states = $state.snapshot(appState.pageStates);
+		const config = $state.snapshot(appState.config);
 		console.log("update");
 		untrack(() => {
 			if (debounceTimer) clearTimeout(debounceTimer);
@@ -22,9 +22,9 @@
 					console.log('Started debounce!');
 				} else {
 					//console.log(window.Date.now(), debounceStart, window.Date.now() - debounceStart);
-					//localStorage.setItem('pageStates', JSON.stringify(states));
-					//localStorage.setItem('appConfig', JSON.stringify(config));
-					//appState.UpdateTheme();
+					localStorage.setItem('pageStates', JSON.stringify(states));
+					localStorage.setItem('appConfig', JSON.stringify(config));
+					appState.UpdateTheme();
 					debounce = false;
 					console.log('Ended debounce!');
 					console.log('Saved pageStates to local storage!');

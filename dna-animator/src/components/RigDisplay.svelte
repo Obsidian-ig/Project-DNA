@@ -21,6 +21,14 @@
 	let canvas: HTMLCanvasElement;
 	let displayWidth = $state(0);
 	let displayHeight = $state(0);
+	let displayShortestSide = $derived(Math.min(displayWidth, displayHeight));
+	let scaleUnit = $derived(displayShortestSide / 200); //fixed "grid" of 200x200 "pixels" -100 <-> +100
+
+	let displayOrigin: RigVector2 = $derived({
+		x: displayWidth / 2,
+		y: displayHeight / 2
+	});
+
 	let { pageId }: { pageId: string } = $props();
 	let pageState = $derived(appState.pageStates.find((ps) => ps.id === pageId));
 	let rigObject = $derived(pageState?.loadedRig);
@@ -41,6 +49,17 @@
 	let scalingAxis = $state('X'); //'X' or 'Y'
 	let scaleStep = $state(0.001);
 	let lastScaleDistance: number | null = $state(null);
+
+	let absoluteBoxStep = $derived(5 * scaleUnit);
+	let absoluteLineLength = $derived(25 * scaleUnit);
+	let absoluteArrowSideLength = $derived(3 * scaleUnit);
+
+	let absoluteRotationCircleRadius = $derived(30 * scaleUnit);
+	let absoluteRotationTwoCircleRadius = $derived(35 * scaleUnit);
+
+	let absoluteScaleArrowDistance = $derived(40 * scaleUnit);
+	let absoluteScaleArrowSideLength = $derived(4 * scaleUnit);
+
 	let camera = $state({
 		x: 0,
 		y: 0,
@@ -50,27 +69,706 @@
 	const maxZoom = 20;
 	const minZoom = 0.1;
 
-	$effect(() => {
-		if (!canvas || !rigObject) return;
+	function CalculatePhysicalPositionFromRigCenter(point: RigVector2): RigVector2 {
+		if (!rigObject) return { x: 0, y: 0 };
+		let virtualRigCenter: RigVector2 = {
+			x: rigObject.offsets.position.x + rigObject.transforms.position.x,
+			y: rigObject.offsets.position.y + rigObject.transforms.position.y
+		};
+		let physicalRigCenter: RigVector2 = {
+			x: displayOrigin.x + virtualRigCenter.x * scaleUnit,
+			y: displayOrigin.y + virtualRigCenter.y * scaleUnit
+		};
+		return {
+			x: physicalRigCenter.x + point.x * scaleUnit,
+			y: physicalRigCenter.y + point.y * scaleUnit
+		};
+	}
+	function CalculatePhysicalPositionFromPhysicalPosition(
+		pointToCalc: RigVector2,
+		physicalPoint: RigVector2,
+		rHat: RigVector2,
+		uHat: RigVector2
+	): RigVector2 {
+		let temp = {
+			x: rHat.x * pointToCalc.x + uHat.x * pointToCalc.y,
+			y: rHat.y * pointToCalc.x + uHat.y * pointToCalc.y
+		};
+		pointToCalc = temp;
+		return {
+			x: physicalPoint.x + pointToCalc.x * scaleUnit,
+			y: physicalPoint.y + pointToCalc.y * scaleUnit
+		};
+	}
+
+	function RotatePhysicalPoint(physicalPoint: RigVector2, degrees: number): RigVector2 {
+		let radians = degrees * (Math.PI / 180);
+		let tempX = physicalPoint.x;
+		let tempY = physicalPoint.y;
+		physicalPoint.x = tempX * Math.cos(radians) - tempY * Math.sin(radians);
+		physicalPoint.y = tempX * Math.sin(radians) + tempY * Math.cos(radians);
+
+		return physicalPoint;
+	}
+	function ScalePhysicalPoint(physicalPoint: RigVector2, scaleMultiplier: RigVector2): RigVector2 {
+		if (!rigObject) return { x: 0, y: 0 };
+		physicalPoint.x = physicalPoint.x * scaleMultiplier.x;
+		physicalPoint.y = physicalPoint.y * scaleMultiplier.y;
+		return physicalPoint;
+	}
+	function CalculatePointPositionWithParams(
+		physicalOrigin: RigVector2,
+		physicalPoint: RigVector2,
+		degreesOfRotation: number,
+		scaleMultiplier: RigVector2,
+		degreesOfRotationTwo: number
+	) {
+		physicalPoint.x -= physicalOrigin.x;
+		physicalPoint.y -= physicalOrigin.y;
+		physicalPoint = RotatePhysicalPoint(physicalPoint, degreesOfRotation); //rotate
+		physicalPoint = ScalePhysicalPoint(physicalPoint, scaleMultiplier); //scale
+		physicalPoint = RotatePhysicalPoint(physicalPoint, degreesOfRotationTwo); //rotate after scaling
+		physicalPoint.x += physicalOrigin.x;
+		physicalPoint.y += physicalOrigin.y;
+		return physicalPoint;
+	}
+	function CalculateNewPhysicalPositionWithParamsInversed(
+		physicalOrigin: RigVector2,
+		physicalPoint: RigVector2,
+		degreesOfRotation: number,
+		scaleMultiplier: RigVector2,
+		degreesOfRotationTwo: number
+	) {
+		if (scaleMultiplier.x === 0 || scaleMultiplier.y === 0) return physicalPoint;
+		physicalPoint.x -= physicalOrigin.x;
+		physicalPoint.y -= physicalOrigin.y;
+		physicalPoint = RotatePhysicalPoint(physicalPoint, -degreesOfRotationTwo);
+		physicalPoint = ScalePhysicalPoint(physicalPoint, {
+			x: 1 / scaleMultiplier.x,
+			y: 1 / scaleMultiplier.y
+		});
+		physicalPoint = RotatePhysicalPoint(physicalPoint, -degreesOfRotation);
+		physicalPoint.x += physicalOrigin.x;
+		physicalPoint.y += physicalOrigin.y;
+		return physicalPoint;
+	}
+
+	function IsPhysicalPointWithinElement(
+		physicalPoint: RigVector2,
+		elementPointsPhysicalPositions: RigVector2[]
+	) {
+		//using the even-odd rule
+		let crossCounter = 0;
+		elementPointsPhysicalPositions.slice().forEach((p, pIndex) => {
+			let nextIndex = pIndex === elementPointsPhysicalPositions.length - 1 ? 0 : pIndex + 1;
+			let np = elementPointsPhysicalPositions[nextIndex];
+			if (
+				(p.y > physicalPoint.y && np.y > physicalPoint.y) ||
+				(p.y < physicalPoint.y && np.y < physicalPoint.y) ||
+				(physicalPoint.x > p.x && physicalPoint.x > np.x)
+			)
+				return; //skip it
+			let lineMinX = 0;
+			let lineMaxX = 0;
+			let lineMinY = 0;
+			let lineMaxY = 0;
+			if (p.x < np.x) {
+				lineMinX = p.x;
+				lineMaxX = np.x;
+			} else if (p.x === np.x) {
+				lineMinX = p.x;
+				lineMaxX = p.x;
+			} else if (p.x > np.x) {
+				lineMinX = np.x;
+				lineMaxX = p.x;
+			}
+			if (p.y < np.y) {
+				lineMinY = p.y;
+				lineMaxY = np.y;
+			} else if (p.y === np.y) {
+				lineMinY = p.y;
+				lineMaxY = p.y;
+			} else if (p.y > np.y) {
+				lineMinY = np.y;
+				lineMaxY = p.y;
+			}
+
+			//NOT WORKING!!
+			//This includes lines that are behind the point, but the maxX is greater than the point's x.
+			//Like a triangle
+			//													 *B
+			//
+			//
+			//
+			//
+			//									o
+			//
+			//
+			//
+			//
+			//*A												   *C
+			//line AB will count as a cross.
+
+			let M = (np.y - p.y) / (np.x - p.x);
+			let xIntercept = p.x + (physicalPoint.y - p.y) / M;
+			if (
+				physicalPoint.y >= lineMinY &&
+				physicalPoint.y < lineMaxY &&
+				xIntercept >= physicalPoint.x
+			) {
+				crossCounter += 1;
+			}
+		});
+
+		return crossCounter % 2 !== 0; //return true if odd, false if even.
+	}
+
+	/*VISUAL EDITOR TOOLS*/
+	function DrawMoveTool(physicalPosition: RigVector2, compact: boolean = false) {
 		const ctx = canvas.getContext('2d');
 		if (!ctx) return;
-
-		let displayOrigin: RigVector2 = {
-			x: displayWidth / 2,
-			y: displayHeight / 2
-		};
 		let displayShortestSide = Math.min(displayWidth, displayHeight);
 		const scaleUnit = displayShortestSide / 200; //fixed "grid" of 200x200 "pixels" -100 <-> +100
 		let absoluteBoxStep = 5 * scaleUnit;
 		let absoluteLineLength = 25 * scaleUnit;
 		let absoluteArrowSideLength = 3 * scaleUnit;
 
+		if (compact) {
+			absoluteLineLength = absoluteLineLength / 2;
+		}
+		ctx.beginPath();
+		ctx.lineWidth = 2;
+		ctx.moveTo(physicalPosition.x - absoluteBoxStep, physicalPosition.y - absoluteBoxStep); //top left
+		ctx.lineTo(physicalPosition.x + absoluteBoxStep, physicalPosition.y - absoluteBoxStep); //top right
+		ctx.lineTo(physicalPosition.x + absoluteBoxStep, physicalPosition.y + absoluteBoxStep); //bottom right
+		ctx.lineTo(physicalPosition.x - absoluteBoxStep, physicalPosition.y + absoluteBoxStep); //bottom left
+		ctx.closePath();
+		ctx.strokeStyle = '#fcba03'; //yellow box outline
+		ctx.stroke();
+		//draw the y axis arrow
+		ctx.lineWidth = 3;
+		ctx.beginPath();
+		ctx.moveTo(physicalPosition.x, physicalPosition.y - absoluteBoxStep); //move to center top of box
+		ctx.lineTo(physicalPosition.x, physicalPosition.y - (absoluteLineLength + absoluteBoxStep)); //move up
+		ctx.closePath();
+		ctx.strokeStyle = '#156307';
+		ctx.fillStyle = '#156307';
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(
+			physicalPosition.x - absoluteArrowSideLength,
+			physicalPosition.y - (absoluteLineLength + absoluteBoxStep)
+		);
+		ctx.lineTo(
+			physicalPosition.x,
+			physicalPosition.y - (absoluteArrowSideLength + absoluteLineLength + absoluteBoxStep)
+		);
+		ctx.lineTo(
+			physicalPosition.x + absoluteArrowSideLength,
+			physicalPosition.y - (absoluteLineLength + absoluteBoxStep)
+		);
+		ctx.stroke();
+		ctx.fill();
+		//draw the x axis arrow
+		ctx.beginPath();
+		ctx.moveTo(physicalPosition.x + absoluteBoxStep, physicalPosition.y);
+		ctx.lineTo(physicalPosition.x + absoluteBoxStep + absoluteLineLength, physicalPosition.y);
+		ctx.closePath();
+		ctx.strokeStyle = '#9c0606';
+		ctx.fillStyle = '#9c0606';
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(
+			physicalPosition.x + absoluteBoxStep + absoluteLineLength,
+			physicalPosition.y - absoluteArrowSideLength
+		);
+		ctx.lineTo(
+			physicalPosition.x + absoluteBoxStep + absoluteLineLength + absoluteArrowSideLength,
+			physicalPosition.y
+		);
+		ctx.lineTo(
+			physicalPosition.x + absoluteBoxStep + absoluteLineLength,
+			physicalPosition.y + absoluteArrowSideLength
+		);
+		ctx.closePath();
+		ctx.stroke();
+		ctx.fill();
+	}
+	function DrawRotateTool(physicalPosition: RigVector2, compact: boolean = true) {
+		const ctx = canvas.getContext('2d');
+		if (!ctx) return;
+		let displayShortestSide = Math.min(displayWidth, displayHeight);
+		const scaleUnit = displayShortestSide / 200; //fixed "grid" of 200x200 "pixels" -100 <-> +100
 		let absoluteRotationCircleRadius = 30 * scaleUnit;
 		let absoluteRotationTwoCircleRadius = 35 * scaleUnit;
 
+		if (compact) {
+			absoluteRotationCircleRadius = absoluteRotationCircleRadius / 3;
+			absoluteRotationTwoCircleRadius = absoluteRotationTwoCircleRadius / 2;
+			ctx.lineWidth = 3;
+		}
+		ctx.beginPath();
+		ctx.arc(physicalPosition.x, physicalPosition.y, absoluteRotationCircleRadius, 0, 360);
+		ctx.strokeStyle = '#21a698';
+		ctx.stroke();
+		ctx.closePath();
+		ctx.beginPath();
+		ctx.arc(physicalPosition.x, physicalPosition.y, absoluteRotationTwoCircleRadius, 0, 360);
+		ctx.strokeStyle = '#9b22a3';
+		ctx.stroke();
+		ctx.closePath();
+	}
+	function DrawScaleTool(physicalPosition: RigVector2, compact: boolean = true) {
+		const ctx = canvas.getContext('2d');
+		if (!ctx) return;
+		let displayShortestSide = Math.min(displayWidth, displayHeight);
+		const scaleUnit = displayShortestSide / 200; //fixed "grid" of 200x200 "pixels" -100 <-> +100
 		let absoluteScaleArrowDistance = 40 * scaleUnit;
 		let absoluteScaleArrowSideLength = 4 * scaleUnit;
 
+		let arrowDistance = compact ? absoluteScaleArrowDistance / 3 : absoluteScaleArrowDistance;
+		ctx.lineWidth = 1.5 * scaleUnit;
+		//y axis arrow
+		ctx.beginPath();
+		ctx.moveTo(
+			physicalPosition.x - absoluteScaleArrowSideLength,
+			physicalPosition.y - arrowDistance
+		);
+		ctx.lineTo(
+			physicalPosition.x,
+			physicalPosition.y - arrowDistance - absoluteScaleArrowSideLength
+		);
+		ctx.lineTo(
+			physicalPosition.x + absoluteScaleArrowSideLength,
+			physicalPosition.y - arrowDistance
+		);
+		ctx.strokeStyle = '#d19a04';
+		ctx.stroke();
+		//x axis arrow
+		ctx.beginPath();
+		ctx.moveTo(
+			physicalPosition.x + arrowDistance,
+			physicalPosition.y - absoluteScaleArrowSideLength
+		);
+		ctx.lineTo(
+			physicalPosition.x + arrowDistance + absoluteScaleArrowSideLength,
+			physicalPosition.y
+		);
+		ctx.lineTo(
+			physicalPosition.x + arrowDistance,
+			physicalPosition.y + absoluteScaleArrowSideLength
+		);
+		ctx.strokeStyle = '#0551a3';
+		ctx.stroke();
+	}
+
+	function DrawElement(
+		element: RigElement,
+		parentPosition: RigVector2,
+		xAxis: RigVector2,
+		yAxis: RigVector2,
+		elementIndex: number
+	) {
+		const ctx = canvas.getContext('2d');
+		if (!rigObject || !ctx || !element.visible) return;
+		let displayShortestSide = Math.min(displayWidth, displayHeight);
+		const scaleUnit = displayShortestSide / 200; //fixed "grid" of 200x200 "pixels" -100 <-> +100
+
+		let elementVirtualTotalPosition: RigVector2 = {
+			x: element.offsets.position.x + element.transforms.position.x,
+			y: element.offsets.position.y + element.transforms.position.y
+		};
+		let elementVirtualOrigin: RigVector2 = {
+			x: elementVirtualTotalPosition.x + element.offsets.transform_origin.x,
+			y: elementVirtualTotalPosition.y + element.offsets.transform_origin.y
+		};
+		let elementRotation = element.offsets.rotation + element.transforms.rotation;
+		let elementScale: RigVector2 = {
+			x: element.offsets.scale.x * element.transforms.scale.x,
+			y: element.offsets.scale.y * element.transforms.scale.y
+		};
+		let elementRotationTwo = element.offsets.rotation_two + element.transforms.rotation_two;
+
+		//calculate the elements position from the group's position and apply the groups rotation/direction with its axies
+		let elementCalculatedPosition = CalculatePhysicalPositionFromPhysicalPosition(
+			elementVirtualTotalPosition,
+			parentPosition,
+			xAxis,
+			yAxis
+		);
+		let elementCalculatedOrigin = CalculatePhysicalPositionFromPhysicalPosition(
+			elementVirtualOrigin,
+			parentPosition,
+			xAxis,
+			yAxis
+		);
+
+		let elementXAxis = { x: 1, y: 0 };
+		let elementYAxis = { x: 0, y: 1 };
+
+		elementXAxis = RotatePhysicalPoint(elementXAxis, elementRotation);
+		elementYAxis = RotatePhysicalPoint(elementYAxis, elementRotation);
+		elementXAxis = ScalePhysicalPoint(elementXAxis, elementScale);
+		elementYAxis = ScalePhysicalPoint(elementYAxis, elementScale);
+		elementXAxis = RotatePhysicalPoint(elementXAxis, elementRotationTwo);
+		elementYAxis = RotatePhysicalPoint(elementYAxis, elementRotationTwo);
+		const elementWorldX = {
+			x: xAxis.x * elementXAxis.x + yAxis.x * elementXAxis.y,
+			y: xAxis.y * elementXAxis.x + yAxis.y * elementXAxis.y
+		};
+		const elementWorldY = {
+			x: xAxis.x * elementYAxis.x + yAxis.x * elementYAxis.y,
+			y: xAxis.y * elementYAxis.x + yAxis.y * elementYAxis.y
+		};
+
+		const o = element.offsets.transform_origin;
+		elementCalculatedPosition = CalculatePhysicalPositionFromPhysicalPosition(
+			{ x: -o.x, y: -o.y },
+			elementCalculatedOrigin,
+			elementWorldX,
+			elementWorldY
+		);
+
+		let pointFrame = pageState?.nodeFrames.find(
+			(n) => n.nodeType === SelectedNodeType.Element && n.nodeId === element.name
+		);
+		if (
+			!pointFrame ||
+			pointFrame.physicalPosition.x !== elementCalculatedPosition.x ||
+			pointFrame.physicalPosition.y !== elementCalculatedPosition.y
+		) {
+			appState.AddOrUpdatePageStateNodeFrame(pageId, {
+				nodeId: element.name,
+				nodeType: SelectedNodeType.Element,
+				physicalPosition: elementCalculatedPosition,
+				physicalTransformOrigin: { x: 0, y: 0 },
+				worldX: elementWorldX,
+				worldY: elementWorldY
+			});
+		}
+
+		//all calculations are from the current point to the next point, never backwards.
+		if (element.closed) ctx.beginPath();
+		element.points.slice().forEach((point, index) => {
+			let calculatedPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
+				point.point,
+				elementCalculatedPosition,
+				elementWorldX,
+				elementWorldY
+			);
+			let nextPointIndex = index >= element.points.length - 1 ? 0 : index + 1;
+			let nextPoint = element.points[nextPointIndex];
+			if (!nextPoint) return;
+			if (nextPointIndex === 0 && !element.closed) return;
+			let id = GetNameIdForElementPoint(element.name, index);
+			let pointFrame = pageState?.nodeFrames.find(
+				(n) => n.nodeType === SelectedNodeType.Point && n.nodeId === id
+			);
+			if (
+				!pointFrame ||
+				pointFrame.physicalPosition.x !== calculatedPointPosition.x ||
+				pointFrame.physicalPosition.y !== calculatedPointPosition.y
+			) {
+				appState.AddOrUpdatePageStateNodeFrame(pageId, {
+					nodeId: id,
+					nodeType: SelectedNodeType.Point,
+					physicalPosition: calculatedPointPosition,
+					physicalTransformOrigin: { x: 0, y: 0 },
+					worldX: elementWorldX,
+					worldY: elementWorldY
+				});
+			}
+			let calculatedNextPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
+				nextPoint.point,
+				elementCalculatedPosition,
+				elementWorldX,
+				elementWorldY
+			);
+			if (index === 0) ctx.moveTo(calculatedPointPosition.x, calculatedPointPosition.y); //move to first point's position
+			if (
+				!point.controls ||
+				point.controls.length < 1 ||
+				point.interpolation_type === RigPointInterpolationType.Linear
+			) {
+				//linear interpolation to the next point
+				ctx.lineTo(calculatedNextPointPosition.x, calculatedNextPointPosition.y);
+			} else if (
+				point.interpolation_type === RigPointInterpolationType.QuadraticBezierCurve ||
+				(point.interpolation_type === RigPointInterpolationType.CubicBezierCurve &&
+					point.controls.length < 2)
+			) {
+				//quadratic bezier curve interpolation to the next point
+				let steps = point.steps;
+				for (let i = 1; i <= steps; i++) {
+					const timeStep = i / steps;
+					let control = point.controls[0];
+					let controlPoint = {
+						x: point.point.x + control.x,
+						y: point.point.y + control.y
+					};
+					let calculatedPathPointVirtual: RigVector2 = {
+						x:
+							Math.pow(1 - timeStep, 2) * point.point.x +
+							2 * (1 - timeStep) * timeStep * controlPoint.x +
+							Math.pow(timeStep, 2) * nextPoint.point.x,
+						y:
+							Math.pow(1 - timeStep, 2) * point.point.y +
+							2 * (1 - timeStep) * timeStep * controlPoint.y +
+							Math.pow(timeStep, 2) * nextPoint.point.y
+					};
+					let calculatedPathPointPhysical = CalculatePhysicalPositionFromPhysicalPosition(
+						calculatedPathPointVirtual,
+						elementCalculatedPosition,
+						elementWorldX,
+						elementWorldY
+					);
+					ctx.lineTo(calculatedPathPointPhysical.x, calculatedPathPointPhysical.y);
+					let name = GetNameIdForPathPoint(element.name, index, i);
+					let frame = pageState?.nodeFrames.find(
+						(nf) => nf.nodeId === name && nf.nodeType === SelectedNodeType.PathPoint
+					);
+					if (
+						!frame ||
+						frame.physicalPosition.x !== calculatedPathPointPhysical.x ||
+						frame.physicalPosition.y !== calculatedPathPointPhysical.y
+					) {
+						appState.AddOrUpdatePageStateNodeFrame(pageId, {
+							nodeId: name,
+							nodeType: SelectedNodeType.PathPoint,
+							physicalPosition: calculatedPathPointPhysical,
+							physicalTransformOrigin: { x: 0, y: 0 },
+							worldX: elementWorldX,
+							worldY: elementWorldY
+						});
+					}
+				}
+			} else if (
+				point.interpolation_type === RigPointInterpolationType.CubicBezierCurve &&
+				point.controls.length === 2
+			) {
+				//cubic bezier curve interpolation to the next point
+				let steps = point.steps;
+				for (let i = 1; i <= steps; i++) {
+					const timeStep = i / steps;
+					let control = point.controls[0];
+					let controlTwo = point.controls[1];
+					let controlPoint = {
+						x: point.point.x + control.x,
+						y: point.point.y + control.y
+					};
+					let controlPointTwo = {
+						x: point.point.x + controlTwo.x,
+						y: point.point.y + controlTwo.y
+					};
+					let calculatedPathPointVirtual: RigVector2 = {
+						x:
+							Math.pow(1 - timeStep, 3) * point.point.x +
+							3 * Math.pow(1 - timeStep, 2) * timeStep * controlPoint.x +
+							3 * (1 - timeStep) * Math.pow(timeStep, 2) * controlPointTwo.x +
+							Math.pow(timeStep, 3) * nextPoint.point.x,
+						y:
+							Math.pow(1 - timeStep, 3) * point.point.y +
+							3 * Math.pow(1 - timeStep, 2) * timeStep * controlPoint.y +
+							3 * (1 - timeStep) * Math.pow(timeStep, 2) * controlPointTwo.y +
+							Math.pow(timeStep, 3) * nextPoint.point.y
+					};
+					let calculatedPathPointPhysical = CalculatePhysicalPositionFromPhysicalPosition(
+						calculatedPathPointVirtual,
+						elementCalculatedPosition,
+						elementWorldX,
+						elementWorldY
+					);
+					ctx.lineTo(calculatedPathPointPhysical.x, calculatedPathPointPhysical.y);
+					let name = GetNameIdForPathPoint(element.name, index, i);
+					let frame = pageState?.nodeFrames.find(
+						(nf) => nf.nodeId === name && nf.nodeType === SelectedNodeType.PathPoint
+					);
+					if (
+						!frame ||
+						frame.physicalPosition.x !== calculatedPathPointPhysical.x ||
+						frame.physicalPosition.y !== calculatedPathPointPhysical.y
+					) {
+						appState.AddOrUpdatePageStateNodeFrame(pageId, {
+							nodeId: name,
+							nodeType: SelectedNodeType.PathPoint,
+							physicalPosition: calculatedPathPointPhysical,
+							physicalTransformOrigin: { x: 0, y: 0 },
+							worldX: elementWorldX,
+							worldY: elementWorldY
+						});
+					}
+				}
+			}
+		});
+		if (element.closed) {
+			ctx.closePath();
+		}
+		ctx.strokeStyle = element.stroke_color;
+		ctx.lineWidth = element.stroke_width;
+		ctx.fillStyle = element.fill_color;
+		ctx.stroke();
+		if (element.filled && element.closed) ctx.fill();
+
+		let splitSelectedVisualEditorNodeName = pageState?.selectedNode?.name.split('_PIndex_');
+		let isParentElement = element.name === splitSelectedVisualEditorNodeName?.[0];
+
+		//debug/visual editor
+		element.points.forEach((point, pointIndex) => {
+			if (
+				element.show_points ||
+				(pageState?.visualEditorEnabled &&
+					isParentElement &&
+					pointIndex === pageState.selectedNode?.index &&
+					pageState.selectedNode.type === SelectedNodeType.Point)
+			) {
+				ctx.beginPath();
+				let calculatedPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
+					point.point,
+					elementCalculatedPosition,
+					elementWorldX,
+					elementWorldY
+				);
+				ctx.arc(
+					calculatedPointPosition.x,
+					calculatedPointPosition.y,
+					element.points_radius * scaleUnit,
+					0,
+					360
+				);
+				ctx.closePath();
+				ctx.fillStyle = element.points_color;
+				ctx.fill();
+
+				if (
+					pageState?.visualEditorEnabled &&
+					isParentElement &&
+					pointIndex === pageState.selectedNode?.index &&
+					pageState.selectedNode.type === SelectedNodeType.Point
+				) {
+					if (
+						calculatedPointPosition.x !== pageState.selectedNodePhysicalPosition?.x ||
+						calculatedPointPosition.y !== pageState.selectedNodePhysicalPosition.y
+					) {
+						console.log('up 1');
+						appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, calculatedPointPosition);
+					}
+				}
+			}
+
+			let isParentPoint = pointIndex === parseInt(splitSelectedVisualEditorNodeName?.[1] ?? '');
+			point.controls?.forEach((control, controlIndex) => {
+				if (
+					pageState &&
+					((point.show_control_points &&
+						!pageState.disableAllDebugOptions &&
+						!pageState.hideAllElements) ||
+						(pageState.visualEditorEnabled &&
+							isParentElement &&
+							isParentPoint &&
+							controlIndex === pageState.selectedNode?.index &&
+							pageState.selectedNode.type === SelectedNodeType.ControlPoint))
+				) {
+					ctx.beginPath();
+					let controlPoint = {
+						x: point.point.x + control.x,
+						y: point.point.y + control.y
+					};
+					let calculatedControlPointPhysical = CalculatePhysicalPositionFromPhysicalPosition(
+						controlPoint,
+						elementCalculatedPosition,
+						elementWorldX,
+						elementWorldY
+					);
+
+					ctx.arc(
+						calculatedControlPointPhysical.x,
+						calculatedControlPointPhysical.y,
+						point.control_point_radius * scaleUnit,
+						0,
+						360
+					);
+					ctx.closePath();
+					ctx.fillStyle = point.control_point_color;
+					ctx.fill();
+
+					if (
+						controlIndex === pageState.selectedNode?.index &&
+						pageState.visualEditorEnabled &&
+						isParentElement &&
+						isParentPoint &&
+						pageState.selectedNode.type === SelectedNodeType.ControlPoint
+					) {
+						if (
+							pageState.selectedNodePhysicalPosition?.x !== calculatedControlPointPhysical.x ||
+							pageState.selectedNodePhysicalPosition.y !== calculatedControlPointPhysical.y
+						) {
+							//if I don't check whether or not it is different, then it just updates forever and causes an update loop
+							appState.UpdatePageStateSelectedNodePhysicalPosition(
+								pageId,
+								calculatedControlPointPhysical
+							);
+						}
+					}
+				}
+			});
+		});
+
+		if (pageState && !pageState.disableAllDebugOptions) {
+			if (
+				element.show_position_point ||
+				(pageState?.visualEditorEnabled &&
+					pageState.selectedNode?.type === SelectedNodeType.Element &&
+					element.name === pageState.selectedNode.name)
+			) {
+				ctx.beginPath();
+				ctx.arc(
+					elementCalculatedPosition.x,
+					elementCalculatedPosition.y,
+					element.position_point_radius * scaleUnit,
+					0,
+					360
+				);
+				ctx.closePath();
+				ctx.fillStyle = element.position_point_color;
+				ctx.fill();
+				if (
+					pageState?.visualEditorEnabled &&
+					pageState.selectedNode?.type === SelectedNodeType.Element &&
+					element.name === pageState.selectedNode.name
+				) {
+					if (
+						elementCalculatedPosition.x !== pageState.selectedNodePhysicalPosition?.x ||
+						elementCalculatedPosition.y !== pageState.selectedNodePhysicalPosition.y
+					) {
+						appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, elementCalculatedPosition);
+					}
+				}
+			}
+			if (element.show_origin_point) {
+				ctx.beginPath();
+				ctx.arc(
+					elementCalculatedOrigin.x,
+					elementCalculatedOrigin.y,
+					element.origin_point_radius * scaleUnit,
+					0,
+					360
+				);
+				ctx.closePath();
+				ctx.fillStyle = element.origin_point_color;
+				ctx.fill();
+			}
+		}
+	}
+	function Draw() {
+		const ctx = canvas.getContext('2d');
+		if (!rigObject || !ctx) return;
+
+		displayOrigin = {
+			x: displayWidth / 2,
+			y: displayHeight / 2
+		};
+		displayShortestSide = Math.min(displayWidth, displayHeight);
+		scaleUnit = displayShortestSide / 200; //fixed "grid" of 200x200 "pixels" -100 <-> +100
 		let virtualRigCenter: RigVector2 = {
 			x: rigObject.offsets.position.x + rigObject.transforms.position.x,
 			y: rigObject.offsets.position.y + rigObject.transforms.position.y
@@ -80,966 +778,285 @@
 			y: displayOrigin.y + virtualRigCenter.y * scaleUnit
 		};
 
-		function CalculatePhysicalPositionFromRigCenter(point: RigVector2): RigVector2 {
-			return {
-				x: physicalRigCenter.x + point.x * scaleUnit,
-				y: physicalRigCenter.y + point.y * scaleUnit
-			};
-		}
-		function CalculatePhysicalPositionFromPhysicalPosition(
-			pointToCalc: RigVector2,
-			physicalPoint: RigVector2,
-			rHat: RigVector2,
-			uHat: RigVector2
-		): RigVector2 {
-			let temp = {
-				x: rHat.x * pointToCalc.x + uHat.x * pointToCalc.y,
-				y: rHat.y * pointToCalc.x + uHat.y * pointToCalc.y
-			};
-			pointToCalc = temp;
-			return {
-				x: physicalPoint.x + pointToCalc.x * scaleUnit,
-				y: physicalPoint.y + pointToCalc.y * scaleUnit
-			};
-		}
+		ctx.lineWidth = 1;
+		ctx.clearRect(0, 0, displayWidth, displayHeight);
+		ctx.beginPath();
+		ctx.arc(displayWidth / 2, displayHeight / 2, 100 * scaleUnit, 0, Math.PI * 2);
+		ctx.closePath();
+		ctx.strokeStyle = '#000000';
+		ctx.fillStyle = '#000000';
+		ctx.fill();
+		ctx.stroke();
 
-		function RotatePhysicalPoint(physicalPoint: RigVector2, degrees: number): RigVector2 {
-			let radians = degrees * (Math.PI / 180);
-			let tempX = physicalPoint.x;
-			let tempY = physicalPoint.y;
-			physicalPoint.x = tempX * Math.cos(radians) - tempY * Math.sin(radians);
-			physicalPoint.y = tempX * Math.sin(radians) + tempY * Math.cos(radians);
+		let totalRigRotation = rigObject.offsets.rotation + rigObject.transforms.rotation;
+		let rigScale: RigVector2 = {
+			x: rigObject.offsets.scale.x * rigObject.transforms.scale.x,
+			y: rigObject.offsets.scale.y * rigObject.transforms.scale.y
+		};
+		let totalRigRotationTwo = rigObject.offsets.rotation_two + rigObject.transforms.rotation_two;
+		let rigXAxis: RigVector2 = { x: 1, y: 0 };
+		let rigYAxis: RigVector2 = { x: 0, y: 1 };
+		rigXAxis = RotatePhysicalPoint(rigXAxis, totalRigRotation);
+		rigYAxis = RotatePhysicalPoint(rigYAxis, totalRigRotation);
+		rigXAxis = ScalePhysicalPoint(rigXAxis, rigScale);
+		rigYAxis = ScalePhysicalPoint(rigYAxis, rigScale);
+		rigXAxis = RotatePhysicalPoint(rigXAxis, totalRigRotationTwo);
+		rigYAxis = RotatePhysicalPoint(rigYAxis, totalRigRotationTwo);
 
-			return physicalPoint;
-		}
-		function ScalePhysicalPoint(
-			physicalPoint: RigVector2,
-			scaleMultiplier: RigVector2
-		): RigVector2 {
-			if (!rigObject) return { x: 0, y: 0 };
-			physicalPoint.x = physicalPoint.x * scaleMultiplier.x;
-			physicalPoint.y = physicalPoint.y * scaleMultiplier.y;
-			return physicalPoint;
-		}
-		function CalculatePointPositionWithParams(
-			physicalOrigin: RigVector2,
-			physicalPoint: RigVector2,
-			degreesOfRotation: number,
-			scaleMultiplier: RigVector2,
-			degreesOfRotationTwo: number
+		if (
+			(!pageState?.disableAllDebugOptions && rigObject.show_position_point) ||
+			(pageState?.visualEditorEnabled && pageState.selectedNode?.type === SelectedNodeType.Root)
 		) {
-			physicalPoint.x -= physicalOrigin.x;
-			physicalPoint.y -= physicalOrigin.y;
-			physicalPoint = RotatePhysicalPoint(physicalPoint, degreesOfRotation); //rotate
-			physicalPoint = ScalePhysicalPoint(physicalPoint, scaleMultiplier); //scale
-			physicalPoint = RotatePhysicalPoint(physicalPoint, degreesOfRotationTwo); //rotate after scaling
-			physicalPoint.x += physicalOrigin.x;
-			physicalPoint.y += physicalOrigin.y;
-			return physicalPoint;
-		}
-		function CalculateNewPhysicalPositionWithParamsInversed(
-			physicalOrigin: RigVector2,
-			physicalPoint: RigVector2,
-			degreesOfRotation: number,
-			scaleMultiplier: RigVector2,
-			degreesOfRotationTwo: number
-		) {
-			if (scaleMultiplier.x === 0 || scaleMultiplier.y === 0) return physicalPoint;
-			physicalPoint.x -= physicalOrigin.x;
-			physicalPoint.y -= physicalOrigin.y;
-			physicalPoint = RotatePhysicalPoint(physicalPoint, -degreesOfRotationTwo);
-			physicalPoint = ScalePhysicalPoint(physicalPoint, {
-				x: 1 / scaleMultiplier.x,
-				y: 1 / scaleMultiplier.y
-			});
-			physicalPoint = RotatePhysicalPoint(physicalPoint, -degreesOfRotation);
-			physicalPoint.x += physicalOrigin.x;
-			physicalPoint.y += physicalOrigin.y;
-			return physicalPoint;
-		}
-
-		function IsPhysicalPointWithinElement(
-			physicalPoint: RigVector2,
-			elementPointsPhysicalPositions: RigVector2[]
-		) {
-			//using the even-odd rule
-			let crossCounter = 0;
-			elementPointsPhysicalPositions.slice().forEach((p, pIndex) => {
-				let nextIndex = pIndex === elementPointsPhysicalPositions.length - 1 ? 0 : pIndex + 1;
-				let np = elementPointsPhysicalPositions[nextIndex];
-				if (
-					(p.y > physicalPoint.y && np.y > physicalPoint.y) ||
-					(p.y < physicalPoint.y && np.y < physicalPoint.y) ||
-					(physicalPoint.x > p.x && physicalPoint.x > np.x)
-				)
-					return; //skip it
-				let lineMinX = 0;
-				let lineMaxX = 0;
-				let lineMinY = 0;
-				let lineMaxY = 0;
-				if (p.x < np.x) {
-					lineMinX = p.x;
-					lineMaxX = np.x;
-				} else if (p.x === np.x) {
-					lineMinX = p.x;
-					lineMaxX = p.x;
-				} else if (p.x > np.x) {
-					lineMinX = np.x;
-					lineMaxX = p.x;
-				}
-				if (p.y < np.y) {
-					lineMinY = p.y;
-					lineMaxY = np.y;
-				} else if (p.y === np.y) {
-					lineMinY = p.y;
-					lineMaxY = p.y;
-				} else if (p.y > np.y) {
-					lineMinY = np.y;
-					lineMaxY = p.y;
-				}
-
-				//NOT WORKING!!
-				//This includes lines that are behind the point, but the maxX is greater than the point's x.
-				//Like a triangle
-				//													 *B
-				//
-				//
-				//
-				//
-				//									o
-				//
-				//
-				//
-				//
-				//*A												   *C
-				//line AB will count as a cross.
-
-				let M = (np.y - p.y) / (np.x - p.x);
-				let xIntercept = p.x + (physicalPoint.y - p.y) / M;
-				if (
-					physicalPoint.y >= lineMinY &&
-					physicalPoint.y < lineMaxY &&
-					xIntercept >= physicalPoint.x
-				) {
-					crossCounter += 1;
-				}
-			});
-
-			return crossCounter % 2 !== 0; //return true if odd, false if even.
-		}
-
-		/*VISUAL EDITOR TOOLS*/
-		function DrawMoveTool(physicalPosition: RigVector2, compact: boolean = false) {
-			if (!ctx) return;
-			if (compact) {
-				absoluteLineLength = absoluteLineLength / 2;
-			}
 			ctx.beginPath();
-			ctx.lineWidth = 2;
-			ctx.moveTo(physicalPosition.x - absoluteBoxStep, physicalPosition.y - absoluteBoxStep); //top left
-			ctx.lineTo(physicalPosition.x + absoluteBoxStep, physicalPosition.y - absoluteBoxStep); //top right
-			ctx.lineTo(physicalPosition.x + absoluteBoxStep, physicalPosition.y + absoluteBoxStep); //bottom right
-			ctx.lineTo(physicalPosition.x - absoluteBoxStep, physicalPosition.y + absoluteBoxStep); //bottom left
+			ctx.arc(
+				physicalRigCenter.x,
+				physicalRigCenter.y,
+				rigObject.position_point_radius * scaleUnit,
+				0,
+				360
+			);
 			ctx.closePath();
-			ctx.strokeStyle = '#fcba03'; //yellow box outline
-			ctx.stroke();
-			//draw the y axis arrow
-			ctx.lineWidth = 3;
-			ctx.beginPath();
-			ctx.moveTo(physicalPosition.x, physicalPosition.y - absoluteBoxStep); //move to center top of box
-			ctx.lineTo(physicalPosition.x, physicalPosition.y - (absoluteLineLength + absoluteBoxStep)); //move up
-			ctx.closePath();
-			ctx.strokeStyle = '#156307';
-			ctx.fillStyle = '#156307';
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.moveTo(
-				physicalPosition.x - absoluteArrowSideLength,
-				physicalPosition.y - (absoluteLineLength + absoluteBoxStep)
-			);
-			ctx.lineTo(
-				physicalPosition.x,
-				physicalPosition.y - (absoluteArrowSideLength + absoluteLineLength + absoluteBoxStep)
-			);
-			ctx.lineTo(
-				physicalPosition.x + absoluteArrowSideLength,
-				physicalPosition.y - (absoluteLineLength + absoluteBoxStep)
-			);
-			ctx.stroke();
+			ctx.fillStyle = rigObject.position_point_color;
 			ctx.fill();
-			//draw the x axis arrow
-			ctx.beginPath();
-			ctx.moveTo(physicalPosition.x + absoluteBoxStep, physicalPosition.y);
-			ctx.lineTo(physicalPosition.x + absoluteBoxStep + absoluteLineLength, physicalPosition.y);
-			ctx.closePath();
-			ctx.strokeStyle = '#9c0606';
-			ctx.fillStyle = '#9c0606';
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.moveTo(
-				physicalPosition.x + absoluteBoxStep + absoluteLineLength,
-				physicalPosition.y - absoluteArrowSideLength
-			);
-			ctx.lineTo(
-				physicalPosition.x + absoluteBoxStep + absoluteLineLength + absoluteArrowSideLength,
-				physicalPosition.y
-			);
-			ctx.lineTo(
-				physicalPosition.x + absoluteBoxStep + absoluteLineLength,
-				physicalPosition.y + absoluteArrowSideLength
-			);
-			ctx.closePath();
-			ctx.stroke();
-			ctx.fill();
-		}
-		function DrawRotateTool(physicalPosition: RigVector2, compact: boolean = true) {
-			if (!ctx) return;
-			if (compact) {
-				absoluteRotationCircleRadius = absoluteRotationCircleRadius / 3;
-				absoluteRotationTwoCircleRadius = absoluteRotationTwoCircleRadius / 2;
-				ctx.lineWidth = 3;
-			}
-			ctx.beginPath();
-			ctx.arc(physicalPosition.x, physicalPosition.y, absoluteRotationCircleRadius, 0, 360);
-			ctx.strokeStyle = '#21a698';
-			ctx.stroke();
-			ctx.closePath();
-			ctx.beginPath();
-			ctx.arc(physicalPosition.x, physicalPosition.y, absoluteRotationTwoCircleRadius, 0, 360);
-			ctx.strokeStyle = '#9b22a3';
-			ctx.stroke();
-			ctx.closePath();
-		}
-		function DrawScaleTool(physicalPosition: RigVector2, compact: boolean = true) {
-			if (!ctx) return;
-			let arrowDistance = compact ? absoluteScaleArrowDistance / 3 : absoluteScaleArrowDistance;
-			ctx.lineWidth = 1.5 * scaleUnit;
-			//y axis arrow
-			ctx.beginPath();
-			ctx.moveTo(
-				physicalPosition.x - absoluteScaleArrowSideLength,
-				physicalPosition.y - arrowDistance
-			);
-			ctx.lineTo(
-				physicalPosition.x,
-				physicalPosition.y - arrowDistance - absoluteScaleArrowSideLength
-			);
-			ctx.lineTo(
-				physicalPosition.x + absoluteScaleArrowSideLength,
-				physicalPosition.y - arrowDistance
-			);
-			ctx.strokeStyle = '#d19a04';
-			ctx.stroke();
-			//x axis arrow
-			ctx.beginPath();
-			ctx.moveTo(
-				physicalPosition.x + arrowDistance,
-				physicalPosition.y - absoluteScaleArrowSideLength
-			);
-			ctx.lineTo(
-				physicalPosition.x + arrowDistance + absoluteScaleArrowSideLength,
-				physicalPosition.y
-			);
-			ctx.lineTo(
-				physicalPosition.x + arrowDistance,
-				physicalPosition.y + absoluteScaleArrowSideLength
-			);
-			ctx.strokeStyle = '#0551a3';
-			ctx.stroke();
-		}
-
-		function DrawElement(
-			element: RigElement,
-			parentPosition: RigVector2,
-			xAxis: RigVector2,
-			yAxis: RigVector2,
-			elementIndex: number
-		) {
-			if (!rigObject || !ctx || !element.visible) return;
-			let elementVirtualTotalPosition: RigVector2 = {
-				x: element.offsets.position.x + element.transforms.position.x,
-				y: element.offsets.position.y + element.transforms.position.y
-			};
-			let elementVirtualOrigin: RigVector2 = {
-				x: elementVirtualTotalPosition.x + element.offsets.transform_origin.x,
-				y: elementVirtualTotalPosition.y + element.offsets.transform_origin.y
-			};
-			let elementRotation = element.offsets.rotation + element.transforms.rotation;
-			let elementScale: RigVector2 = {
-				x: element.offsets.scale.x * element.transforms.scale.x,
-				y: element.offsets.scale.y * element.transforms.scale.y
-			};
-			let elementRotationTwo = element.offsets.rotation_two + element.transforms.rotation_two;
-
-			//calculate the elements position from the group's position and apply the groups rotation/direction with its axies
-			let elementCalculatedPosition = CalculatePhysicalPositionFromPhysicalPosition(
-				elementVirtualTotalPosition,
-				parentPosition,
-				xAxis,
-				yAxis
-			);
-			let elementCalculatedOrigin = CalculatePhysicalPositionFromPhysicalPosition(
-				elementVirtualOrigin,
-				parentPosition,
-				xAxis,
-				yAxis
-			);
-
-			let elementXAxis = { x: 1, y: 0 };
-			let elementYAxis = { x: 0, y: 1 };
-
-			elementXAxis = RotatePhysicalPoint(elementXAxis, elementRotation);
-			elementYAxis = RotatePhysicalPoint(elementYAxis, elementRotation);
-			elementXAxis = ScalePhysicalPoint(elementXAxis, elementScale);
-			elementYAxis = ScalePhysicalPoint(elementYAxis, elementScale);
-			elementXAxis = RotatePhysicalPoint(elementXAxis, elementRotationTwo);
-			elementYAxis = RotatePhysicalPoint(elementYAxis, elementRotationTwo);
-			const elementWorldX = {
-				x: xAxis.x * elementXAxis.x + yAxis.x * elementXAxis.y,
-				y: xAxis.y * elementXAxis.x + yAxis.y * elementXAxis.y
-			};
-			const elementWorldY = {
-				x: xAxis.x * elementYAxis.x + yAxis.x * elementYAxis.y,
-				y: xAxis.y * elementYAxis.x + yAxis.y * elementYAxis.y
-			};
-
-			const o = element.offsets.transform_origin;
-			elementCalculatedPosition = CalculatePhysicalPositionFromPhysicalPosition(
-				{ x: -o.x, y: -o.y },
-				elementCalculatedOrigin,
-				elementWorldX,
-				elementWorldY
-			);
-
-			let pointFrame = pageState?.nodeFrames.find(
-				(n) => n.nodeType === SelectedNodeType.Element && n.nodeId === element.name
-			);
 			if (
-				!pointFrame ||
-				pointFrame.physicalPosition.x !== elementCalculatedPosition.x ||
-				pointFrame.physicalPosition.y !== elementCalculatedPosition.y
+				pageState?.visualEditorEnabled &&
+				pageState.selectedNode?.type === SelectedNodeType.Root
 			) {
-				appState.AddOrUpdatePageStateNodeFrame(pageId, {
-					nodeId: element.name,
-					nodeType: SelectedNodeType.Element,
-					physicalPosition: elementCalculatedPosition,
-					physicalTransformOrigin: { x: 0, y: 0 },
-					worldX: elementWorldX,
-					worldY: elementWorldY
-				});
+				if (
+					physicalRigCenter.x !== pageState.selectedNodePhysicalPosition?.x ||
+					physicalRigCenter.y !== pageState.selectedNodePhysicalPosition.y
+				) {
+					appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, physicalRigCenter);
+				}
 			}
+		}
 
-			//all calculations are from the current point to the next point, never backwards.
-			if (element.closed) ctx.beginPath();
-			element.points.slice().forEach((point, index) => {
-				let calculatedPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
-					point.point,
-					elementCalculatedPosition,
-					elementWorldX,
-					elementWorldY
+		rigObject.layering_order.slice().forEach((item) => {
+			if (item.type === RigLayeringOrderNodeType.Group) {
+				let group = rigObject.groups.find((g) => g.id === item.id);
+				if (!group || !pageState) return;
+				if (!group.visible || pageState.hideAllGroups || pageState.hideAllElements) return;
+
+				let groupRotation = group.offsets.rotation + group.transforms.rotation;
+				let groupScale: RigVector2 = {
+					x: group.offsets.scale.x * group.transforms.scale.x,
+					y: group.offsets.scale.y * group.transforms.scale.y
+				};
+				let groupRotationTwo = group.offsets.rotation_two + group.transforms.rotation_two;
+
+				let groupCalculatedPosition = CalculatePhysicalPositionFromRigCenter({
+					x: group.offsets.position.x + group.transforms.position.x,
+					y: group.offsets.position.y + group.transforms.position.y
+				});
+
+				let groupXAxis = { x: 1, y: 0 };
+				let groupYAxis = { x: 0, y: 1 };
+				groupXAxis = RotatePhysicalPoint(groupXAxis, groupRotation);
+				groupYAxis = RotatePhysicalPoint(groupYAxis, groupRotation);
+				groupXAxis = ScalePhysicalPoint(groupXAxis, groupScale);
+				groupYAxis = ScalePhysicalPoint(groupYAxis, groupScale);
+				groupXAxis = RotatePhysicalPoint(groupXAxis, groupRotationTwo);
+				groupYAxis = RotatePhysicalPoint(groupYAxis, groupRotationTwo);
+
+				//calculate the group transform_origin separately
+				let calculatedGroupOrigin = CalculatePhysicalPositionFromRigCenter({
+					x:
+						group.offsets.position.x +
+						group.transforms.position.x +
+						group.offsets.transform_origin.x,
+					y:
+						group.offsets.position.y +
+						group.transforms.position.y +
+						group.offsets.transform_origin.y
+				});
+
+				//final group position calculated
+				groupCalculatedPosition = CalculatePointPositionWithParams(
+					calculatedGroupOrigin,
+					groupCalculatedPosition,
+					groupRotation,
+					groupScale,
+					groupRotationTwo
 				);
-				let nextPointIndex = index >= element.points.length - 1 ? 0 : index + 1;
-				let nextPoint = element.points[nextPointIndex];
-				if (!nextPoint) return;
-				if (nextPointIndex === 0 && !element.closed) return;
-				let id = GetNameIdForElementPoint(element.name, index);
+
+				//apply rig transforms to origin
+				calculatedGroupOrigin.x -= physicalRigCenter.x;
+				calculatedGroupOrigin.y -= physicalRigCenter.y;
+				calculatedGroupOrigin = RotatePhysicalPoint(calculatedGroupOrigin, totalRigRotation);
+				calculatedGroupOrigin = ScalePhysicalPoint(calculatedGroupOrigin, rigScale);
+				calculatedGroupOrigin = RotatePhysicalPoint(calculatedGroupOrigin, totalRigRotationTwo);
+				calculatedGroupOrigin.x += physicalRigCenter.x;
+				calculatedGroupOrigin.y += physicalRigCenter.y;
+				//Apply all of the rig "total" values to the group
+				groupCalculatedPosition.x -= physicalRigCenter.x;
+				groupCalculatedPosition.y -= physicalRigCenter.y;
+				groupCalculatedPosition = RotatePhysicalPoint(groupCalculatedPosition, totalRigRotation); //rotate the groups physical position with the rigs total rotation
+				groupCalculatedPosition = ScalePhysicalPoint(groupCalculatedPosition, {
+					x: rigObject.offsets.scale.x * rigObject.transforms.scale.x,
+					y: rigObject.offsets.scale.y * rigObject.transforms.scale.y
+				});
+				groupCalculatedPosition = RotatePhysicalPoint(groupCalculatedPosition, totalRigRotationTwo);
+				groupCalculatedPosition.x += physicalRigCenter.x;
+				groupCalculatedPosition.y += physicalRigCenter.y;
+				const groupWorldX = {
+					x: rigXAxis.x * groupXAxis.x + rigYAxis.x * groupXAxis.y,
+					y: rigXAxis.y * groupXAxis.x + rigYAxis.y * groupXAxis.y
+				};
+				const groupWorldY = {
+					x: rigXAxis.x * groupYAxis.x + rigYAxis.x * groupYAxis.y,
+					y: rigXAxis.y * groupYAxis.x + rigYAxis.y * groupYAxis.y
+				};
+
 				let pointFrame = pageState?.nodeFrames.find(
-					(n) => n.nodeType === SelectedNodeType.Point && n.nodeId === id
+					(n) => n.nodeType === SelectedNodeType.Group && n.nodeId === group.id
 				);
 				if (
 					!pointFrame ||
-					pointFrame.physicalPosition.x !== calculatedPointPosition.x ||
-					pointFrame.physicalPosition.y !== calculatedPointPosition.y
+					pointFrame.physicalPosition.x !== groupCalculatedPosition.x ||
+					pointFrame.physicalPosition.y !== groupCalculatedPosition.y
 				) {
 					appState.AddOrUpdatePageStateNodeFrame(pageId, {
-						nodeId: id,
-						nodeType: SelectedNodeType.Point,
-						physicalPosition: calculatedPointPosition,
-						physicalTransformOrigin: { x: 0, y: 0 },
-						worldX: elementWorldX,
-						worldY: elementWorldY
+						nodeId: group.id,
+						nodeType: SelectedNodeType.Group,
+						physicalPosition: groupCalculatedPosition,
+						physicalTransformOrigin: physicalRigCenter,
+						worldX: groupWorldX,
+						worldY: groupWorldY
 					});
 				}
-				let calculatedNextPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
-					nextPoint.point,
-					elementCalculatedPosition,
-					elementWorldX,
-					elementWorldY
-				);
-				if (index === 0) ctx.moveTo(calculatedPointPosition.x, calculatedPointPosition.y); //move to first point's position
-				if (
-					!point.controls ||
-					point.controls.length < 1 ||
-					point.interpolation_type === RigPointInterpolationType.Linear
-				) {
-					//linear interpolation to the next point
-					ctx.lineTo(calculatedNextPointPosition.x, calculatedNextPointPosition.y);
-				} else if (
-					point.interpolation_type === RigPointInterpolationType.QuadraticBezierCurve ||
-					(point.interpolation_type === RigPointInterpolationType.CubicBezierCurve &&
-						point.controls.length < 2)
-				) {
-					//quadratic bezier curve interpolation to the next point
-					let steps = point.steps;
-					for (let i = 1; i <= steps; i++) {
-						const timeStep = i / steps;
-						let control = point.controls[0];
-						let controlPoint = {
-							x: point.point.x + control.x,
-							y: point.point.y + control.y
-						};
-						let calculatedPathPointVirtual: RigVector2 = {
-							x:
-								Math.pow(1 - timeStep, 2) * point.point.x +
-								2 * (1 - timeStep) * timeStep * controlPoint.x +
-								Math.pow(timeStep, 2) * nextPoint.point.x,
-							y:
-								Math.pow(1 - timeStep, 2) * point.point.y +
-								2 * (1 - timeStep) * timeStep * controlPoint.y +
-								Math.pow(timeStep, 2) * nextPoint.point.y
-						};
-						let calculatedPathPointPhysical = CalculatePhysicalPositionFromPhysicalPosition(
-							calculatedPathPointVirtual,
-							elementCalculatedPosition,
-							elementWorldX,
-							elementWorldY
-						);
-						ctx.lineTo(calculatedPathPointPhysical.x, calculatedPathPointPhysical.y);
-						let name = GetNameIdForPathPoint(element.name, index, i);
-						let frame = pageState?.nodeFrames.find(
-							(nf) => nf.nodeId === name && nf.nodeType === SelectedNodeType.PathPoint
-						);
-						if (
-							!frame ||
-							frame.physicalPosition.x !== calculatedPathPointPhysical.x ||
-							frame.physicalPosition.y !== calculatedPathPointPhysical.y
-						) {
-							appState.AddOrUpdatePageStateNodeFrame(pageId, {
-								nodeId: name,
-								nodeType: SelectedNodeType.PathPoint,
-								physicalPosition: calculatedPathPointPhysical,
-								physicalTransformOrigin: { x: 0, y: 0 },
-								worldX: elementWorldX,
-								worldY: elementWorldY
-							});
-						}
-					}
-				} else if (
-					point.interpolation_type === RigPointInterpolationType.CubicBezierCurve &&
-					point.controls.length === 2
-				) {
-					//cubic bezier curve interpolation to the next point
-					let steps = point.steps;
-					for (let i = 1; i <= steps; i++) {
-						const timeStep = i / steps;
-						let control = point.controls[0];
-						let controlTwo = point.controls[1];
-						let controlPoint = {
-							x: point.point.x + control.x,
-							y: point.point.y + control.y
-						};
-						let controlPointTwo = {
-							x: point.point.x + controlTwo.x,
-							y: point.point.y + controlTwo.y
-						};
-						let calculatedPathPointVirtual: RigVector2 = {
-							x:
-								Math.pow(1 - timeStep, 3) * point.point.x +
-								3 * Math.pow(1 - timeStep, 2) * timeStep * controlPoint.x +
-								3 * (1 - timeStep) * Math.pow(timeStep, 2) * controlPointTwo.x +
-								Math.pow(timeStep, 3) * nextPoint.point.x,
-							y:
-								Math.pow(1 - timeStep, 3) * point.point.y +
-								3 * Math.pow(1 - timeStep, 2) * timeStep * controlPoint.y +
-								3 * (1 - timeStep) * Math.pow(timeStep, 2) * controlPointTwo.y +
-								Math.pow(timeStep, 3) * nextPoint.point.y
-						};
-						let calculatedPathPointPhysical = CalculatePhysicalPositionFromPhysicalPosition(
-							calculatedPathPointVirtual,
-							elementCalculatedPosition,
-							elementWorldX,
-							elementWorldY
-						);
-						ctx.lineTo(calculatedPathPointPhysical.x, calculatedPathPointPhysical.y);
-						let name = GetNameIdForPathPoint(element.name, index, i);
-						let frame = pageState?.nodeFrames.find(
-							(nf) => nf.nodeId === name && nf.nodeType === SelectedNodeType.PathPoint
-						);
-						if (
-							!frame ||
-							frame.physicalPosition.x !== calculatedPathPointPhysical.x ||
-							frame.physicalPosition.y !== calculatedPathPointPhysical.y
-						) {
-							appState.AddOrUpdatePageStateNodeFrame(pageId, {
-								nodeId: name,
-								nodeType: SelectedNodeType.PathPoint,
-								physicalPosition: calculatedPathPointPhysical,
-								physicalTransformOrigin: { x: 0, y: 0 },
-								worldX: elementWorldX,
-								worldY: elementWorldY
-							});
-						}
-					}
-				}
-			});
-			if (element.closed) {
-				ctx.closePath();
-			}
-			ctx.strokeStyle = element.stroke_color;
-			ctx.lineWidth = element.stroke_width;
-			ctx.fillStyle = element.fill_color;
-			ctx.stroke();
-			if (element.filled && element.closed) ctx.fill();
 
-			let splitSelectedVisualEditorNodeName = pageState?.selectedNode?.name.split('_PIndex_');
-			let isParentElement = element.name === splitSelectedVisualEditorNodeName?.[0];
+				rigObject.elements
+					.filter((e) => e.group_id === group.id)
+					.slice()
+					.forEach((element, elementIndex) => {
+						DrawElement(element, groupCalculatedPosition, groupWorldX, groupWorldY, elementIndex);
+					});
 
-			//debug/visual editor
-			element.points.forEach((point, pointIndex) => {
-				if (
-					element.show_points ||
-					(pageState?.visualEditorEnabled &&
-						isParentElement &&
-						pointIndex === pageState.selectedNode?.index &&
-						pageState.selectedNode.type === SelectedNodeType.Point)
-				) {
-					ctx.beginPath();
-					let calculatedPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
-						point.point,
-						elementCalculatedPosition,
-						elementWorldX,
-						elementWorldY
-					);
-					ctx.arc(
-						calculatedPointPosition.x,
-						calculatedPointPosition.y,
-						element.points_radius * scaleUnit,
-						0,
-						360
-					);
-					ctx.closePath();
-					ctx.fillStyle = element.points_color;
-					ctx.fill();
-
+				if (!pageState.disableAllDebugOptions && group.visible && !pageState.hideAllGroups) {
 					if (
-						pageState?.visualEditorEnabled &&
-						isParentElement &&
-						pointIndex === pageState.selectedNode?.index &&
-						pageState.selectedNode.type === SelectedNodeType.Point
-					) {
-						if (
-							calculatedPointPosition.x !== pageState.selectedNodePhysicalPosition?.x ||
-							calculatedPointPosition.y !== pageState.selectedNodePhysicalPosition.y
-						) {
-							console.log("up 1");
-							appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, calculatedPointPosition);
-						}
-					}
-				}
-
-				let isParentPoint = pointIndex === parseInt(splitSelectedVisualEditorNodeName?.[1] ?? '');
-				point.controls?.forEach((control, controlIndex) => {
-					if (
-						pageState &&
-						((point.show_control_points &&
-							!pageState.disableAllDebugOptions &&
-							!pageState.hideAllElements) ||
-							(pageState.visualEditorEnabled &&
-								isParentElement &&
-								isParentPoint &&
-								controlIndex === pageState.selectedNode?.index &&
-								pageState.selectedNode.type === SelectedNodeType.ControlPoint))
+						group.show_position_point ||
+						(pageState?.visualEditorEnabled &&
+							pageState.selectedNode?.type === SelectedNodeType.Group &&
+							group.id === pageState.selectedNode.name)
 					) {
 						ctx.beginPath();
-						let controlPoint = {
-							x: point.point.x + control.x,
-							y: point.point.y + control.y
-						};
-						let calculatedControlPointPhysical = CalculatePhysicalPositionFromPhysicalPosition(
-							controlPoint,
-							elementCalculatedPosition,
-							elementWorldX,
-							elementWorldY
-						);
-
 						ctx.arc(
-							calculatedControlPointPhysical.x,
-							calculatedControlPointPhysical.y,
-							point.control_point_radius * scaleUnit,
+							groupCalculatedPosition.x,
+							groupCalculatedPosition.y,
+							group.position_point_radius * scaleUnit,
 							0,
 							360
 						);
 						ctx.closePath();
-						ctx.fillStyle = point.control_point_color;
+						ctx.fillStyle = group.position_point_color;
 						ctx.fill();
-
-						if (
-							controlIndex === pageState.selectedNode?.index &&
-							pageState.visualEditorEnabled &&
-							isParentElement &&
-							isParentPoint &&
-							pageState.selectedNode.type === SelectedNodeType.ControlPoint
-						) {
-							if (
-								pageState.selectedNodePhysicalPosition?.x !== calculatedControlPointPhysical.x ||
-								pageState.selectedNodePhysicalPosition.y !== calculatedControlPointPhysical.y
-							) {
-								//if I don't check whether or not it is different, then it just updates forever and causes an update loop
-								appState.UpdatePageStateSelectedNodePhysicalPosition(
-									pageId,
-									calculatedControlPointPhysical
-								);
-							}
-						}
 					}
-				});
-			});
-
-			if (pageState && !pageState.disableAllDebugOptions) {
-				if (
-					element.show_position_point ||
-					(pageState?.visualEditorEnabled &&
-						pageState.selectedNode?.type === SelectedNodeType.Element &&
-						element.name === pageState.selectedNode.name)
-				) {
-					ctx.beginPath();
-					ctx.arc(
-						elementCalculatedPosition.x,
-						elementCalculatedPosition.y,
-						element.position_point_radius * scaleUnit,
-						0,
-						360
-					);
-					ctx.closePath();
-					ctx.fillStyle = element.position_point_color;
-					ctx.fill();
-					if (
-						pageState?.visualEditorEnabled &&
-						pageState.selectedNode?.type === SelectedNodeType.Element &&
-						element.name === pageState.selectedNode.name
-					) {
-						if (
-							elementCalculatedPosition.x !== pageState.selectedNodePhysicalPosition?.x ||
-							elementCalculatedPosition.y !== pageState.selectedNodePhysicalPosition.y
-						) {
-							appState.UpdatePageStateSelectedNodePhysicalPosition(
-								pageId,
-								elementCalculatedPosition
-							);
-						}
+					if (group.show_origin_point) {
+						ctx.beginPath();
+						ctx.arc(
+							calculatedGroupOrigin.x,
+							calculatedGroupOrigin.y,
+							group.origin_point_radius * scaleUnit,
+							0,
+							360
+						);
+						ctx.closePath();
+						ctx.fillStyle = group.origin_point_color;
+						ctx.fill();
 					}
 				}
-				if (element.show_origin_point) {
-					ctx.beginPath();
-					ctx.arc(
-						elementCalculatedOrigin.x,
-						elementCalculatedOrigin.y,
-						element.origin_point_radius * scaleUnit,
-						0,
-						360
-					);
-					ctx.closePath();
-					ctx.fillStyle = element.origin_point_color;
-					ctx.fill();
-				}
-			}
-		}
-		function Draw() {
-			if (!rigObject || !ctx) return;
-			ctx.lineWidth = 1;
-			ctx.clearRect(0, 0, displayWidth, displayHeight);
-			ctx.beginPath();
-			ctx.arc(displayWidth / 2, displayHeight / 2, 100 * scaleUnit, 0, Math.PI * 2);
-			ctx.closePath();
-			ctx.strokeStyle = '#000000';
-			ctx.fillStyle = '#000000';
-			ctx.fill();
-			ctx.stroke();
 
-			let totalRigRotation = rigObject.offsets.rotation + rigObject.transforms.rotation;
-			let rigScale: RigVector2 = {
-				x: rigObject.offsets.scale.x * rigObject.transforms.scale.x,
-				y: rigObject.offsets.scale.y * rigObject.transforms.scale.y
-			};
-			let totalRigRotationTwo = rigObject.offsets.rotation_two + rigObject.transforms.rotation_two;
-			let rigXAxis: RigVector2 = { x: 1, y: 0 };
-			let rigYAxis: RigVector2 = { x: 0, y: 1 };
-			rigXAxis = RotatePhysicalPoint(rigXAxis, totalRigRotation);
-			rigYAxis = RotatePhysicalPoint(rigYAxis, totalRigRotation);
-			rigXAxis = ScalePhysicalPoint(rigXAxis, rigScale);
-			rigYAxis = ScalePhysicalPoint(rigYAxis, rigScale);
-			rigXAxis = RotatePhysicalPoint(rigXAxis, totalRigRotationTwo);
-			rigYAxis = RotatePhysicalPoint(rigYAxis, totalRigRotationTwo);
-
-			if (
-				(!pageState?.disableAllDebugOptions && rigObject.show_position_point) ||
-				(pageState?.visualEditorEnabled && pageState.selectedNode?.type === SelectedNodeType.Root)
-			) {
-				ctx.beginPath();
-				ctx.arc(
-					physicalRigCenter.x,
-					physicalRigCenter.y,
-					rigObject.position_point_radius * scaleUnit,
-					0,
-					360
-				);
-				ctx.closePath();
-				ctx.fillStyle = rigObject.position_point_color;
-				ctx.fill();
 				if (
+					pageState.selectedNodePhysicalPosition &&
 					pageState?.visualEditorEnabled &&
-					pageState.selectedNode?.type === SelectedNodeType.Root
+					pageState.selectedNode?.type === SelectedNodeType.Group &&
+					group.id === pageState.selectedNode.name
 				) {
 					if (
-						physicalRigCenter.x !== pageState.selectedNodePhysicalPosition?.x ||
-						physicalRigCenter.y !== pageState.selectedNodePhysicalPosition.y
+						groupCalculatedPosition.x !== pageState.selectedNodePhysicalPosition.x ||
+						groupCalculatedPosition.y !== pageState.selectedNodePhysicalPosition.y
 					) {
-						appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, physicalRigCenter);
+						appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, groupCalculatedPosition);
 					}
 				}
+			} else if (item.type === RigLayeringOrderNodeType.Element) {
+				let elementIndex = rigObject.elements.findIndex((e) => e.name === item.id);
+				let element = rigObject.elements[elementIndex];
+				if (!element) return;
+				DrawElement(element, physicalRigCenter, rigXAxis, rigYAxis, elementIndex);
+			} else {
+				return;
+			}
+		});
+
+		//grid overlay
+		if (gridOverlay) {
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			//columns
+			let columnCount = displayWidth / (gridColumnsAndRows.x * scaleUnit);
+			for (let i = 0; i < columnCount; i++) {
+				ctx.moveTo(i * (displayWidth / columnCount), 0);
+				ctx.lineTo(i * (displayWidth / columnCount), displayHeight);
+				ctx.moveTo(i * (displayWidth / columnCount), 0);
 			}
 
-			rigObject.layering_order.slice().forEach((item) => {
-				if (item.type === RigLayeringOrderNodeType.Group) {
-					let group = rigObject.groups.find((g) => g.id === item.id);
-					if (!group || !pageState) return;
-					if (!group.visible || pageState.hideAllGroups || pageState.hideAllElements) return;
-
-					let groupRotation = group.offsets.rotation + group.transforms.rotation;
-					let groupScale: RigVector2 = {
-						x: group.offsets.scale.x * group.transforms.scale.x,
-						y: group.offsets.scale.y * group.transforms.scale.y
-					};
-					let groupRotationTwo = group.offsets.rotation_two + group.transforms.rotation_two;
-
-					let groupCalculatedPosition = CalculatePhysicalPositionFromRigCenter({
-						x: group.offsets.position.x + group.transforms.position.x,
-						y: group.offsets.position.y + group.transforms.position.y
-					});
-
-					let groupXAxis = { x: 1, y: 0 };
-					let groupYAxis = { x: 0, y: 1 };
-					groupXAxis = RotatePhysicalPoint(groupXAxis, groupRotation);
-					groupYAxis = RotatePhysicalPoint(groupYAxis, groupRotation);
-					groupXAxis = ScalePhysicalPoint(groupXAxis, groupScale);
-					groupYAxis = ScalePhysicalPoint(groupYAxis, groupScale);
-					groupXAxis = RotatePhysicalPoint(groupXAxis, groupRotationTwo);
-					groupYAxis = RotatePhysicalPoint(groupYAxis, groupRotationTwo);
-
-					//calculate the group transform_origin separately
-					let calculatedGroupOrigin = CalculatePhysicalPositionFromRigCenter({
-						x:
-							group.offsets.position.x +
-							group.transforms.position.x +
-							group.offsets.transform_origin.x,
-						y:
-							group.offsets.position.y +
-							group.transforms.position.y +
-							group.offsets.transform_origin.y
-					});
-
-					//final group position calculated
-					groupCalculatedPosition = CalculatePointPositionWithParams(
-						calculatedGroupOrigin,
-						groupCalculatedPosition,
-						groupRotation,
-						groupScale,
-						groupRotationTwo
-					);
-
-					//apply rig transforms to origin
-					calculatedGroupOrigin.x -= physicalRigCenter.x;
-					calculatedGroupOrigin.y -= physicalRigCenter.y;
-					calculatedGroupOrigin = RotatePhysicalPoint(calculatedGroupOrigin, totalRigRotation);
-					calculatedGroupOrigin = ScalePhysicalPoint(calculatedGroupOrigin, rigScale);
-					calculatedGroupOrigin = RotatePhysicalPoint(calculatedGroupOrigin, totalRigRotationTwo);
-					calculatedGroupOrigin.x += physicalRigCenter.x;
-					calculatedGroupOrigin.y += physicalRigCenter.y;
-					//Apply all of the rig "total" values to the group
-					groupCalculatedPosition.x -= physicalRigCenter.x;
-					groupCalculatedPosition.y -= physicalRigCenter.y;
-					groupCalculatedPosition = RotatePhysicalPoint(groupCalculatedPosition, totalRigRotation); //rotate the groups physical position with the rigs total rotation
-					groupCalculatedPosition = ScalePhysicalPoint(groupCalculatedPosition, {
-						x: rigObject.offsets.scale.x * rigObject.transforms.scale.x,
-						y: rigObject.offsets.scale.y * rigObject.transforms.scale.y
-					});
-					groupCalculatedPosition = RotatePhysicalPoint(
-						groupCalculatedPosition,
-						totalRigRotationTwo
-					);
-					groupCalculatedPosition.x += physicalRigCenter.x;
-					groupCalculatedPosition.y += physicalRigCenter.y;
-					const groupWorldX = {
-						x: rigXAxis.x * groupXAxis.x + rigYAxis.x * groupXAxis.y,
-						y: rigXAxis.y * groupXAxis.x + rigYAxis.y * groupXAxis.y
-					};
-					const groupWorldY = {
-						x: rigXAxis.x * groupYAxis.x + rigYAxis.x * groupYAxis.y,
-						y: rigXAxis.y * groupYAxis.x + rigYAxis.y * groupYAxis.y
-					};
-
-					let pointFrame = pageState?.nodeFrames.find(
-						(n) => n.nodeType === SelectedNodeType.Group && n.nodeId === group.id
-					);
-					if (
-						!pointFrame ||
-						pointFrame.physicalPosition.x !== groupCalculatedPosition.x ||
-						pointFrame.physicalPosition.y !== groupCalculatedPosition.y
-					) {
-						appState.AddOrUpdatePageStateNodeFrame(pageId, {
-							nodeId: group.id,
-							nodeType: SelectedNodeType.Group,
-							physicalPosition: groupCalculatedPosition,
-							physicalTransformOrigin: physicalRigCenter,
-							worldX: groupWorldX,
-							worldY: groupWorldY
-						});
-					}
-
-					rigObject.elements
-						.filter((e) => e.group_id === group.id)
-						.slice()
-						.forEach((element, elementIndex) => {
-							DrawElement(element, groupCalculatedPosition, groupWorldX, groupWorldY, elementIndex);
-						});
-
-					if (!pageState.disableAllDebugOptions && group.visible && !pageState.hideAllGroups) {
-						if (
-							group.show_position_point ||
-							(pageState?.visualEditorEnabled &&
-								pageState.selectedNode?.type === SelectedNodeType.Group &&
-								group.id === pageState.selectedNode.name)
-						) {
-							ctx.beginPath();
-							ctx.arc(
-								groupCalculatedPosition.x,
-								groupCalculatedPosition.y,
-								group.position_point_radius * scaleUnit,
-								0,
-								360
-							);
-							ctx.closePath();
-							ctx.fillStyle = group.position_point_color;
-							ctx.fill();
-						}
-						if (group.show_origin_point) {
-							ctx.beginPath();
-							ctx.arc(
-								calculatedGroupOrigin.x,
-								calculatedGroupOrigin.y,
-								group.origin_point_radius * scaleUnit,
-								0,
-								360
-							);
-							ctx.closePath();
-							ctx.fillStyle = group.origin_point_color;
-							ctx.fill();
-						}
-					}
-
-					if (
-						pageState.selectedNodePhysicalPosition &&
-						pageState?.visualEditorEnabled &&
-						pageState.selectedNode?.type === SelectedNodeType.Group &&
-						group.id === pageState.selectedNode.name
-					) {
-						if (
-							groupCalculatedPosition.x !== pageState.selectedNodePhysicalPosition.x ||
-							groupCalculatedPosition.y !== pageState.selectedNodePhysicalPosition.y
-						) {
-							console.log($state.snapshot(groupCalculatedPosition), $state.snapshot(pageState.selectedNodePhysicalPosition));
-							appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, groupCalculatedPosition);
-						}
-					}
-				} else if (item.type === RigLayeringOrderNodeType.Element) {
-					let elementIndex = rigObject.elements.findIndex((e) => e.name === item.id);
-					let element = rigObject.elements[elementIndex];
-					if (!element) return;
-					DrawElement(element, physicalRigCenter, rigXAxis, rigYAxis, elementIndex);
-				} else {
-					return;
-				}
-			});
-
-			//grid overlay
-			if (gridOverlay) {
-				ctx.lineWidth = 1;
-				ctx.beginPath();
-				//columns
-				let columnCount = displayWidth / (gridColumnsAndRows.x * scaleUnit);
-				for (let i = 0; i < columnCount; i++) {
-					ctx.moveTo(i * (displayWidth / columnCount), 0);
-					ctx.lineTo(i * (displayWidth / columnCount), displayHeight);
-					ctx.moveTo(i * (displayWidth / columnCount), 0);
-				}
-
-				//rows
-				let rowCount = displayHeight / (gridColumnsAndRows.y * scaleUnit);
-				for (let i = 0; i < rowCount; i++) {
-					ctx.moveTo(0, i * (displayHeight / rowCount));
-					ctx.lineTo(displayWidth, i * (displayHeight / rowCount));
-					ctx.moveTo(0, i * (displayHeight / rowCount));
-				}
-				ctx.closePath();
-				ctx.strokeStyle = gridStrokeColor;
-				ctx.stroke();
+			//rows
+			let rowCount = displayHeight / (gridColumnsAndRows.y * scaleUnit);
+			for (let i = 0; i < rowCount; i++) {
+				ctx.moveTo(0, i * (displayHeight / rowCount));
+				ctx.lineTo(displayWidth, i * (displayHeight / rowCount));
+				ctx.moveTo(0, i * (displayHeight / rowCount));
 			}
-
-			//visual editor tools & stuff
-			if (
-				pageState?.visualEditorEnabled &&
-				pageState?.currentVisualEditorMode === VisualEditorModes.VISUAL
-			) {
-				if (
-					pageState.selectedNode?.type === SelectedNodeType.Point ||
-					pageState.selectedNode?.type === SelectedNodeType.ControlPoint ||
-					currentVisualEditorTool === VisualEditorTools.MOVE
-				) {
-					if (!pageState.selectedNodePhysicalPosition) return;
-					DrawMoveTool(pageState.selectedNodePhysicalPosition);
-				}
-
-				if (!pageState.selectedNodePhysicalPosition) return;
-				switch (currentVisualEditorTool) {
-					case VisualEditorTools.ALL:
-						DrawMoveTool(pageState.selectedNodePhysicalPosition, true);
-						DrawRotateTool(pageState.selectedNodePhysicalPosition, false);
-						DrawScaleTool(pageState.selectedNodePhysicalPosition, false);
-						break;
-					case VisualEditorTools.MOVE:
-						DrawMoveTool(pageState.selectedNodePhysicalPosition);
-						break;
-					case VisualEditorTools.ROTATE:
-						DrawRotateTool(pageState.selectedNodePhysicalPosition);
-						break;
-					case VisualEditorTools.SCALE:
-						DrawScaleTool(pageState.selectedNodePhysicalPosition);
-						break;
-					case VisualEditorTools.SELECT:
-						break;
-				}
-			}
-			requestAnimationFrame(Draw);
+			ctx.closePath();
+			ctx.strokeStyle = gridStrokeColor;
+			ctx.stroke();
 		}
+
+		//visual editor tools & stuff
+		if (
+			pageState?.visualEditorEnabled &&
+			pageState?.currentVisualEditorMode === VisualEditorModes.VISUAL
+		) {
+			if (
+				pageState.selectedNode?.type === SelectedNodeType.Point ||
+				pageState.selectedNode?.type === SelectedNodeType.ControlPoint ||
+				currentVisualEditorTool === VisualEditorTools.MOVE
+			) {
+				if (!pageState.selectedNodePhysicalPosition) return;
+				DrawMoveTool(pageState.selectedNodePhysicalPosition);
+			}
+
+			if (!pageState.selectedNodePhysicalPosition) return;
+			switch (currentVisualEditorTool) {
+				case VisualEditorTools.ALL:
+					DrawMoveTool(pageState.selectedNodePhysicalPosition, true);
+					DrawRotateTool(pageState.selectedNodePhysicalPosition, false);
+					DrawScaleTool(pageState.selectedNodePhysicalPosition, false);
+					break;
+				case VisualEditorTools.MOVE:
+					DrawMoveTool(pageState.selectedNodePhysicalPosition);
+					break;
+				case VisualEditorTools.ROTATE:
+					DrawRotateTool(pageState.selectedNodePhysicalPosition);
+					break;
+				case VisualEditorTools.SCALE:
+					DrawScaleTool(pageState.selectedNodePhysicalPosition);
+					break;
+				case VisualEditorTools.SELECT:
+					break;
+			}
+		}
+		requestAnimationFrame(Draw);
+	}
+
+	$effect(() => {
+		if (!canvas || !rigObject) return;
+		const ctx = canvas.getContext('2d');
+		if (!ctx) return;
 
 		//Draw();
 		requestAnimationFrame(Draw);
-
-		/*
-		TODO:
-		-Start working on visual editor
-		-Make it so if you have visual editing turned on and you have a node selected, it displays Movement Arrows, A Rotation Circle, and Scale Arrows
-			-Depending on the editor mode. Make it so users can choose between All, Movement, Rotation, or Scale in order to make it less cluttered if wanted.
-		-Add an option inside the display settings to make it so you can override any debug settings and make all points/controls visible for easier editing.
-		-Possibly make it so that if a user has an element selected, they don't have to individually select the points in the RigTree and can just select them in the display.
-		-Maybe make it so there are two different visual editing modes.
-			-The normal one with all the visual indicators
-			-The minimalist one were you can only drag position points, origin points, element points, and control points around to move them. Maybe you can still select between the editor modes 
-				-Which makes it change what happens when you drag and move a point.
-					-Movement Mode/All: Dragging a point moves it
-					-Scale Mode: You can only mess with position points, dragging left/right changes the scale of the rig/group/element on the X axis, Up/Down modifies the Y axis.
-					-Rotate Mode: Again, only position points. Dragging left rotates the rig/group/element counter clockwise, dragging right does clockwise.
-		*/
 
 		let VisualEditorDragStarted = function (e: MouseEvent) {
 			e.preventDefault();
@@ -1339,6 +1356,15 @@
 				y: 0
 			};
 			if (!pageState) return;
+			let virtualRigCenter: RigVector2 = {
+				x: rigObject.offsets.position.x + rigObject.transforms.position.x,
+				y: rigObject.offsets.position.y + rigObject.transforms.position.y
+			};
+			let physicalRigCenter: RigVector2 = {
+				x: displayOrigin.x + virtualRigCenter.x * scaleUnit,
+				y: displayOrigin.y + virtualRigCenter.y * scaleUnit
+			};
+
 			switch (currentVisualEditorTool) {
 				case VisualEditorTools.MOVE:
 					switch (pageState?.selectedNode?.type) {
