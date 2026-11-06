@@ -1053,7 +1053,6 @@
 		}
 	}
 
-	let canvasDataUrlDebounce = false;
 	let canvasDataUrlDebounceTimer: any;
 	$effect(() => {
 		//save preview render to rigObject on every change
@@ -1124,12 +1123,14 @@
 					? absoluteRotationCircleRadius / 3
 					: absoluteRotationCircleRadius;
 			let rotationCircleMaxDistance =
-				(currentVisualEditorTool === VisualEditorTools.ROTATE ? 7 : 0.5) * scaleUnit;
+				(currentVisualEditorTool === VisualEditorTools.ROTATE ? 3 : 1.5) * scaleUnit;
 			let rotationCircleMinDistance =
-				(currentVisualEditorTool === VisualEditorTools.ROTATE ? 3 : -3) * scaleUnit;
+				(currentVisualEditorTool === VisualEditorTools.ROTATE ? -2 : -2) * scaleUnit;
 			let isCursorInRotationCircle = //pain in my fucking ass trying to hone in the distance values.
 				distanceFromCenter <= rotationCircleRadius + rotationCircleMaxDistance &&
 				distanceFromCenter > rotationCircleRadius + rotationCircleMinDistance;
+			
+			console.log(isCursorInRotationCircle, distanceFromCenter, rotationCircleMaxDistance, rotationCircleMinDistance, rotationCircleRadius);
 
 			let rotationTwoCircleRadius =
 				currentVisualEditorTool === VisualEditorTools.ROTATE
@@ -1137,14 +1138,16 @@
 					: absoluteRotationTwoCircleRadius;
 
 			let rotationTwoCircleMaxDistance =
-				(currentVisualEditorTool === VisualEditorTools.ROTATE ? 11 : 3) * scaleUnit;
+				(currentVisualEditorTool === VisualEditorTools.ROTATE ? 3 : 2) * scaleUnit;
 			let rotationTwoCircleMinDistance =
-				rotationCircleRadius +
-				(currentVisualEditorTool === VisualEditorTools.ROTATE ? 1.5 : -31) * scaleUnit;
+				(currentVisualEditorTool === VisualEditorTools.ROTATE ? -1 : -1) * scaleUnit;
 
 			let isCursorInRotationTwoCircle =
 				distanceFromCenter <= rotationTwoCircleRadius + rotationTwoCircleMaxDistance &&
 				distanceFromCenter > rotationTwoCircleRadius + rotationTwoCircleMinDistance;
+
+			//console.log(isCursorInRotationTwoCircle, distanceFromCenter, rotationTwoCircleMaxDistance, rotationTwoCircleMinDistance, rotationTwoCircleRadius);
+
 
 			let scaleArrowDistance =
 				pageState.currentVisualEditorTool === VisualEditorTools.SCALE
