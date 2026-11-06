@@ -369,11 +369,13 @@
 		element: RigElement,
 		parentPosition: RigVector2,
 		xAxis: RigVector2,
-		yAxis: RigVector2,
-		elementIndex: number
+		yAxis: RigVector2
 	) {
 		const ctx = canvas.getContext('2d');
 		if (!rigObject || !ctx || !element.visible) return;
+		ctx.fillStyle = element.fill_color;
+		ctx.strokeStyle = element.stroke_color;
+		ctx.lineWidth = element.stroke_width;
 		let displayShortestSide = Math.min(displayWidth, displayHeight);
 		const scaleUnit = displayShortestSide / 200; //fixed "grid" of 200x200 "pixels" -100 <-> +100
 
@@ -451,7 +453,7 @@
 		}
 
 		//all calculations are from the current point to the next point, never backwards.
-		if (element.closed) ctx.beginPath();
+		ctx.beginPath();
 		element.points.slice().forEach((point, index) => {
 			let calculatedPointPosition = CalculatePhysicalPositionFromPhysicalPosition(
 				point.point,
@@ -603,13 +605,8 @@
 				}
 			}
 		});
-		if (element.closed) {
-			ctx.closePath();
-		}
-		ctx.strokeStyle = element.stroke_color;
-		ctx.lineWidth = element.stroke_width;
-		ctx.fillStyle = element.fill_color;
-		ctx.stroke();
+		if (element.closed) ctx.closePath();
+		if (element.stroke_width > 0) ctx.stroke();
 		if (element.filled && element.closed) ctx.fill();
 
 		let splitSelectedVisualEditorNodeName = pageState?.selectedNode?.name.split('_PIndex_');
@@ -933,7 +930,7 @@
 					.filter((e) => e.group_id === group.id)
 					.slice()
 					.forEach((element, elementIndex) => {
-						DrawElement(element, groupCalculatedPosition, groupWorldX, groupWorldY, elementIndex);
+						DrawElement(element, groupCalculatedPosition, groupWorldX, groupWorldY);
 					});
 
 				if (!pageState.disableAllDebugOptions && group.visible && !pageState.hideAllGroups) {
@@ -987,7 +984,7 @@
 				let elementIndex = rigObject.elements.findIndex((e) => e.name === item.id);
 				let element = rigObject.elements[elementIndex];
 				if (!element) return;
-				DrawElement(element, physicalRigCenter, rigXAxis, rigYAxis, elementIndex);
+				DrawElement(element, physicalRigCenter, rigXAxis, rigYAxis);
 			} else {
 				return;
 			}
@@ -1130,7 +1127,7 @@
 				distanceFromCenter <= rotationCircleRadius + rotationCircleMaxDistance &&
 				distanceFromCenter > rotationCircleRadius + rotationCircleMinDistance;
 			
-			console.log(isCursorInRotationCircle, distanceFromCenter, rotationCircleMaxDistance, rotationCircleMinDistance, rotationCircleRadius);
+			//console.log(isCursorInRotationCircle, distanceFromCenter, rotationCircleMaxDistance, rotationCircleMinDistance, rotationCircleRadius);
 
 			let rotationTwoCircleRadius =
 				currentVisualEditorTool === VisualEditorTools.ROTATE
