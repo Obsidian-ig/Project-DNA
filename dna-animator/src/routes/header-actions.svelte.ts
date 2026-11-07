@@ -24,7 +24,9 @@ export function registerHeaderActions(actions: HeaderActionsPanels) {
 //EDIT FUNCTIONS
 export function Undo() {console.log("Undo!");}
 export function Redo() {console.log("Redo!");}
-export function Cut() {console.log("Cut!");}
+export function Cut() {
+    document.execCommand("cut");//i aint implementing this shit myself gng idc if its deprecated
+}
 export function Copy() {console.log("Copy!");}
 export function Paste() {console.log("Paste!");}
 export function Find() {console.log("Find!");}

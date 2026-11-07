@@ -1190,14 +1190,14 @@
 							let exists = expandedNodes?.find(
 								(n) =>
 									n.type === DNARig.SelectedNodeType.Point &&
-									n.name === element.name &&
+									n.name === DNARig.GetNameIdForElementPoint(element.name, pointIndex) &&
 									n.index === pointIndex
 							);
 							if (exists) {
 								expandedNodes?.slice().forEach((n, index) => {
 									if (
 										n.type === DNARig.SelectedNodeType.Point &&
-										n.name === element.name &&
+										n.name === DNARig.GetNameIdForElementPoint(element.name, pointIndex) &&
 										n.index === pointIndex
 									) {
 										expandedNodes?.splice(index, 1);
@@ -1205,7 +1205,7 @@
 								});
 							} else {
 								expandedNodes?.push({
-									name: element.name,
+									name: DNARig.GetNameIdForElementPoint(element.name, pointIndex),
 									type: DNARig.SelectedNodeType.Point,
 									index: pointIndex
 								});
@@ -1216,7 +1216,7 @@
 							class="expand-arrow-icon {expandedNodes?.find(
 								(n) =>
 									n.type === DNARig.SelectedNodeType.Point &&
-									n.name === element.name &&
+									n.name === DNARig.GetNameIdForElementPoint(element.name, pointIndex) &&
 									n.index === pointIndex
 							)
 								? 'expanded'
@@ -1239,7 +1239,7 @@
 					}}>Point: {pointIndex}</button
 				>
 			</div>
-			{#if expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Point && n.name === element.name && n.index === pointIndex) && point.controls && point.controls.length > 0}
+			{#if expandedNodes?.find((n) => n.type === DNARig.SelectedNodeType.Point && n.name === DNARig.GetNameIdForElementPoint(element.name, pointIndex) && n.index === pointIndex) && point.controls && point.controls.length > 0}
 				{#each point.controls as control, controlIndex}
 					<div
 						class="rig-node
