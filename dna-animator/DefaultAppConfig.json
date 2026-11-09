@@ -1,0 +1,129 @@
+{
+  "theme": 0,
+  "keybindings": [
+    {
+      "page_id": "rig_playground",
+      "keybinds": [
+        {
+          "keybind_id": "save_rig",
+          "keycode": "KeyS",
+          "shift": false,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "create_new_node",
+          "keycode": "KeyN",
+          "shift": false,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "undo",
+          "keycode": "KeyZ",
+          "shift": false,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "redo",
+          "keycode": "KeyY",
+          "shift": false,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "find_node",
+          "keycode": "KeyF",
+          "shift": false,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "expand_collapse_rig_tree",
+          "keycode": "KeyE",
+          "shift": false,
+          "ctrl": false,
+          "alt": true
+        },
+        {
+          "keybind_id": "save_rig_as",
+          "keycode": "KeyS",
+          "shift": true,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "import_rig",
+          "keycode": "KeyM",
+          "shift": true,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "close_rig",
+          "keycode": "KeyC",
+          "shift": true,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "new_rig",
+          "keycode": "KeyN",
+          "shift": true,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "create_rig_restore_point",
+          "keycode": "KeyR",
+          "shift": true,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "load_rig_restore_point",
+          "keycode": "KeyL",
+          "shift": true,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "open_rig_in_file_explorer",
+          "keycode": "KeyO",
+          "shift": true,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "export_rig_preview_as_png",
+          "keycode": "KeyE",
+          "shift": true,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "toggle_rig_tree",
+          "keycode": "KeyT",
+          "shift": true,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "toggle_properties_explorer",
+          "keycode": "KeyP",
+          "shift": true,
+          "ctrl": true,
+          "alt": false
+        },
+        {
+          "keybind_id": "toggle_visual_editing_mode",
+          "keycode": "KeyV",
+          "shift": true,
+          "ctrl": true,
+          "alt": false
+        }
+      ]
+    }
+  ]
+}

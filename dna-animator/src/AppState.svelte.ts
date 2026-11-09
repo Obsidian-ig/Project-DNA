@@ -11,6 +11,18 @@ export enum Theme {
 
 export interface AppConfig {
     theme: Theme;
+    keybindings: Keybind[];
+}
+export interface Keybind {
+    keybind_id: string;
+    keycode: string;
+    shift: boolean;
+    ctrl: boolean;
+    alt: boolean;
+}
+export interface PageKeybindings {
+    page_id: string;
+    keybinds: Keybind[];
 }
 
 export enum HeaderType {
@@ -133,10 +145,158 @@ export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): Page
     };
 };
 
+export const CreateDefaultAppConfig = (overrides: Partial<AppConfig> = {}): AppConfig => {
+    return {
+        theme: Theme.Device,
+        keybindings: [
+            {
+                "keybind_id": "undo",
+                "keycode": "KeyZ",
+                "shift": false,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "redo",
+                "keycode": "KeyY",
+                "shift": false,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "copy",
+                "keycode": "KeyC",
+                "shift": false,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "paste",
+                "keycode": "KeyV",
+                "shift": false,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "cut",
+                "keycode": "KeyX",
+                "shift": false,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "save_rig",
+                "keycode": "KeyS",
+                "shift": false,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "create_new_node",
+                "keycode": "KeyN",
+                "shift": false,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "find_node",
+                "keycode": "KeyF",
+                "shift": false,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "expand_collapse_rig_tree",
+                "keycode": "KeyE",
+                "shift": false,
+                "ctrl": false,
+                "alt": true
+            },
+            {
+                "keybind_id": "save_rig_as",
+                "keycode": "KeyS",
+                "shift": true,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "import_rig",
+                "keycode": "KeyM",
+                "shift": true,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "close_rig",
+                "keycode": "KeyC",
+                "shift": true,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "new_rig",
+                "keycode": "KeyN",
+                "shift": true,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "create_rig_restore_point",
+                "keycode": "KeyR",
+                "shift": true,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "load_rig_restore_point",
+                "keycode": "KeyL",
+                "shift": true,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "open_rig_in_file_explorer",
+                "keycode": "KeyO",
+                "shift": true,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "export_rig_preview_as_png",
+                "keycode": "KeyE",
+                "shift": true,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "toggle_rig_tree",
+                "keycode": "KeyT",
+                "shift": true,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "toggle_properties_explorer",
+                "keycode": "KeyP",
+                "shift": true,
+                "ctrl": true,
+                "alt": false
+            },
+            {
+                "keybind_id": "toggle_visual_editing_mode",
+                "keycode": "KeyV",
+                "shift": true,
+                "ctrl": true,
+                "alt": false
+            }
+        ],
+        ...overrides
+    };
+};
+
 
 class AppState {
-    constAppConfig = { theme: Theme.Device };
-    config = $state(this.constAppConfig); //whatever should/needs to be persistant between sessions.
+    config = $state(CreateDefaultAppConfig()); //whatever should/needs to be persistant between sessions.
     loading = $state(true);
     loadingErrorMessage: string | null = $state(null);
     pageStates: PageState[] = $state([
@@ -147,7 +307,7 @@ class AppState {
 
 
     ImportConfig(config: AppConfig) {
-        this.config = config;
+        this.config = CreateDefaultAppConfig(config);
     }
 
     ImportPageStates(states: PageState[]) {

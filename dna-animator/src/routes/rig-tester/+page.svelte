@@ -357,117 +357,38 @@ Ideas/Plans:
 
 	//Make keybinds bindable at some point. Probably after the visual editor is finished.
 	function HandleKeyPress(e: KeyboardEvent) {
+		let keybind = appState.config.keybindings.find(k => k.keycode === e.code && k.shift === e.shiftKey && k.ctrl === e.ctrlKey && k.alt === e.altKey);
+		if (!keybind) return;
 		e.preventDefault();
-		if (e.ctrlKey) {
-			if (!e.shiftKey) {
-				if (!e.altKey) {
-					switch (e.code) {
-						case 'KeyS':
-							saveRig();
-							break;
-						case 'KeyN':
-							//create da new thing based on the selectedNode
-							break;
-						case 'KeyZ':
-							//undo last change
-							break;
-						case 'KeyY':
-							//redo last change
-							break;
-						case 'KeyF':
-							//open find node prompt
-							break;
-					}
-				}
-			} else {
-				if (!e.altKey) {
-					switch (e.code) {
-						case 'KeyS':
-							saveRigAs();
-							break;
-						case 'KeyM':
-							importRig();
-							break;
-						case 'KeyC':
-							closeRig();
-							break;
-						case 'KeyN':
-							newRig();
-							break;
-						case 'KeyR':
-							createRigRestorePoint();
-							break;
-						case 'KeyL':
-							loadRigRestorePoint();
-							break;
-						case 'KeyO':
-							openRigInFileExplorer();
-							break;
-						case 'KeyE':
-							exportRigPreviewAsPng();
-							break;
-						case 'KeyT':
-							//toggle rig tree on/off
-							break;
-						case 'KeyP':
-							//toggle props explorer on/off
-							break;
-						case 'KeyV':
-							//toggle visual editing mode on/off
-							break;
-					}
-				}
-			}
-		} else if (e.altKey) {
-			switch (e.code) {
-				case 'KeyE':
-					//expand/collapse everything in the rig tree
-					if (pageState?.expandedNodes?.length && pageState.expandedNodes.length > 0) {
-						//collapse everything
-						appState.UpdatePageStateExpandedNodes(pageId, []);
-					} else {
-						//expand everything
-						if (!rigObject) return;
-						let newExpandedNodes: SelectedNode[] = [
-							{
-								name: rigObject.name,
-								type: SelectedNodeType.Root,
-								index: 0
-							}
-						];
-						rigObject.groups.forEach((g, gIndex) => {
-							let groupHasElements =
-								rigObject.elements.filter((e) => e.group_id === g.id).length > 0;
-							if (groupHasElements) {
-								newExpandedNodes.push({
-									name: g.id,
-									type: SelectedNodeType.Group,
-									index: gIndex
-								});
-							}
-						});
-						rigObject.elements.forEach((e, eIndex) => {
-							if (e.points.length) {
-								newExpandedNodes.push({
-									name: e.name,
-									type: SelectedNodeType.Element,
-									index: eIndex
-								});
-								e.points.forEach((p, pIndex) => {
-									if (p.controls?.length && p.controls.length > 0) {
-										newExpandedNodes.push({
-											name: GetNameIdForElementPoint(e.name, pIndex),
-											type: SelectedNodeType.Point,
-											index: pIndex
-										});
-									}
-								});
-							}
-						});
-						appState.UpdatePageStateExpandedNodes(pageId, newExpandedNodes);
-					}
-					break;
-			}
+
+		switch (keybind.keybind_id) {
+			case "close_rig":
+				closeRig();
+				break;
+			case "import_rig":
+				importRig();
+				break;
+			case "new_rig":
+				newRig();
+				break;
+			case "save_rig":
+				saveRig();
+				break;
+			case "save_rig_as":
+				saveRigAs();
+				break;
+			case "open_rig_in_file_explorer":
+				openRigInFileExplorer();
+				break;
+			case "create_rig_restore_point":
+				createRigRestorePoint();
+				break;
+			case "load_rig_restore_point":
+				loadRigRestorePoint();
+				break;
+			case "export_rig_preview_as_png":
+				exportRigPreviewAsPng();
+				break;
 		}
 	}
 
