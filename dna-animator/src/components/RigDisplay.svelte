@@ -63,6 +63,11 @@
 	let absoluteScaleArrowDistance = $derived(40 * scaleUnit);
 	let absoluteScaleArrowSideLength = $derived(4 * scaleUnit);
 
+
+	let showSelectToolContextMenu = $state(false);
+	let lastCursorPositionAfterRightClick: RigVector2 = $state({x: 0, y:0});
+
+
 	let camera = $state({
 		x: 0,
 		y: 0,
@@ -973,9 +978,9 @@
 					group.id === pageState.selectedNode.name
 				) {
 					if (
-						!pageState.selectedNodePhysicalPosition || 
-						(groupCalculatedPosition.x !== pageState.selectedNodePhysicalPosition.x ||
-						groupCalculatedPosition.y !== pageState.selectedNodePhysicalPosition.y)
+						!pageState.selectedNodePhysicalPosition ||
+						groupCalculatedPosition.x !== pageState.selectedNodePhysicalPosition.x ||
+						groupCalculatedPosition.y !== pageState.selectedNodePhysicalPosition.y
 					) {
 						appState.UpdatePageStateSelectedNodePhysicalPosition(pageId, groupCalculatedPosition);
 					}
@@ -1058,9 +1063,8 @@
 			if (canvasDataUrlDebounceTimer) clearTimeout(canvasDataUrlDebounceTimer);
 			canvasDataUrlDebounceTimer = setTimeout(() => {
 				rigObject.previewRender = canvas.toDataURL();
-				console.log("Saved rig preview");
+				console.log('Saved rig preview');
 			}, 1000);
-			
 		}
 	});
 
@@ -1071,286 +1075,290 @@
 
 		let VisualEditorDragStarted = function (e: MouseEvent) {
 			e.preventDefault();
-			if (isDragging || !pageState) return;
-			let canvasBoundingRect = canvas.getBoundingClientRect();
-			let cursorPhysicalPosition: RigVector2 = {
-				x: e.clientX - canvasBoundingRect.left,
-				y: e.clientY - canvasBoundingRect.top
-			};
-			cursorStartPosition = cursorPhysicalPosition;
-
-			if (!pageState.selectedNodePhysicalPosition)
-				pageState.selectedNodePhysicalPosition = { x: 0, y: 0 };
-
-			let isCursorInFreeMoveSquare =
-				cursorPhysicalPosition.x >= pageState.selectedNodePhysicalPosition.x - absoluteBoxStep && //cursor.x >= box_left
-				cursorPhysicalPosition.x <= pageState.selectedNodePhysicalPosition.x + absoluteBoxStep && //cursor.x <= box_right
-				cursorPhysicalPosition.y >= pageState.selectedNodePhysicalPosition.y - absoluteBoxStep && //cursor.y >= box_top
-				cursorPhysicalPosition.y <= pageState.selectedNodePhysicalPosition.y + absoluteBoxStep; //cursor.y <= box_bottom
-
-			let isCursorInXAxisArrow =
-				cursorPhysicalPosition.x > pageState.selectedNodePhysicalPosition.x + absoluteBoxStep && //on right side of free move box (> to prevent overlapping)
-				cursorPhysicalPosition.x <=
-					pageState.selectedNodePhysicalPosition.x +
-						absoluteBoxStep +
-						absoluteLineLength +
-						absoluteArrowSideLength && //left of the very tip of the arrow
-				cursorPhysicalPosition.y >= pageState.selectedNodePhysicalPosition.y - absoluteBoxStep && // below the top of the free move box
-				cursorPhysicalPosition.y <= pageState.selectedNodePhysicalPosition.y + absoluteBoxStep; // above the bottom of the free move box
-
-			let isCursorInYAxisArrow =
-				cursorPhysicalPosition.x >= pageState.selectedNodePhysicalPosition.x - absoluteBoxStep && //cursor.x > left of free move box
-				cursorPhysicalPosition.x <= pageState.selectedNodePhysicalPosition.x + absoluteBoxStep && // cursor.x < right of free move box
-				cursorPhysicalPosition.y < pageState.selectedNodePhysicalPosition.y - absoluteBoxStep && // cursor.y above top of free move box
-				cursorPhysicalPosition.y >=
-					pageState.selectedNodePhysicalPosition.y -
-						absoluteBoxStep -
-						absoluteLineLength -
-						absoluteArrowSideLength; // cursor.y below tip of y axis arrow
-
-			function getDistanceBetweenTwoPoints(point: RigVector2, point_two: RigVector2): number {
-				return Math.sqrt(Math.pow(point_two.x - point.x, 2) + Math.pow(point_two.y - point.y, 2));
-			}
-			let distanceFromCenter = getDistanceBetweenTwoPoints(
-				cursorPhysicalPosition,
-				pageState.selectedNodePhysicalPosition
-			);
-			let rotationCircleRadius =
-				currentVisualEditorTool === VisualEditorTools.ROTATE
-					? absoluteRotationCircleRadius / 3
-					: absoluteRotationCircleRadius;
-			let rotationCircleMaxDistance =
-				(currentVisualEditorTool === VisualEditorTools.ROTATE ? 3 : 1.5) * scaleUnit;
-			let rotationCircleMinDistance =
-				(currentVisualEditorTool === VisualEditorTools.ROTATE ? -2 : -2) * scaleUnit;
-			let isCursorInRotationCircle = //pain in my fucking ass trying to hone in the distance values.
-				distanceFromCenter <= rotationCircleRadius + rotationCircleMaxDistance &&
-				distanceFromCenter > rotationCircleRadius + rotationCircleMinDistance;
-			
-			//console.log(isCursorInRotationCircle, distanceFromCenter, rotationCircleMaxDistance, rotationCircleMinDistance, rotationCircleRadius);
-
-			let rotationTwoCircleRadius =
-				currentVisualEditorTool === VisualEditorTools.ROTATE
-					? absoluteRotationTwoCircleRadius / 2
-					: absoluteRotationTwoCircleRadius;
-
-			let rotationTwoCircleMaxDistance =
-				(currentVisualEditorTool === VisualEditorTools.ROTATE ? 3 : 2) * scaleUnit;
-			let rotationTwoCircleMinDistance =
-				(currentVisualEditorTool === VisualEditorTools.ROTATE ? -1 : -1) * scaleUnit;
-
-			let isCursorInRotationTwoCircle =
-				distanceFromCenter <= rotationTwoCircleRadius + rotationTwoCircleMaxDistance &&
-				distanceFromCenter > rotationTwoCircleRadius + rotationTwoCircleMinDistance;
-
-			//console.log(isCursorInRotationTwoCircle, distanceFromCenter, rotationTwoCircleMaxDistance, rotationTwoCircleMinDistance, rotationTwoCircleRadius);
-
-
-			let scaleArrowDistance =
-				pageState.currentVisualEditorTool === VisualEditorTools.SCALE
-					? absoluteScaleArrowDistance / 3
-					: absoluteScaleArrowDistance;
-			let isCursorInScaleYAxisArrow =
-				cursorPhysicalPosition.x >=
-					pageState.selectedNodePhysicalPosition.x - absoluteScaleArrowSideLength &&
-				cursorPhysicalPosition.x <=
-					pageState.selectedNodePhysicalPosition.x + absoluteScaleArrowSideLength &&
-				cursorPhysicalPosition.y >=
-					pageState.selectedNodePhysicalPosition.y -
-						scaleArrowDistance -
-						absoluteScaleArrowSideLength &&
-				cursorPhysicalPosition.y <=
-					pageState.selectedNodePhysicalPosition.y -
-						scaleArrowDistance +
-						absoluteScaleArrowSideLength;
-
-			let isCursorInScaleXAxisArrow =
-				cursorPhysicalPosition.x <=
-					pageState.selectedNodePhysicalPosition.x +
-						scaleArrowDistance +
-						absoluteScaleArrowSideLength &&
-				cursorPhysicalPosition.x >=
-					pageState.selectedNodePhysicalPosition.x +
-						scaleArrowDistance -
-						absoluteScaleArrowSideLength &&
-				cursorPhysicalPosition.y <=
-					pageState.selectedNodePhysicalPosition.y + absoluteScaleArrowSideLength &&
-				cursorPhysicalPosition.y >=
-					pageState.selectedNodePhysicalPosition.y - absoluteScaleArrowSideLength;
-
-			function setGrabOffset() {
-				grabOffset = {
-					x: (pageState?.selectedNodePhysicalPosition?.x ?? 0) - cursorPhysicalPosition.x,
-					y: (pageState?.selectedNodePhysicalPosition?.y ?? 0) - cursorPhysicalPosition.y
+			if (e.button === 0) {
+				if (isDragging || !pageState) return;
+				let canvasBoundingRect = canvas.getBoundingClientRect();
+				let cursorPhysicalPosition: RigVector2 = {
+					x: e.clientX - canvasBoundingRect.left,
+					y: e.clientY - canvasBoundingRect.top
 				};
-			}
+				cursorStartPosition = cursorPhysicalPosition;
 
-			/*MOVE TOOL STUFF/ALL TOOL*/
-			if (
-				(isCursorInFreeMoveSquare && currentVisualEditorTool === VisualEditorTools.MOVE) ||
-				currentVisualEditorTool === VisualEditorTools.ALL
-			) {
-				//console.log('Drag Started');
-				setGrabOffset();
-				isDragging = true;
-				isRotating = false;
-				lockHorizontal = false;
-				lockVertical = false;
-			}
+				if (!pageState.selectedNodePhysicalPosition)
+					pageState.selectedNodePhysicalPosition = { x: 0, y: 0 };
 
-			if (
-				(isCursorInXAxisArrow && currentVisualEditorTool === VisualEditorTools.MOVE) ||
-				currentVisualEditorTool === VisualEditorTools.ALL
-			) {
-				setGrabOffset();
-				isDragging = true;
-				isRotating = false;
-				lockHorizontal = true;
-				lockVertical = false;
-			}
+				let isCursorInFreeMoveSquare =
+					cursorPhysicalPosition.x >= pageState.selectedNodePhysicalPosition.x - absoluteBoxStep && //cursor.x >= box_left
+					cursorPhysicalPosition.x <= pageState.selectedNodePhysicalPosition.x + absoluteBoxStep && //cursor.x <= box_right
+					cursorPhysicalPosition.y >= pageState.selectedNodePhysicalPosition.y - absoluteBoxStep && //cursor.y >= box_top
+					cursorPhysicalPosition.y <= pageState.selectedNodePhysicalPosition.y + absoluteBoxStep; //cursor.y <= box_bottom
 
-			if (
-				(isCursorInYAxisArrow && currentVisualEditorTool === VisualEditorTools.MOVE) ||
-				currentVisualEditorTool === VisualEditorTools.ALL
-			) {
-				setGrabOffset();
-				isDragging = true;
-				isRotating = false;
-				lockHorizontal = false;
-				lockVertical = true;
-			}
+				let isCursorInXAxisArrow =
+					cursorPhysicalPosition.x > pageState.selectedNodePhysicalPosition.x + absoluteBoxStep && //on right side of free move box (> to prevent overlapping)
+					cursorPhysicalPosition.x <=
+						pageState.selectedNodePhysicalPosition.x +
+							absoluteBoxStep +
+							absoluteLineLength +
+							absoluteArrowSideLength && //left of the very tip of the arrow
+					cursorPhysicalPosition.y >= pageState.selectedNodePhysicalPosition.y - absoluteBoxStep && // below the top of the free move box
+					cursorPhysicalPosition.y <= pageState.selectedNodePhysicalPosition.y + absoluteBoxStep; // above the bottom of the free move box
 
-			if (
-				((isCursorInRotationCircle || isCursorInRotationTwoCircle) &&
-					currentVisualEditorTool === VisualEditorTools.ROTATE) ||
-				currentVisualEditorTool === VisualEditorTools.ALL
-			) {
-				setGrabOffset();
-				isDragging = true;
-				isRotating = true;
-				lockHorizontal = false;
-				lockVertical = false;
-				rotationCircle = isCursorInRotationCircle ? 'One' : 'Two';
-			}
+				let isCursorInYAxisArrow =
+					cursorPhysicalPosition.x >= pageState.selectedNodePhysicalPosition.x - absoluteBoxStep && //cursor.x > left of free move box
+					cursorPhysicalPosition.x <= pageState.selectedNodePhysicalPosition.x + absoluteBoxStep && // cursor.x < right of free move box
+					cursorPhysicalPosition.y < pageState.selectedNodePhysicalPosition.y - absoluteBoxStep && // cursor.y above top of free move box
+					cursorPhysicalPosition.y >=
+						pageState.selectedNodePhysicalPosition.y -
+							absoluteBoxStep -
+							absoluteLineLength -
+							absoluteArrowSideLength; // cursor.y below tip of y axis arrow
 
-			if (
-				((isCursorInScaleYAxisArrow || isCursorInScaleXAxisArrow) &&
-					currentVisualEditorTool === VisualEditorTools.SCALE) ||
-				currentVisualEditorTool === VisualEditorTools.ALL
-			) {
-				setGrabOffset();
-				isDragging = true;
-				isRotating = false;
-				isScaling = true;
-				lockHorizontal = false;
-				lockVertical = false;
-				scalingAxis = isCursorInScaleYAxisArrow ? 'Y' : 'X';
-			}
+				function getDistanceBetweenTwoPoints(point: RigVector2, point_two: RigVector2): number {
+					return Math.sqrt(Math.pow(point_two.x - point.x, 2) + Math.pow(point_two.y - point.y, 2));
+				}
+				let distanceFromCenter = getDistanceBetweenTwoPoints(
+					cursorPhysicalPosition,
+					pageState.selectedNodePhysicalPosition
+				);
+				let rotationCircleRadius =
+					currentVisualEditorTool === VisualEditorTools.ROTATE
+						? absoluteRotationCircleRadius / 3
+						: absoluteRotationCircleRadius;
+				let rotationCircleMaxDistance =
+					(currentVisualEditorTool === VisualEditorTools.ROTATE ? 3 : 1.5) * scaleUnit;
+				let rotationCircleMinDistance =
+					(currentVisualEditorTool === VisualEditorTools.ROTATE ? -2 : -2) * scaleUnit;
+				let isCursorInRotationCircle = //pain in my fucking ass trying to hone in the distance values.
+					distanceFromCenter <= rotationCircleRadius + rotationCircleMaxDistance &&
+					distanceFromCenter > rotationCircleRadius + rotationCircleMinDistance;
 
-			/*ROTATE TOOL STUFF/ALL TOOL*/
+				//console.log(isCursorInRotationCircle, distanceFromCenter, rotationCircleMaxDistance, rotationCircleMinDistance, rotationCircleRadius);
 
-			if (pageState.currentVisualEditorTool === VisualEditorTools.SELECT) {
-				rigObject.layering_order.forEach((lo, loIndex) => {
-					if (lo.type === RigLayeringOrderNodeType.Element) {
-						let elementPointsNodeFrames = pageState.nodeFrames.filter(
-							(nf) =>
-								nf.nodeId.includes(lo.id + '_PIndex_') &&
-								nf.nodeType !== SelectedNodeType.ControlPoint &&
-								nf.nodeType !== SelectedNodeType.Element
-						);
-						if (
-							IsPhysicalPointWithinElement(
-								cursorPhysicalPosition,
-								elementPointsNodeFrames.map((pnf) => {
-									return pnf.physicalPosition;
-								})
-							)
-						) {
-							//console.log("inside of element '" + lo.id + "'!");
-							appState.UpdatePageStateSelectedNode(pageId, {
-								name: lo.id,
-								index: rigObject.elements.findIndex((e) => e.name === lo.id) ?? 0,
-								type: SelectedNodeType.Element
-							});
-						} else {
-							//console.log("not inside of element '" + lo.id + "'!");
-						}
-					} else {
-						if (
-							pageState.currentVisualEditorSelectToolMode ===
-							VisualEditorSelectToolModes.PRIORITIZE_GROUPS
-						) {
-							let lowestPoint = -Infinity;
-							let highestPoint = Infinity;
-							let mostLeftPoint = Infinity;
-							let mostRightPoint = -Infinity;
-							rigObject.elements
-								.filter((e) => e.group_id === lo.id)
-								.forEach((e, eIndex) => {
-									let elementNodeFrames = pageState.nodeFrames.filter(
-										(nf) =>
-											nf.nodeId.includes(e.name + '_PIndex_') &&
-											nf.nodeType !== SelectedNodeType.ControlPoint &&
-											nf.nodeType !== SelectedNodeType.Element
-									);
-									elementNodeFrames.forEach((nf) => {
-										//console.log($state.snapshot(nf));
-										if (nf.physicalPosition.x < mostLeftPoint)
-											mostLeftPoint = nf.physicalPosition.x;
-										if (nf.physicalPosition.x > mostRightPoint)
-											mostRightPoint = nf.physicalPosition.x;
-										if (nf.physicalPosition.y < highestPoint) highestPoint = nf.physicalPosition.y;
-										if (nf.physicalPosition.y > lowestPoint) lowestPoint = nf.physicalPosition.y;
-									});
-								});
+				let rotationTwoCircleRadius =
+					currentVisualEditorTool === VisualEditorTools.ROTATE
+						? absoluteRotationTwoCircleRadius / 2
+						: absoluteRotationTwoCircleRadius;
+
+				let rotationTwoCircleMaxDistance =
+					(currentVisualEditorTool === VisualEditorTools.ROTATE ? 3 : 2) * scaleUnit;
+				let rotationTwoCircleMinDistance =
+					(currentVisualEditorTool === VisualEditorTools.ROTATE ? -1 : -1) * scaleUnit;
+
+				let isCursorInRotationTwoCircle =
+					distanceFromCenter <= rotationTwoCircleRadius + rotationTwoCircleMaxDistance &&
+					distanceFromCenter > rotationTwoCircleRadius + rotationTwoCircleMinDistance;
+
+				//console.log(isCursorInRotationTwoCircle, distanceFromCenter, rotationTwoCircleMaxDistance, rotationTwoCircleMinDistance, rotationTwoCircleRadius);
+
+				let scaleArrowDistance =
+					pageState.currentVisualEditorTool === VisualEditorTools.SCALE
+						? absoluteScaleArrowDistance / 3
+						: absoluteScaleArrowDistance;
+				let isCursorInScaleYAxisArrow =
+					cursorPhysicalPosition.x >=
+						pageState.selectedNodePhysicalPosition.x - absoluteScaleArrowSideLength &&
+					cursorPhysicalPosition.x <=
+						pageState.selectedNodePhysicalPosition.x + absoluteScaleArrowSideLength &&
+					cursorPhysicalPosition.y >=
+						pageState.selectedNodePhysicalPosition.y -
+							scaleArrowDistance -
+							absoluteScaleArrowSideLength &&
+					cursorPhysicalPosition.y <=
+						pageState.selectedNodePhysicalPosition.y -
+							scaleArrowDistance +
+							absoluteScaleArrowSideLength;
+
+				let isCursorInScaleXAxisArrow =
+					cursorPhysicalPosition.x <=
+						pageState.selectedNodePhysicalPosition.x +
+							scaleArrowDistance +
+							absoluteScaleArrowSideLength &&
+					cursorPhysicalPosition.x >=
+						pageState.selectedNodePhysicalPosition.x +
+							scaleArrowDistance -
+							absoluteScaleArrowSideLength &&
+					cursorPhysicalPosition.y <=
+						pageState.selectedNodePhysicalPosition.y + absoluteScaleArrowSideLength &&
+					cursorPhysicalPosition.y >=
+						pageState.selectedNodePhysicalPosition.y - absoluteScaleArrowSideLength;
+
+				function setGrabOffset() {
+					grabOffset = {
+						x: (pageState?.selectedNodePhysicalPosition?.x ?? 0) - cursorPhysicalPosition.x,
+						y: (pageState?.selectedNodePhysicalPosition?.y ?? 0) - cursorPhysicalPosition.y
+					};
+				}
+
+				/*MOVE TOOL STUFF/ALL TOOL*/
+				if (
+					(isCursorInFreeMoveSquare && currentVisualEditorTool === VisualEditorTools.MOVE) ||
+					currentVisualEditorTool === VisualEditorTools.ALL
+				) {
+					//console.log('Drag Started');
+					setGrabOffset();
+					isDragging = true;
+					isRotating = false;
+					lockHorizontal = false;
+					lockVertical = false;
+				}
+
+				if (
+					(isCursorInXAxisArrow && currentVisualEditorTool === VisualEditorTools.MOVE) ||
+					currentVisualEditorTool === VisualEditorTools.ALL
+				) {
+					setGrabOffset();
+					isDragging = true;
+					isRotating = false;
+					lockHorizontal = true;
+					lockVertical = false;
+				}
+
+				if (
+					(isCursorInYAxisArrow && currentVisualEditorTool === VisualEditorTools.MOVE) ||
+					currentVisualEditorTool === VisualEditorTools.ALL
+				) {
+					setGrabOffset();
+					isDragging = true;
+					isRotating = false;
+					lockHorizontal = false;
+					lockVertical = true;
+				}
+
+				if (
+					((isCursorInRotationCircle || isCursorInRotationTwoCircle) &&
+						currentVisualEditorTool === VisualEditorTools.ROTATE) ||
+					currentVisualEditorTool === VisualEditorTools.ALL
+				) {
+					setGrabOffset();
+					isDragging = true;
+					isRotating = true;
+					lockHorizontal = false;
+					lockVertical = false;
+					rotationCircle = isCursorInRotationCircle ? 'One' : 'Two';
+				}
+
+				if (
+					((isCursorInScaleYAxisArrow || isCursorInScaleXAxisArrow) &&
+						currentVisualEditorTool === VisualEditorTools.SCALE) ||
+					currentVisualEditorTool === VisualEditorTools.ALL
+				) {
+					setGrabOffset();
+					isDragging = true;
+					isRotating = false;
+					isScaling = true;
+					lockHorizontal = false;
+					lockVertical = false;
+					scalingAxis = isCursorInScaleYAxisArrow ? 'Y' : 'X';
+				}
+
+				/*ROTATE TOOL STUFF/ALL TOOL*/
+
+				if (pageState.currentVisualEditorTool === VisualEditorTools.SELECT) {
+					rigObject.layering_order.forEach((lo, loIndex) => {
+						if (lo.type === RigLayeringOrderNodeType.Element) {
+							let elementPointsNodeFrames = pageState.nodeFrames.filter(
+								(nf) =>
+									nf.nodeId.includes(lo.id + '_PIndex_') &&
+									nf.nodeType !== SelectedNodeType.ControlPoint &&
+									nf.nodeType !== SelectedNodeType.Element
+							);
 							if (
-								IsPhysicalPointWithinElement(cursorPhysicalPosition, [
-									{ x: mostLeftPoint, y: lowestPoint }, //bottomLeft
-									{ x: mostLeftPoint, y: highestPoint }, //topLeft
-									{ x: mostRightPoint, y: highestPoint }, //topRight
-									{ x: mostRightPoint, y: lowestPoint } //bottomRight
-								])
+								IsPhysicalPointWithinElement(
+									cursorPhysicalPosition,
+									elementPointsNodeFrames.map((pnf) => {
+										return pnf.physicalPosition;
+									})
+								)
 							) {
-								//console.log("Cursor is inside of group '" + lo.id + "'!");
+								//console.log("inside of element '" + lo.id + "'!");
 								appState.UpdatePageStateSelectedNode(pageId, {
 									name: lo.id,
-									index: rigObject.groups.findIndex((g) => g.id === lo.id) ?? 0,
-									type: SelectedNodeType.Group
+									index: rigObject.elements.findIndex((e) => e.name === lo.id) ?? 0,
+									type: SelectedNodeType.Element
 								});
 							} else {
-								//console.log("Cursor is not inside of group '" + lo.id + "'!");
+								//console.log("not inside of element '" + lo.id + "'!");
 							}
-							//console.log(mostLeftPoint, mostRightPoint, highestPoint, lowestPoint);
 						} else {
-							rigObject.elements
-								.filter((e) => e.group_id === lo.id)
-								.forEach((e, eIndex) => {
-									let elementPointsNodeFrames = pageState.nodeFrames.filter(
-										(nf) =>
-											nf.nodeId.includes(e.name + '_PIndex_') &&
-											nf.nodeType !== SelectedNodeType.ControlPoint
-									);
-									if (
-										IsPhysicalPointWithinElement(
-											cursorPhysicalPosition,
-											elementPointsNodeFrames.map((pnf) => {
-												return pnf.physicalPosition;
-											})
-										)
-									) {
-										//console.log("Cusor is inside of element '" + e.name + "'!");
-										appState.UpdatePageStateSelectedNode(pageId, {
-											name: e.name,
-											index: rigObject.elements.findIndex((e) => e.name === lo.id) ?? 0,
-											type: SelectedNodeType.Element
+							if (
+								pageState.currentVisualEditorSelectToolMode ===
+								VisualEditorSelectToolModes.PRIORITIZE_GROUPS
+							) {
+								let lowestPoint = -Infinity;
+								let highestPoint = Infinity;
+								let mostLeftPoint = Infinity;
+								let mostRightPoint = -Infinity;
+								rigObject.elements
+									.filter((e) => e.group_id === lo.id)
+									.forEach((e, eIndex) => {
+										let elementNodeFrames = pageState.nodeFrames.filter(
+											(nf) =>
+												nf.nodeId.includes(e.name + '_PIndex_') &&
+												nf.nodeType !== SelectedNodeType.ControlPoint &&
+												nf.nodeType !== SelectedNodeType.Element
+										);
+										elementNodeFrames.forEach((nf) => {
+											//console.log($state.snapshot(nf));
+											if (nf.physicalPosition.x < mostLeftPoint)
+												mostLeftPoint = nf.physicalPosition.x;
+											if (nf.physicalPosition.x > mostRightPoint)
+												mostRightPoint = nf.physicalPosition.x;
+											if (nf.physicalPosition.y < highestPoint)
+												highestPoint = nf.physicalPosition.y;
+											if (nf.physicalPosition.y > lowestPoint) lowestPoint = nf.physicalPosition.y;
 										});
-									} else {
-										//console.log("Cursor is not inside of element '" + e.name + "'!");
-									}
-								});
+									});
+								if (
+									IsPhysicalPointWithinElement(cursorPhysicalPosition, [
+										{ x: mostLeftPoint, y: lowestPoint }, //bottomLeft
+										{ x: mostLeftPoint, y: highestPoint }, //topLeft
+										{ x: mostRightPoint, y: highestPoint }, //topRight
+										{ x: mostRightPoint, y: lowestPoint } //bottomRight
+									])
+								) {
+									//console.log("Cursor is inside of group '" + lo.id + "'!");
+									appState.UpdatePageStateSelectedNode(pageId, {
+										name: lo.id,
+										index: rigObject.groups.findIndex((g) => g.id === lo.id) ?? 0,
+										type: SelectedNodeType.Group
+									});
+								} else {
+									//console.log("Cursor is not inside of group '" + lo.id + "'!");
+								}
+								//console.log(mostLeftPoint, mostRightPoint, highestPoint, lowestPoint);
+							} else {
+								rigObject.elements
+									.filter((e) => e.group_id === lo.id)
+									.forEach((e, eIndex) => {
+										let elementPointsNodeFrames = pageState.nodeFrames.filter(
+											(nf) =>
+												nf.nodeId.includes(e.name + '_PIndex_') &&
+												nf.nodeType !== SelectedNodeType.ControlPoint
+										);
+										if (
+											IsPhysicalPointWithinElement(
+												cursorPhysicalPosition,
+												elementPointsNodeFrames.map((pnf) => {
+													return pnf.physicalPosition;
+												})
+											)
+										) {
+											//console.log("Cusor is inside of element '" + e.name + "'!");
+											appState.UpdatePageStateSelectedNode(pageId, {
+												name: e.name,
+												index: rigObject.elements.findIndex((e) => e.name === lo.id) ?? 0,
+												type: SelectedNodeType.Element
+											});
+										} else {
+											//console.log("Cursor is not inside of element '" + e.name + "'!");
+										}
+									});
+							}
 						}
-					}
-				});
+					});
+				}
+			} else if (e.button === 2) {
+				//right click
 			}
 		};
 		let handleVisualEditorDrag = function (e: MouseEvent) {
@@ -1848,7 +1856,7 @@
 						title="Transform Tool"
 						onclick={() => {
 							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.ALL);
-							console.log('test');
+							//console.log('test');
 						}}
 					>
 						<svg
@@ -1876,7 +1884,7 @@
 						title="Move Tool"
 						onclick={() => {
 							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.MOVE);
-							console.log('test 2');
+							//console.log('test 2');
 						}}
 					>
 						<svg
@@ -1902,7 +1910,7 @@
 						title="Rotate Tool"
 						onclick={() => {
 							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.ROTATE);
-							console.log('test 3');
+							//console.log('test 3');
 						}}
 					>
 						<svg
@@ -1930,7 +1938,7 @@
 						title="Scale Tool"
 						onclick={() => {
 							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.SCALE);
-							console.log('test 4');
+							//console.log('test 4');
 						}}
 					>
 						<svg
@@ -1956,7 +1964,18 @@
 						title="Select Tool"
 						onclick={() => {
 							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.SELECT);
-							console.log('test 5');
+								console.log("Select tool left clicked");
+						}}
+						onauxclick={(e: MouseEvent) => {
+							if (e.button === 2) {
+								//right click
+								showSelectToolContextMenu = true;
+								lastCursorPositionAfterRightClick = {
+									x: e.clientX,
+									y: e.clientY
+								};
+								console.log("Select tool right clicked!");
+							}
 						}}
 					>
 						<svg
@@ -2100,6 +2119,32 @@
 			</div>
 		</div>
 	{/if}
+
+	{#if showSelectToolContextMenu} 
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="context-menu-bg-click-absorb" onclick={
+			() => {
+				showSelectToolContextMenu = false;
+			}
+		}></div>
+		<div class="select-tool-context-menu" style="left: {lastCursorPositionAfterRightClick.x}px; top: {lastCursorPositionAfterRightClick.y}px;">
+			<button
+			class="{(pageState?.currentVisualEditorSelectToolMode === VisualEditorSelectToolModes.PRIORITIZE_GROUPS ? "current" : "")}"
+			onclick={() => {
+				if (!pageState) return;
+				pageState.currentVisualEditorSelectToolMode = VisualEditorSelectToolModes.PRIORITIZE_GROUPS;
+				showSelectToolContextMenu = false;
+			}}>Prioritize Groups</button>
+			<button 
+			class="{(pageState?.currentVisualEditorSelectToolMode === VisualEditorSelectToolModes.PRIORITIZE_ELEMENTS ? "current" : "")}"
+			onclick={() => {
+				if (!pageState) return;
+				pageState.currentVisualEditorSelectToolMode = VisualEditorSelectToolModes.PRIORITIZE_ELEMENTS;
+				showSelectToolContextMenu = false;
+			}}>Prioritize Elements</button>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -2222,5 +2267,26 @@
 		z-index: 1;
 		position: absolute;
 		padding: inherit;
+	}
+
+	.context-menu-bg-click-absorb {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		z-index: 2;
+	}
+
+	.select-tool-context-menu {
+		position: fixed;
+		z-index: 3;
+		display: flex;
+		flex-direction: column;
+		background-color: var(--bg);
+		border-radius: 8px;
+		padding: 2px;
+
+		button.current {
+			color: var(--secondary);
+		}
 	}
 </style>
