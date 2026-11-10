@@ -108,7 +108,7 @@
 		background-color: var(--bg-light);
 		padding-left: 10px;
 		box-shadow: black 0px -5px 10px;
-		z-index: 3;
+		z-index: 4;
 		-webkit-app-region: drag;
 
 		.logo-icon {
@@ -156,7 +156,7 @@
 		height: fit-content;
 		padding: 10px;
 		background-color: var(--highlight);
-		z-index: 3;
+		z-index: 4;
 		border-bottom-left-radius: 12px;
 		border-bottom-right-radius: 12px;
 
