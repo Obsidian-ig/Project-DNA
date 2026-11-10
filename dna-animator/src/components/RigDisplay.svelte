@@ -63,10 +63,8 @@
 	let absoluteScaleArrowDistance = $derived(40 * scaleUnit);
 	let absoluteScaleArrowSideLength = $derived(4 * scaleUnit);
 
-
 	let showSelectToolContextMenu = $state(false);
-	let lastCursorPositionAfterRightClick: RigVector2 = $state({x: 0, y:0});
-
+	let lastCursorPositionAfterRightClick: RigVector2 = $state({ x: 0, y: 0 });
 
 	let camera = $state({
 		x: 0,
@@ -1964,7 +1962,7 @@
 						title="Select Tool"
 						onclick={() => {
 							appState.UpdatePageStateVisualEditorTool(pageId, VisualEditorTools.SELECT);
-								console.log("Select tool left clicked");
+							console.log('Select tool left clicked');
 						}}
 						onauxclick={(e: MouseEvent) => {
 							if (e.button === 2) {
@@ -1974,7 +1972,7 @@
 									x: e.clientX,
 									y: e.clientY
 								};
-								console.log("Select tool right clicked!");
+								console.log('Select tool right clicked!');
 							}
 						}}
 					>
@@ -2120,29 +2118,79 @@
 		</div>
 	{/if}
 
-	{#if showSelectToolContextMenu} 
+	{#if showSelectToolContextMenu}
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="context-menu-bg-click-absorb" onclick={
-			() => {
+		<div
+			class="context-menu-bg-click-absorb"
+			onclick={() => {
 				showSelectToolContextMenu = false;
-			}
-		}></div>
-		<div class="select-tool-context-menu" style="left: {lastCursorPositionAfterRightClick.x}px; top: {lastCursorPositionAfterRightClick.y}px;">
+			}}
+		></div>
+		<div
+			class="select-tool-context-menu"
+			style="left: {lastCursorPositionAfterRightClick.x}px; top: {lastCursorPositionAfterRightClick.y}px;"
+		>
 			<button
-			class="{(pageState?.currentVisualEditorSelectToolMode === VisualEditorSelectToolModes.PRIORITIZE_GROUPS ? "current" : "")}"
-			onclick={() => {
-				if (!pageState) return;
-				pageState.currentVisualEditorSelectToolMode = VisualEditorSelectToolModes.PRIORITIZE_GROUPS;
-				showSelectToolContextMenu = false;
-			}}>Prioritize Groups</button>
-			<button 
-			class="{(pageState?.currentVisualEditorSelectToolMode === VisualEditorSelectToolModes.PRIORITIZE_ELEMENTS ? "current" : "")}"
-			onclick={() => {
-				if (!pageState) return;
-				pageState.currentVisualEditorSelectToolMode = VisualEditorSelectToolModes.PRIORITIZE_ELEMENTS;
-				showSelectToolContextMenu = false;
-			}}>Prioritize Elements</button>
+				class={pageState?.currentVisualEditorSelectToolMode ===
+				VisualEditorSelectToolModes.PRIORITIZE_GROUPS
+					? 'current'
+					: ''}
+				onclick={() => {
+					if (!pageState) return;
+					appState.UpdatePageStateVisualEditorSelectToolCurrentMode(pageId, VisualEditorSelectToolModes.PRIORITIZE_GROUPS);
+					showSelectToolContextMenu = false;
+				}}
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="24"
+					height="24"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="#ffffff"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="lucide lucide-group preview-icon"
+					><path d="M3 7V5c0-1.1.9-2 2-2h2" /><path d="M17 3h2c1.1 0 2 .9 2 2v2" /><path
+						d="M21 17v2c0 1.1-.9 2-2 2h-2"
+					/><path d="M7 21H5c-1.1 0-2-.9-2-2v-2" /><rect
+						width="7"
+						height="5"
+						x="7"
+						y="7"
+						rx="1"
+					/><rect width="7" height="5" x="10" y="12" rx="1" /></svg
+				>
+				Prioritize Groups
+			</button>
+			<button
+				class={pageState?.currentVisualEditorSelectToolMode ===
+				VisualEditorSelectToolModes.PRIORITIZE_ELEMENTS
+					? 'current'
+					: ''}
+				onclick={() => {
+					if (!pageState) return;
+					appState.UpdatePageStateVisualEditorSelectToolCurrentMode(pageId, VisualEditorSelectToolModes.PRIORITIZE_ELEMENTS);
+					showSelectToolContextMenu = false;
+				}}
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="24"
+					height="24"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="#ffffff"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="lucide lucide-triangle preview-icon"
+					><path d="M13.73 4a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /></svg
+				>
+				Prioritize Elements
+			</button>
 		</div>
 	{/if}
 </div>
@@ -2283,7 +2331,20 @@
 		flex-direction: column;
 		background-color: var(--bg);
 		border-radius: 8px;
-		padding: 2px;
+		padding: 5px;
+		padding-top: 0;
+		align-items: start;
+
+		button {
+			color: var(--text);
+			display: flex;
+			gap: 5px;
+			margin-top: 5px;
+
+			svg {
+				stroke: var(--text);
+			}
+		}
 
 		button.current {
 			color: var(--secondary);

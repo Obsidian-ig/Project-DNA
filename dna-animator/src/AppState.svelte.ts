@@ -434,6 +434,14 @@ class AppState {
         }
         pageState.visualEditorEnabled = visualEditorEnabled;
     }
+    UpdatePageStateVisualEditorSelectToolCurrentMode(pageStateId: string, selectToolMode: VisualEditorSelectToolModes) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.currentVisualEditorSelectToolMode = selectToolMode;
+    }
     AddOrUpdatePageStateNodeFrame(pageStateId: string, nodeFrame: NodeFrame) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);
         if (!pageState) {
@@ -474,6 +482,7 @@ class AppState {
     }
     ChangeTheme(theme: Theme) {
         this.config.theme = theme;
+        this.UpdateTheme();
     }
     UpdateTheme() {
         untrack(() => {
