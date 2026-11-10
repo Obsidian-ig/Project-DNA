@@ -27,6 +27,19 @@ export interface RigPoint {
     control_point_color: string;
     control_point_radius: number;
 };
+export const RigPointParameters = {
+    position_x: 'position.x',
+    position_y: 'position.y',
+    interpolation_type: 'interpolation_type',
+    steps: 'steps'
+} as const;
+export type RigPointParameters = (typeof RigPointParameters)[keyof typeof RigPointParameters];
+export const RigControlPointParameters = {
+    position_x: 'position.x',
+    position_y: 'position.y'
+} as const;
+export type RigControlPointParameters = (typeof RigControlPointParameters)[keyof typeof RigControlPointParameters];
+
 export interface RigElement {
     name: string;
     group_id?: string;
@@ -57,6 +70,12 @@ export interface RigElement {
 };
 export const RigElementParameters = {
     visible: 'visible',
+    offsets_position_x: 'offsets.position.x',
+    offsets_position_y: 'offsets.position.y',
+    offsets_rotation: 'offsets.rotation',
+    offsets_scale_x: 'offsets.scale.x',
+    offsets_scale_y: 'offsets.scale.y',
+    offsets_rotation_two: 'offsets.rotation_two',
     position_x: 'position.x',
     position_y: 'position.y',
     rotation: 'rotation',
@@ -90,6 +109,12 @@ export interface RigGroup {
 };
 export const RigGroupParameters = {
     visible: 'visible',
+    offsets_position_x: 'offsets.position.x',
+    offsets_position_y: 'offsets.position.y',
+    offsets_rotation: 'offsets.rotation',
+    offsets_scale_x: 'offsets.scale.x',
+    offsets_scale_y: 'offsets.scale.y',
+    offsets_rotation_two: 'offsets.rotation_two',
     position_x: 'position.x',
     position_y: 'position.y',
     rotation: 'rotation',
@@ -481,6 +506,27 @@ export interface RigObject {
     bindings: RigBinding[];
     previewRender: string; //the canvas converted to a data url.
 }
+export const RigObjectParameters = {
+    offsets_position_x: 'offsets.position.x',
+    offsets_position_y: 'offsets.position.y',
+    offsets_rotation: 'offsets.rotation',
+    offsets_scale_x: 'offsets.scale.x',
+    offsets_scale_y: 'offsets.scale.y',
+    offsets_rotation_two: 'offsets.rotation_two',
+    position_x: 'position.x',
+    position_y: 'position.y',
+    rotation: 'rotation',
+    scale_x: 'scale.x',
+    scale_y: 'scale.y',
+    rotation_two: 'rotation_two',
+    disable_all_debug_options: 'disabled_all_debug_options',
+    hide_all_elements: 'hide_all_elements',
+    hide_all_groups: 'hide_all_groups',
+    show_position_point: 'show_position_point',
+    position_point_color: 'position_point_color',
+    position_point_radius: 'position_point_radius'
+} as const;
+export type RigObjectParameters = (typeof RigObjectParameters)[keyof typeof RigObjectParameters];
 
 export const createDefaultRigObject = (overrides: Partial<RigObject> = {}): RigObject => {
     return {

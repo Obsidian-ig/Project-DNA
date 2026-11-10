@@ -1,6 +1,6 @@
 import { browser } from "$app/environment";
 import { untrack } from "svelte";
-import { createDefaultRigObject, type NodeFrame, type RigObject, type RigVector2, type SelectedNode } from "./DNARig";
+import { createDefaultRigObject, RigControlPointParameters, RigElementParameters, RigGroupParameters, RigObjectParameters, RigPointParameters, SelectedNodeType, type NodeFrame, type RigObject, type RigVector2, type SelectedNode } from "./DNARig";
 
 //supported themes
 export enum Theme {
@@ -87,6 +87,44 @@ export const VisualEditorSelectToolModes = {
 } as const;
 export type VisualEditorSelectToolModes = (typeof VisualEditorSelectToolModes)[keyof typeof VisualEditorSelectToolModes];
 
+export type Change = 
+{
+    node_type: 'Group';
+    node_id: string;
+    changed_property: RigObjectParameters;
+    new_value: string | number | boolean;
+    old_value: string | number | boolean;
+} |
+{
+    node_type: 'Group';
+    node_id: string;
+    changed_property: RigGroupParameters;
+    new_value: string | number | boolean;
+    old_value: string | number | boolean;
+} |
+{
+    node_type: 'Element';
+    node_id: string;
+    changed_property: RigElementParameters;
+    new_value: string | number | boolean;
+    old_value: string | number | boolean;
+} |
+{
+    node_type: 'Point';
+    node_id: string; //the special name including the parent element name
+    changed_property: RigPointParameters;
+    new_value: string | number | boolean;
+    old_value: string | number | boolean;
+} |
+{
+    node_type: 'ControlPoint';
+    node_id: string; //the special name including the parent element name
+    changed_property: RigControlPointParameters;
+    new_value: number;
+    old_value: number;
+};
+
+
 export interface PageState {
     title: string; //the page title that should be displayed
     id: string; //the constant id of the page for identification.
@@ -111,6 +149,7 @@ export interface PageState {
     rigErrorMessages: string[];
     watchRules: PageWatchRule[];
     rigRestorePoints: RigObject[];
+    change_history: Change[];
 }
 
 export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): PageState => {
@@ -141,6 +180,7 @@ export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): Page
         disableAllDebugOptions: false,
         showGridOverlay: false,
         rigRestorePoints: [],
+        change_history: [],
         ...overrides
     };
 };

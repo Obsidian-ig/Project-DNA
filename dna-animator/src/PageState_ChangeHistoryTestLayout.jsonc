@@ -1,0 +1,20 @@
+//The test template for page based change history
+//All changes should be cleared on an intentional app/page close. If the app crashes or something, changes should stay there.
+//And thus, changes should still be stored in local storage. 
+//When the app launches it should look for a file called "crash_status" in its executing directory.
+//The app then reads the contents of that file and if its a '0' that means the app didn't crash unexpectedly.
+//If its a '1' that means the app was actively running before it was suddenly stopped without a proper close sequence.
+//This is kind of like what windows does with USB drives and their 'dirty bit'.
+//page histories should be stored inside of the pagestates individually
+{
+    //...PageState data
+    "change_history": [
+        {
+            "node_type": "Group",
+            "node_id": "Group One",
+            "changed_property": "Offsets_Position_X",
+            "new_value": 123,
+            "original_value": 0
+        }
+    ]
+}
