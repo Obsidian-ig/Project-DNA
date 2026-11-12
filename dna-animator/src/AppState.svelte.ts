@@ -342,12 +342,17 @@ class AppState {
     pageStates: PageState[] = $state([
         CreateDefaultPageState({ title: "Rig Playground", id: "rig_playground" })
     ]);
+    crashStatus: string | null = $state(null);
 
     constructor() { }
 
 
     ImportConfig(config: AppConfig) {
         this.config = CreateDefaultAppConfig(config);
+    }
+
+    SetCrashStatus(status: string | null) {
+        this.crashStatus = status;
     }
 
     ImportPageStates(states: PageState[]) {

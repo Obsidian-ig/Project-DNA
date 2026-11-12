@@ -12,7 +12,8 @@ var iconPath = app.isPackaged ? path.join(__dirname, "favicon.png") : path.join(
 var loadApp = serve({
   directory: path.join(__dirname, "../../build")
 });
-function createWindow() {
+var crash_status = null;
+async function createWindow() {
   win = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -58,9 +59,18 @@ function createWindow() {
       wc.openDevTools({ mode: "detach" });
     }
   }, 8e3);
+  let crash_status_data = await fs.readFile("crash_status", "utf-8");
+  if (crash_status_data) {
+    crash_status = crash_status_data;
+  } else {
+    crash_status = null;
+  }
 }
 ipcMain.once("window-show", () => {
   win?.show();
+});
+ipcMain.handle("get-crash-status", () => {
+  return crash_status;
 });
 ipcMain.on("window-minimize", () => {
   win?.minimize();
@@ -79,6 +89,7 @@ ipcMain.handle("is-maximized", () => {
 });
 ipcMain.on("window-close", () => {
   win?.close();
+  fs.writeFile("crash_status", "0", "utf-8");
 });
 ipcMain.on("set-window-title", (event, title) => {
   win?.setTitle(title);

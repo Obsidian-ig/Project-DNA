@@ -13,5 +13,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveOrCreateFile: (filePath: string, data: string) => ipcRenderer.invoke('save-or-create-file', filePath, data),
     openFile: (windowTitle: string, fileTypeName: string, acceptedFileExtensions: string[]) => ipcRenderer.invoke('open-file', windowTitle, fileTypeName, acceptedFileExtensions),
     readFile: (filePath: string) => ipcRenderer.invoke('read-file', filePath),
-    saveNewFile: (windowTitle: string, fileTypeName: string, acceptedFileExtensions: string[], data: string) => ipcRenderer.invoke('save-new-file', windowTitle, fileTypeName, acceptedFileExtensions, data)
+    saveNewFile: (windowTitle: string, fileTypeName: string, acceptedFileExtensions: string[], data: string) => ipcRenderer.invoke('save-new-file', windowTitle, fileTypeName, acceptedFileExtensions, data),
+    getCrashStatus: () => ipcRenderer.invoke('get-crash-status')
 });

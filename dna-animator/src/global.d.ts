@@ -13,6 +13,7 @@ export interface ElectronAPI {
   openFile: (windowTitle: string, fileTypeName: string, acceptedFileExtensions: string[]) => Promise<string[] | undefined>;
   readFile: (filePath: string) => Promise<string>;
   saveNewFile: (windowTitle: string, fileTypeName: string, acceptedFileExtensions: string[], data: string) => Promise<{success: boolean, filePath: string}>;
+  getCrashStatus: () => Promise<string | null>;
 }
 
 declare global {
