@@ -556,6 +556,8 @@ class AppState {
         }
         if (!pageState.loadedRig) return;
         let removedChange = pageState.change_history.splice(pageState.change_history.length - 1, 1)[0];
+        if (!removedChange) return;
+        pageState.undone_change_history.push(removedChange);
         switch (removedChange.node_type) {
             case "Root":
                 switch (removedChange.changed_property) {
@@ -915,7 +917,7 @@ class AppState {
                 }
                 break;
         }
-        console.log("Undid change to propterty '" + removedChange.changed_property + "' of " + removedChange.node_type + " node '" + removedChange.node_id + "', Current Value: " + removedChange.new_value);
+        console.log("Undid change to propterty '" + removedChange.changed_property + "' of " + removedChange.node_type + " node '" + removedChange.node_id + "', Current Value: " + removedChange.old_value);
     }
     RedoLastUndonChangeFromPageStateHistory(pageStateId: string) {
         let pageState = this.pageStates.find(ps => ps.id === pageStateId);
@@ -925,6 +927,7 @@ class AppState {
         }
         if (!pageState.loadedRig) return;
         let redoneChange = pageState.undone_change_history.splice(pageState.undone_change_history.length - 1, 1)[0];
+        if (!redoneChange) return;
         pageState.change_history.push(redoneChange);
         switch (redoneChange.node_type) {
             case "Root":
