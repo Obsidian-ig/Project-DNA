@@ -398,44 +398,7 @@
 					if (groupNumber > highestNumberUsed) highestNumberUsed = groupNumber;
 				});
 				if (highestNumberUsed >= 0) numberToUse = highestNumberUsed + 1;
-				let newGroup = {
-					id: 'New_Group_' + numberToUse.toString(),
-					visible: true,
-					show_position_point: false,
-    				position_point_color: "#49c998",
-    				position_point_radius: 1.5,
-    				show_origin_point: false,
-    				origin_point_color: "#4d49c9",
-    				origin_point_radius: 1.5,
-					offsets: {
-						position: {
-							x: 0,
-							y: 0
-						},
-						rotation: 0,
-						scale: {
-							x: 1,
-							y: 1
-						},
-						rotation_two: 0,
-						transform_origin: {
-							x: 0,
-							y: 0
-						}
-					},
-					transforms: {
-						position: {
-							x: 0,
-							y: 0
-						},
-						rotation: 0,
-						scale: {
-							x: 1,
-							y: 1
-						},
-						rotation_two: 0
-					}
-				};
+				let newGroup: DNARig.RigGroup = DNARig.CreateDefaultRigGroup(numberToUse);
 
 				rigObject?.layering_order.push({
 					type: DNARig.RigLayeringOrderNodeType.Group,
@@ -456,68 +419,7 @@
 					});
 					numberToUse = highestNumberUsed + 1;
 				}
-				let newElement = {
-					name: 'New_Element_' + numberToUse.toString(),
-					group_id: groupId,
-					expanded: false,
-					visible: true,
-					show_position_point: false,
-					position_point_color: '#00fc22',
-					position_point_radius: 1.5,
-					show_origin_point: false,
-					origin_point_color: '#ed6f26',
-					origin_point_radius: 1.5,
-					show_points: false,
-					points_color: '#03e3fc',
-					points_radius: 1.5,
-					offsets: {
-						position: {
-							x: 0,
-							y: 0
-						},
-						rotation: 0,
-						scale: {
-							x: 1,
-							y: 1
-						},
-						rotation_two: 0,
-						transform_origin: {
-							x: 0,
-							y: 0
-						}
-					},
-					transforms: {
-						position: {
-							x: 0,
-							y: 0
-						},
-						rotation: 0,
-						scale: {
-							x: 1,
-							y: 1
-						},
-						rotation_two: 0
-					},
-					points: [
-						{
-							point: {
-								x: 0,
-								y: 0
-							},
-							interpolation_type: DNARig.RigPointInterpolationType.Linear,
-							controls: [],
-							steps: 20,
-							show_control_points: false,
-							control_point_color: '#ed263a',
-							control_point_radius: 1.5
-						}
-					],
-					fill_color: '#FFFFFF',
-					stroke_color: '#FFFFFF',
-					closed: true,
-					filled: true,
-					stroke_width: 1
-				};
+				let newElement: DNARig.RigElement = DNARig.CreateDefaultRigElement(numberToUse, groupId);
 				if (!groupId) {
 					rigObject.layering_order.push({
 						type: DNARig.RigLayeringOrderNodeType.Element,

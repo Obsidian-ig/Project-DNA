@@ -63,7 +63,8 @@ Ideas/Plans:
 		//cut the runtime properties out of the rig object.
 		let cleanedRigObject: RigObject = RemoveKeysFromObject(rigObject, [
 			'transforms',
-			'previewRender'
+			'previewRender',
+			'guid'
 		]);
 		if (!pageState.loadedRigFilePath) {
 			console.log('Unable to save rig as the file path is invalid!');
@@ -88,7 +89,8 @@ Ideas/Plans:
 		//cut the runtime properties out of the rig object.
 		let cleanedRigObject: RigObject = RemoveKeysFromObject(rigObject, [
 			'transforms',
-			'previewRender'
+			'previewRender',
+			'guid'
 		]);
 		let result = await window.electronAPI.saveNewFile(
 			'Save New Rig',
@@ -106,6 +108,7 @@ Ideas/Plans:
 		appState.UpdatePageStatePartial(pageId, { title: 'Rig Playground' });
 	}
 	function closeRig() {
+		console.log("Close rig");
 		if (!pageState) return;
 		currentRigFile = null;
 		appState.UpdatePageStateLoadedRig(pageId, null);
@@ -114,6 +117,7 @@ Ideas/Plans:
 		appState.UpdatePageStateExpandedNodes(pageId, []);
 		appState.ResetPageStateRestorePoints(pageId);
 		pageState.nodeFrames = [];
+		appState.ForceLocalStorageUpdate();
 	}
 	function newRig() {
 		if (!pageState) return;
@@ -145,6 +149,7 @@ Ideas/Plans:
 		if (rigObject) {
 			//create the runtime transforms in the object.
 			rigObject.groups.forEach((group) => {
+				group.guid = crypto.randomUUID();
 				group.transforms = {
 					position: {
 						x: 0,
@@ -160,6 +165,7 @@ Ideas/Plans:
 			});
 
 			rigObject.elements.forEach((element) => {
+				element.guid = crypto.randomUUID();
 				element.transforms = {
 					position: {
 						x: 0,
@@ -232,15 +238,15 @@ Ideas/Plans:
 			},
 			{
 				id: 'closeRig',
-				action: () => closeRig
+				action: closeRig
 			},
 			{
 				id: 'importRig',
-				action: async () => importRig
+				action: async () => importRig()
 			},
 			{
 				id: 'newRig',
-				action: () => newRig
+				action: newRig
 			},
 			{
 				id: 'saveRig',
@@ -252,21 +258,19 @@ Ideas/Plans:
 			},
 			{
 				id: 'openInFileExplorer',
-				action: () => openRigInFileExplorer
+				action: openRigInFileExplorer
 			},
 			{
 				id: 'createRigRestorePoint',
-				action: () => createRigRestorePoint
+				action: createRigRestorePoint
 			},
 			{
 				id: 'loadRigRestorePoint',
-				action: () => {
-					loadRigRestorePoint();
-				}
+				action: loadRigRestorePoint
 			},
 			{
 				id: 'exportPreviewAsImage',
-				action: () => exportRigPreviewAsPng
+				action: exportRigPreviewAsPng
 			}
 		],
 		edit: [

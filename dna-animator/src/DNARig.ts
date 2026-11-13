@@ -42,6 +42,7 @@ export type RigControlPointParameters = (typeof RigControlPointParameters)[keyof
 
 export interface RigElement {
     name: string;
+    guid: string; //cannot change once imported. Generated upon import and is "runtime" only.
     group_id?: string;
     visible: boolean;
     show_position_point: boolean;
@@ -95,8 +96,75 @@ export const RigElementParameters = {
 } as const;
 export type RigElementParameters = (typeof RigElementParameters)[keyof typeof RigElementParameters];
 
+export function CreateDefaultRigElement(numberToUse: number, groupId?: string, overides?: Partial<RigElement>) {
+    return {
+        name: 'New_Element_' + numberToUse.toString(),
+        guid: crypto.randomUUID(),
+        group_id: groupId ?? "",
+        visible: true,
+        show_position_point: false,
+        position_point_color: '#00fc22',
+        position_point_radius: 1.5,
+        show_origin_point: false,
+        origin_point_color: '#ed6f26',
+        origin_point_radius: 1.5,
+        show_points: false,
+        points_color: '#03e3fc',
+        points_radius: 1.5,
+        offsets: {
+            position: {
+                x: 0,
+                y: 0
+            },
+            rotation: 0,
+            scale: {
+                x: 1,
+                y: 1
+            },
+            rotation_two: 0,
+            transform_origin: {
+                x: 0,
+                y: 0
+            }
+        },
+        transforms: {
+            position: {
+                x: 0,
+                y: 0
+            },
+            rotation: 0,
+            scale: {
+                x: 1,
+                y: 1
+            },
+            rotation_two: 0
+        },
+        points: [
+            {
+                point: {
+                    x: 0,
+                    y: 0
+                },
+                interpolation_type: RigPointInterpolationType.Linear,
+                controls: [],
+                steps: 20,
+                show_control_points: false,
+                control_point_color: '#ed263a',
+                control_point_radius: 1.5
+            }
+        ],
+        fill_color: '#FFFFFF',
+        stroke_color: '#FFFFFF',
+        closed: true,
+        filled: true,
+        stroke_width: 1
+    };
+}
+
+
 export interface RigGroup {
     id: string;
+    guid: string; //cannot change once imported. Generated upon import and is "runtime" only.
     visible: boolean;
     show_position_point: boolean;
     position_point_color: string;
@@ -133,9 +201,54 @@ export const RigGroupParameters = {
     scale_x: 'scale.x',
     scale_y: 'scale.y',
     rotation_two: 'rotation_two',
-    
+
 } as const;
 export type RigGroupParameters = (typeof RigGroupParameters)[keyof typeof RigGroupParameters];
+
+export function CreateDefaultRigGroup(numberToUse: number, overrides?: Partial<RigGroup>) {
+    return {
+        id: 'New_Group_' + numberToUse,
+        guid: crypto.randomUUID(),
+        visible: true,
+        show_position_point: false,
+        position_point_color: "#49c998",
+        position_point_radius: 1.5,
+        show_origin_point: false,
+        origin_point_color: "#4d49c9",
+        origin_point_radius: 1.5,
+        offsets: {
+            position: {
+                x: 0,
+                y: 0
+            },
+            rotation: 0,
+            scale: {
+                x: 1,
+                y: 1
+            },
+            rotation_two: 0,
+            transform_origin: {
+                x: 0,
+                y: 0
+            }
+        },
+        transforms: {
+            position: {
+                x: 0,
+                y: 0
+            },
+            rotation: 0,
+            scale: {
+                x: 1,
+                y: 1
+            },
+            rotation_two: 0
+        },
+        ...overrides
+    };
+}
+
+
 
 export interface RigEnum {
     id: string;

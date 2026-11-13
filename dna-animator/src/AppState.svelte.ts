@@ -384,6 +384,11 @@ class AppState {
         }
     }
 
+    ForceLocalStorageUpdate() {
+        localStorage.setItem("pageStates", JSON.stringify(this.pageStates));
+        localStorage.setItem("appConfig", JSON.stringify(this.config));
+    }
+
     CreatePageStatesInLocalStorage() {
         localStorage.setItem("pageStates", JSON.stringify(this.pageStates));
     }
