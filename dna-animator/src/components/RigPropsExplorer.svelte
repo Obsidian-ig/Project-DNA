@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { appState } from '../AppState.svelte';
+	import { appState, type Change } from '../AppState.svelte';
 	import {
 		SelectedNodeType,
 		RigPointInterpolationTypeEnum,
@@ -7,7 +7,10 @@
 
 		RigPointInterpolationType,
 
-		GetNameIdForElementPoint
+		GetNameIdForElementPoint,
+
+		RigObjectParameters
+
 
 
 	} from '../DNARig';
@@ -88,7 +91,15 @@
 					let rootNodeFrame = pageState.nodeFrames.find(n => n.nodeId === rigObject.name && n.nodeType === SelectedNodeType.Root);
 					if (expandedRootNode) expandedRootNode.name = value;
 					if (rootNodeFrame) rootNodeFrame.nodeId = value;
+					let change: Change = {
+						node_id: rigObject.name,
+						node_type: SelectedNodeType.Root,
+						changed_property: RigObjectParameters.name,
+						new_value: value,
+						old_value: rigObject.name
+					};
 					rigObject.name = value;
+					appState.AddChangeToPageStateHistory(pageId, change);
 				}}
 				currentErrors={nameErrors}
 			/>

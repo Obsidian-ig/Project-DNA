@@ -38,6 +38,7 @@ if (crash_status === "0") {
     window.electronAPI.saveOrCreateFile("crash_status", "1"); //mark crash_status as the app is currently running.
 }
 appState.SetCrashStatus(crash_status);
+appState.ManagePageStatesChangeHistories();
 
 
 appState.UpdateTheme();

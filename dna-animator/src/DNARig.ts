@@ -70,6 +70,12 @@ export interface RigElement {
 };
 export const RigElementParameters = {
     visible: 'visible',
+    show_position_point: 'show_position_point',
+    position_point_color: 'position_point_color',
+    position_point_radius: 'position_point_radius',
+    show_origin_point: 'show_origin_point',
+    origin_point_color: 'origin_point_color',
+    origin_point_radius: 'origin_point_radius',
     offsets_position_x: 'offsets.position.x',
     offsets_position_y: 'offsets.position.y',
     offsets_rotation: 'offsets.rotation',
@@ -109,6 +115,12 @@ export interface RigGroup {
 };
 export const RigGroupParameters = {
     visible: 'visible',
+    show_position_point: 'show_position_point',
+    position_point_color: 'position_point_color',
+    position_point_radius: 'position_point_radius',
+    show_origin_point: 'show_origin_point',
+    origin_point_color: 'origin_point_color',
+    origin_point_radius: 'origin_point_radius',
     offsets_position_x: 'offsets.position.x',
     offsets_position_y: 'offsets.position.y',
     offsets_rotation: 'offsets.rotation',
@@ -120,7 +132,8 @@ export const RigGroupParameters = {
     rotation: 'rotation',
     scale_x: 'scale.x',
     scale_y: 'scale.y',
-    rotation_two: 'rotation_two'
+    rotation_two: 'rotation_two',
+    
 } as const;
 export type RigGroupParameters = (typeof RigGroupParameters)[keyof typeof RigGroupParameters];
 
@@ -507,6 +520,7 @@ export interface RigObject {
     previewRender: string; //the canvas converted to a data url.
 }
 export const RigObjectParameters = {
+    name: 'name',
     offsets_position_x: 'offsets.position.x',
     offsets_position_y: 'offsets.position.y',
     offsets_rotation: 'offsets.rotation',

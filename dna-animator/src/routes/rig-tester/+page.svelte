@@ -362,6 +362,12 @@ Ideas/Plans:
 		e.preventDefault();
 
 		switch (keybind.keybind_id) {
+			case "undo":
+				appState.UndoLastChangeFromPageStateHistory(pageId);
+				break;
+			case "redo":
+				appState.RedoLastUndonChangeFromPageStateHistory(pageId);
+				break;
 			case "close_rig":
 				closeRig();
 				break;

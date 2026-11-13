@@ -1,6 +1,6 @@
 import { browser } from "$app/environment";
 import { untrack } from "svelte";
-import { createDefaultRigObject, RigControlPointParameters, RigElementParameters, RigGroupParameters, RigObjectParameters, RigPointParameters, SelectedNodeType, type NodeFrame, type RigObject, type RigVector2, type SelectedNode } from "./DNARig";
+import { createDefaultRigObject, RigControlPointParameters, RigElementParameters, RigGroupParameters, RigObjectParameters, RigPointInterpolationType, RigPointParameters, SelectedNodeType, type NodeFrame, type RigElement, type RigGroup, type RigObject, type RigPoint, type RigVector2, type SelectedNode } from "./DNARig";
 
 //supported themes
 export enum Theme {
@@ -8,10 +8,15 @@ export enum Theme {
     Light,
     Dark
 }
-
+export interface AppConfigSetting {
+    label: string;
+    id: string;
+    value: boolean | string | number;
+}
 export interface AppConfig {
     theme: Theme;
     keybindings: Keybind[];
+    settings: AppConfigSetting[];
 }
 export interface Keybind {
     keybind_id: string;
@@ -87,42 +92,42 @@ export const VisualEditorSelectToolModes = {
 } as const;
 export type VisualEditorSelectToolModes = (typeof VisualEditorSelectToolModes)[keyof typeof VisualEditorSelectToolModes];
 
-export type Change = 
-{
-    node_type: 'Group';
-    node_id: string;
-    changed_property: RigObjectParameters;
-    new_value: string | number | boolean;
-    old_value: string | number | boolean;
-} |
-{
-    node_type: 'Group';
-    node_id: string;
-    changed_property: RigGroupParameters;
-    new_value: string | number | boolean;
-    old_value: string | number | boolean;
-} |
-{
-    node_type: 'Element';
-    node_id: string;
-    changed_property: RigElementParameters;
-    new_value: string | number | boolean;
-    old_value: string | number | boolean;
-} |
-{
-    node_type: 'Point';
-    node_id: string; //the special name including the parent element name
-    changed_property: RigPointParameters;
-    new_value: string | number | boolean;
-    old_value: string | number | boolean;
-} |
-{
-    node_type: 'ControlPoint';
-    node_id: string; //the special name including the parent element name
-    changed_property: RigControlPointParameters;
-    new_value: number;
-    old_value: number;
-};
+export type Change =
+    {
+        node_type: 'Root';
+        node_id: string;
+        changed_property: RigObjectParameters;
+        new_value: string | number | boolean;
+        old_value: string | number | boolean;
+    } |
+    {
+        node_type: 'Group';
+        node_id: string;
+        changed_property: RigGroupParameters;
+        new_value: string | number | boolean;
+        old_value: string | number | boolean;
+    } |
+    {
+        node_type: 'Element';
+        node_id: string;
+        changed_property: RigElementParameters;
+        new_value: string | number | boolean;
+        old_value: string | number | boolean;
+    } |
+    {
+        node_type: 'Point';
+        node_id: string; //the special name including the parent element name
+        changed_property: RigPointParameters;
+        new_value: string | number | boolean;
+        old_value: string | number | boolean;
+    } |
+    {
+        node_type: 'ControlPoint';
+        node_id: string; //the special name including the parent element name
+        changed_property: RigControlPointParameters;
+        new_value: number;
+        old_value: number;
+    };
 
 
 export interface PageState {
@@ -150,6 +155,7 @@ export interface PageState {
     watchRules: PageWatchRule[];
     rigRestorePoints: RigObject[];
     change_history: Change[];
+    undone_change_history: Change[];
 }
 
 export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): PageState => {
@@ -181,6 +187,7 @@ export const CreateDefaultPageState = (overrides: Partial<PageState> = {}): Page
         showGridOverlay: false,
         rigRestorePoints: [],
         change_history: [],
+        undone_change_history: [],
         ...overrides
     };
 };
@@ -330,6 +337,13 @@ export const CreateDefaultAppConfig = (overrides: Partial<AppConfig> = {}): AppC
                 "alt": false
             }
         ],
+        settings: [
+            {
+                label: "Clear Change Histories On App Start",
+                id: "clear_change_histories_on_app_start",
+                value: false
+            }
+        ],
         ...overrides
     };
 };
@@ -353,6 +367,15 @@ class AppState {
 
     SetCrashStatus(status: string | null) {
         this.crashStatus = status;
+    }
+    ManagePageStatesChangeHistories() {
+        if (this.crashStatus === "0" && this.config.settings.find(s => s.id === "clear_change_histories_on_app_start")?.value === true) {
+            //clear da histories
+            this.pageStates.forEach((ps) => {
+                ps.change_history = [];
+            });
+            console.log("Cleared change histories.");
+        }
     }
 
     ImportPageStates(states: PageState[]) {
@@ -516,6 +539,753 @@ class AppState {
             return;
         }
         pageState.rigRestorePoints = [];
+    }
+    AddChangeToPageStateHistory(pageStateId: string, change: Change) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        pageState.change_history.push(change);
+    }
+    UndoLastChangeFromPageStateHistory(pageStateId: string) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        if (!pageState.loadedRig) return;
+        let removedChange = pageState.change_history.splice(pageState.change_history.length - 1, 1)[0];
+        switch (removedChange.node_type) {
+            case "Root":
+                switch (removedChange.changed_property) {
+                    case "name":
+                        if (typeof removedChange.old_value === "string") {
+                            pageState.loadedRig.name = removedChange.old_value;
+                        }
+                        break;
+                    case "disabled_all_debug_options":
+                        if (typeof removedChange.old_value ===  "boolean") {
+                            pageState.disableAllDebugOptions = removedChange.old_value;
+                        }
+                        break;
+                    case "hide_all_elements":
+                        if (typeof removedChange.old_value ===  "boolean") {
+                            pageState.hideAllElements = removedChange.old_value;
+                        }
+                        break;
+                    case "hide_all_groups":
+                        if (typeof removedChange.old_value ===  "boolean") {
+                            pageState.hideAllGroups = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.position.x":
+                        if (typeof removedChange.old_value ===  "number") {
+                            pageState.loadedRig.offsets.position.x = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.position.y":
+                        if (typeof removedChange.old_value ===  "number") {
+                            pageState.loadedRig.offsets.position.y = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.rotation":
+                        if (typeof removedChange.old_value ===  "number") {
+                            pageState.loadedRig.offsets.rotation = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.rotation_two":
+                        if (typeof removedChange.old_value ===  "number") {
+                            pageState.loadedRig.offsets.rotation_two = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.scale.x":
+                        if (typeof removedChange.old_value ===  "number") {
+                            pageState.loadedRig.offsets.scale.x = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.scale.y":
+                        if (typeof removedChange.old_value ===  "number") {
+                            pageState.loadedRig.offsets.scale.y = removedChange.old_value;
+                        }
+                        break;
+                    case "position.x":
+                        if (typeof removedChange.old_value ===  "number") {
+                            pageState.loadedRig.transforms.position.x = removedChange.old_value;
+                        }
+                        break;
+                    case "position.y":
+                        if (typeof removedChange.old_value ===  "number") {
+                            pageState.loadedRig.transforms.position.y = removedChange.old_value;
+                        }
+                        break;
+                    case "position_point_color":
+                        if (typeof removedChange.old_value ===  "string") {
+                            pageState.loadedRig.position_point_color = removedChange.old_value;
+                        }
+                        break;
+                    case "position_point_radius":
+                        if (typeof removedChange.old_value ===  "number") {
+                            pageState.loadedRig.position_point_radius = removedChange.old_value;
+                        }
+                        break;
+                    case "rotation":
+                        if (typeof removedChange.old_value ===  "number") {
+                            pageState.loadedRig.transforms.rotation = removedChange.old_value;
+                        }
+                        break;
+                    case "rotation_two":
+                        if (typeof removedChange.old_value ===  "number") {
+                            pageState.loadedRig.transforms.rotation_two = removedChange.old_value;
+                        }
+                        break;
+                    case "scale.x":
+                        if (typeof removedChange.old_value ===  "number") {
+                            pageState.loadedRig.transforms.scale.x = removedChange.old_value;
+                        }
+                        break;
+                    case "scale.y":
+                        if (typeof removedChange.old_value ===  "number") {
+                            pageState.loadedRig.transforms.scale.y = removedChange.old_value;
+                        }
+                        break;
+                    case "show_position_point":
+                        if (typeof removedChange.old_value ===  "boolean") {
+                            pageState.loadedRig.show_position_point = removedChange.old_value;
+                        }
+                        break;
+                }
+                break;
+            case "Group":
+                let item: RigGroup | RigElement | RigPoint | RigVector2 | undefined = pageState.loadedRig.groups.find(g => g.id === removedChange.node_id);
+                if (!item) {
+                    console.error("Unable to find the group item being changed!");
+                    return;
+                }
+                switch (removedChange.changed_property) {
+                    case "offsets.position.x":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.offsets.position.x = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.position.y":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.offsets.position.y = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.rotation":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.offsets.rotation = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.rotation_two":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.offsets.rotation_two = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.scale.x":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.offsets.scale.x = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.scale.y":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.offsets.scale.y = removedChange.old_value;
+                        }
+                        break;
+                    case "position.x":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.transforms.position.x = removedChange.old_value;
+                        }
+                        break;
+                    case "position.y":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.transforms.position.y = removedChange.old_value;
+                        }
+                        break;
+                    case "rotation":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.transforms.rotation = removedChange.old_value;
+                        }
+                        break;
+                    case "rotation_two":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.transforms.rotation_two = removedChange.old_value;
+                        }
+                        break;
+                    case "scale.x":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.transforms.scale.x = removedChange.old_value;
+                        }
+                        break;
+                    case "scale.y":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.transforms.scale.y = removedChange.old_value;
+                        }
+                        break;
+                    case "visible":
+                        if (typeof removedChange.old_value === "boolean") {
+                            item.visible = removedChange.old_value;
+                        }
+                        break;
+                    case "show_position_point":
+                        if (typeof removedChange.old_value ===  "boolean") {
+                            item.show_position_point = removedChange.old_value;
+                        }
+                        break;
+                    case "position_point_color":
+                        if (typeof removedChange.old_value ===  "string") {
+                            item.position_point_color = removedChange.old_value;
+                        }
+                        break;
+                    case "position_point_radius":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.position_point_radius = removedChange.old_value;
+                        }
+                        break;
+                    case "show_origin_point":
+                        if (typeof removedChange.old_value ===  "boolean") {
+                            item.show_origin_point = removedChange.old_value;
+                        }
+                        break;
+                    case "origin_point_color":
+                        if (typeof removedChange.old_value ===  "string") {
+                            item.origin_point_color = removedChange.old_value;
+                        }
+                        break;
+                    case "origin_point_radius":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.origin_point_radius = removedChange.old_value;
+                        }
+                        break;
+                }
+                break;
+            case "Element":
+                item = pageState.loadedRig.elements.find(e => e.name === removedChange.node_id);
+                if (!item) {
+                    console.error("Unable to find the element item being changed!");
+                    return;
+                }
+                switch (removedChange.changed_property) {
+                    case "offsets.position.x":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.offsets.position.x = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.position.y":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.offsets.position.y = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.rotation":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.offsets.rotation = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.rotation_two":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.offsets.rotation_two = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.scale.x":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.offsets.scale.x = removedChange.old_value;
+                        }
+                        break;
+                    case "offsets.scale.y":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.offsets.scale.y = removedChange.old_value;
+                        }
+                        break;
+                    case "position.x":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.transforms.position.x = removedChange.old_value;
+                        }
+                        break;
+                    case "position.y":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.transforms.position.y = removedChange.old_value;
+                        }
+                        break;
+                    case "rotation":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.transforms.rotation = removedChange.old_value;
+                        }
+                        break;
+                    case "rotation_two":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.transforms.rotation_two = removedChange.old_value;
+                        }
+                        break;
+                    case "scale.x":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.transforms.scale.x = removedChange.old_value;
+                        }
+                        break;
+                    case "scale.y":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.transforms.scale.y = removedChange.old_value;
+                        }
+                        break;
+                    case "visible":
+                        if (typeof removedChange.old_value === "boolean") {
+                            item.visible = removedChange.old_value;
+                        }
+                        break;
+                    case "show_position_point":
+                        if (typeof removedChange.old_value ===  "boolean") {
+                            item.show_position_point = removedChange.old_value;
+                        }
+                        break;
+                    case "position_point_color":
+                        if (typeof removedChange.old_value ===  "string") {
+                            item.position_point_color = removedChange.old_value;
+                        }
+                        break;
+                    case "position_point_radius":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.position_point_radius = removedChange.old_value;
+                        }
+                        break;
+                    case "show_origin_point":
+                        if (typeof removedChange.old_value ===  "boolean") {
+                            item.show_origin_point = removedChange.old_value;
+                        }
+                        break;
+                    case "origin_point_color":
+                        if (typeof removedChange.old_value ===  "string") {
+                            item.origin_point_color = removedChange.old_value;
+                        }
+                        break;
+                    case "origin_point_radius":
+                        if (typeof removedChange.old_value ===  "number") {
+                            item.origin_point_radius = removedChange.old_value;
+                        }
+                        break;
+                }
+                break;
+            case "Point":
+                let splitId = removedChange.node_id.split("_PIndex_");
+                item = pageState.loadedRig.elements.find(e => e.name === splitId[0])?.points[parseInt(splitId[1])];
+                if (!item) {
+                    console.error("Unable to find the point item being changed!");
+                    return;
+                }
+                switch (removedChange.changed_property) {
+                    case "position.x":
+                        if (typeof removedChange.old_value === "number") {
+                            item.point.x = removedChange.old_value;
+                        }
+                        break;
+                    case "position.y":
+                        if (typeof removedChange.old_value === "number") {
+                            item.point.y = removedChange.old_value;
+                        }
+                        break;
+                    case "interpolation_type":
+                        if (typeof removedChange.old_value === "string" && (removedChange.old_value === RigPointInterpolationType.CubicBezierCurve || removedChange.old_value === RigPointInterpolationType.QuadraticBezierCurve || removedChange.old_value === RigPointInterpolationType.Linear)) {
+                            item.interpolation_type = removedChange.old_value;
+                        }
+                        break;
+                    case "steps":
+                        if (typeof removedChange.old_value === "number") {
+                            item.steps = removedChange.old_value;
+                        }
+                        break;
+                }
+                break;
+            case "ControlPoint":
+                splitId = removedChange.node_id.split("_PIndex_");
+                item = pageState.loadedRig.elements.find(e => e.name === splitId[0])?.points?.[parseInt(splitId[1])]?.controls?.[parseInt(splitId[2])];
+                if (!item) {
+                    console.error("Unable to find the point item being changed!");
+                    return;
+                }
+                switch (removedChange.changed_property) {
+                    case "position.x":
+                        if (typeof removedChange.old_value === "number") {
+                            item.x = removedChange.old_value;
+                        }
+                        break;
+                    case "position.y":
+                        if (typeof removedChange.old_value === "number") {
+                            item.y = removedChange.old_value;
+                        }
+                        break;
+                }
+                break;
+        }
+        console.log("Undid change to propterty '" + removedChange.changed_property + "' of " + removedChange.node_type + " node '" + removedChange.node_id + "', Current Value: " + removedChange.new_value);
+    }
+    RedoLastUndonChangeFromPageStateHistory(pageStateId: string) {
+        let pageState = this.pageStates.find(ps => ps.id === pageStateId);
+        if (!pageState) {
+            console.log("Failed to find page state with id: '" + pageStateId + "'!");
+            return;
+        }
+        if (!pageState.loadedRig) return;
+        let redoneChange = pageState.undone_change_history.splice(pageState.undone_change_history.length - 1, 1)[0];
+        pageState.change_history.push(redoneChange);
+        switch (redoneChange.node_type) {
+            case "Root":
+                switch (redoneChange.changed_property) {
+                    case "name":
+                        if (typeof redoneChange.new_value === "string") {
+                            pageState.loadedRig.name = redoneChange.new_value;
+                        }
+                        break;
+                    case "disabled_all_debug_options":
+                        if (typeof redoneChange.new_value ===  "boolean") {
+                            pageState.disableAllDebugOptions = redoneChange.new_value;
+                        }
+                        break;
+                    case "hide_all_elements":
+                        if (typeof redoneChange.new_value ===  "boolean") {
+                            pageState.hideAllElements = redoneChange.new_value;
+                        }
+                        break;
+                    case "hide_all_groups":
+                        if (typeof redoneChange.new_value ===  "boolean") {
+                            pageState.hideAllGroups = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.position.x":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            pageState.loadedRig.offsets.position.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.position.y":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            pageState.loadedRig.offsets.position.y = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.rotation":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            pageState.loadedRig.offsets.rotation = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.rotation_two":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            pageState.loadedRig.offsets.rotation_two = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.scale.x":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            pageState.loadedRig.offsets.scale.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.scale.y":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            pageState.loadedRig.offsets.scale.y = redoneChange.new_value;
+                        }
+                        break;
+                    case "position.x":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            pageState.loadedRig.transforms.position.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "position.y":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            pageState.loadedRig.transforms.position.y = redoneChange.new_value;
+                        }
+                        break;
+                    case "position_point_color":
+                        if (typeof redoneChange.new_value ===  "string") {
+                            pageState.loadedRig.position_point_color = redoneChange.new_value;
+                        }
+                        break;
+                    case "position_point_radius":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            pageState.loadedRig.position_point_radius = redoneChange.new_value;
+                        }
+                        break;
+                    case "rotation":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            pageState.loadedRig.transforms.rotation = redoneChange.new_value;
+                        }
+                        break;
+                    case "rotation_two":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            pageState.loadedRig.transforms.rotation_two = redoneChange.new_value;
+                        }
+                        break;
+                    case "scale.x":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            pageState.loadedRig.transforms.scale.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "scale.y":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            pageState.loadedRig.transforms.scale.y = redoneChange.new_value;
+                        }
+                        break;
+                    case "show_position_point":
+                        if (typeof redoneChange.new_value ===  "boolean") {
+                            pageState.loadedRig.show_position_point = redoneChange.new_value;
+                        }
+                        break;
+                }
+                break;
+            case "Group":
+                let item: RigGroup | RigElement | RigPoint | RigVector2 | undefined = pageState.loadedRig.groups.find(g => g.id === redoneChange.node_id);
+                if (!item) {
+                    console.error("Unable to find the group item being changed!");
+                    return;
+                }
+                switch (redoneChange.changed_property) {
+                    case "offsets.position.x":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.offsets.position.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.position.y":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.offsets.position.y = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.rotation":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.offsets.rotation = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.rotation_two":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.offsets.rotation_two = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.scale.x":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.offsets.scale.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.scale.y":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.offsets.scale.y = redoneChange.new_value;
+                        }
+                        break;
+                    case "position.x":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.transforms.position.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "position.y":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.transforms.position.y = redoneChange.new_value;
+                        }
+                        break;
+                    case "rotation":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.transforms.rotation = redoneChange.new_value;
+                        }
+                        break;
+                    case "rotation_two":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.transforms.rotation_two = redoneChange.new_value;
+                        }
+                        break;
+                    case "scale.x":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.transforms.scale.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "scale.y":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.transforms.scale.y = redoneChange.new_value;
+                        }
+                        break;
+                    case "visible":
+                        if (typeof redoneChange.new_value === "boolean") {
+                            item.visible = redoneChange.new_value;
+                        }
+                        break;
+                    case "show_position_point":
+                        if (typeof redoneChange.new_value ===  "boolean") {
+                            item.show_position_point = redoneChange.new_value;
+                        }
+                        break;
+                    case "position_point_color":
+                        if (typeof redoneChange.new_value ===  "string") {
+                            item.position_point_color = redoneChange.new_value;
+                        }
+                        break;
+                    case "position_point_radius":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.position_point_radius = redoneChange.new_value;
+                        }
+                        break;
+                    case "show_origin_point":
+                        if (typeof redoneChange.new_value ===  "boolean") {
+                            item.show_origin_point = redoneChange.new_value;
+                        }
+                        break;
+                    case "origin_point_color":
+                        if (typeof redoneChange.new_value ===  "string") {
+                            item.origin_point_color = redoneChange.new_value;
+                        }
+                        break;
+                    case "origin_point_radius":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.origin_point_radius = redoneChange.new_value;
+                        }
+                        break;
+                }
+                break;
+            case "Element":
+                item = pageState.loadedRig.elements.find(e => e.name === redoneChange.node_id);
+                if (!item) {
+                    console.error("Unable to find the element item being changed!");
+                    return;
+                }
+                switch (redoneChange.changed_property) {
+                    case "offsets.position.x":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.offsets.position.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.position.y":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.offsets.position.y = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.rotation":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.offsets.rotation = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.rotation_two":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.offsets.rotation_two = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.scale.x":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.offsets.scale.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "offsets.scale.y":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.offsets.scale.y = redoneChange.new_value;
+                        }
+                        break;
+                    case "position.x":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.transforms.position.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "position.y":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.transforms.position.y = redoneChange.new_value;
+                        }
+                        break;
+                    case "rotation":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.transforms.rotation = redoneChange.new_value;
+                        }
+                        break;
+                    case "rotation_two":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.transforms.rotation_two = redoneChange.new_value;
+                        }
+                        break;
+                    case "scale.x":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.transforms.scale.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "scale.y":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.transforms.scale.y = redoneChange.new_value;
+                        }
+                        break;
+                    case "visible":
+                        if (typeof redoneChange.new_value === "boolean") {
+                            item.visible = redoneChange.new_value;
+                        }
+                        break;
+                    case "show_position_point":
+                        if (typeof redoneChange.new_value ===  "boolean") {
+                            item.show_position_point = redoneChange.new_value;
+                        }
+                        break;
+                    case "position_point_color":
+                        if (typeof redoneChange.new_value ===  "string") {
+                            item.position_point_color = redoneChange.new_value;
+                        }
+                        break;
+                    case "position_point_radius":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.position_point_radius = redoneChange.new_value;
+                        }
+                        break;
+                    case "show_origin_point":
+                        if (typeof redoneChange.new_value ===  "boolean") {
+                            item.show_origin_point = redoneChange.new_value;
+                        }
+                        break;
+                    case "origin_point_color":
+                        if (typeof redoneChange.new_value ===  "string") {
+                            item.origin_point_color = redoneChange.new_value;
+                        }
+                        break;
+                    case "origin_point_radius":
+                        if (typeof redoneChange.new_value ===  "number") {
+                            item.origin_point_radius = redoneChange.new_value;
+                        }
+                        break;
+                }
+                break;
+            case "Point":
+                let splitId = redoneChange.node_id.split("_PIndex_");
+                item = pageState.loadedRig.elements.find(e => e.name === splitId[0])?.points[parseInt(splitId[1])];
+                if (!item) {
+                    console.error("Unable to find the point item being changed!");
+                    return;
+                }
+                switch (redoneChange.changed_property) {
+                    case "position.x":
+                        if (typeof redoneChange.new_value === "number") {
+                            item.point.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "position.y":
+                        if (typeof redoneChange.new_value === "number") {
+                            item.point.y = redoneChange.new_value;
+                        }
+                        break;
+                    case "interpolation_type":
+                        if (typeof redoneChange.new_value === "string" && (redoneChange.new_value === RigPointInterpolationType.CubicBezierCurve || redoneChange.new_value === RigPointInterpolationType.QuadraticBezierCurve || redoneChange.new_value === RigPointInterpolationType.Linear)) {
+                            item.interpolation_type = redoneChange.new_value;
+                        }
+                        break;
+                    case "steps":
+                        if (typeof redoneChange.new_value === "number") {
+                            item.steps = redoneChange.new_value;
+                        }
+                        break;
+                }
+                break;
+            case "ControlPoint":
+                splitId = redoneChange.node_id.split("_PIndex_");
+                item = pageState.loadedRig.elements.find(e => e.name === splitId[0])?.points?.[parseInt(splitId[1])]?.controls?.[parseInt(splitId[2])];
+                if (!item) {
+                    console.error("Unable to find the point item being changed!");
+                    return;
+                }
+                switch (redoneChange.changed_property) {
+                    case "position.x":
+                        if (typeof redoneChange.new_value === "number") {
+                            item.x = redoneChange.new_value;
+                        }
+                        break;
+                    case "position.y":
+                        if (typeof redoneChange.new_value === "number") {
+                            item.y = redoneChange.new_value;
+                        }
+                        break;
+                }
+                break;
+        }
+        console.log("Reverted propterty '" + redoneChange.changed_property + "' of " + redoneChange.node_type + " node '" + redoneChange.node_id + "', Current Value: " + redoneChange.new_value);
     }
 
 
