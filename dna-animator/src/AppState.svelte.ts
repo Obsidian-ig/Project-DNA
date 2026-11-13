@@ -1,4 +1,3 @@
-import { browser } from "$app/environment";
 import { untrack } from "svelte";
 import { createDefaultRigObject, RigControlPointParameters, RigElementParameters, RigGroupParameters, RigObjectParameters, RigPointInterpolationType, RigPointParameters, SelectedNodeType, type NodeFrame, type RigElement, type RigGroup, type RigObject, type RigPoint, type RigVector2, type SelectedNode } from "./DNARig";
 

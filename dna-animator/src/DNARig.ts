@@ -307,6 +307,8 @@ export interface RigStateRule {
     priority: number; // state rule with the highest priority and all values true happens/takes over.
 };
 
+
+
 export const RigEventTriggerType = {
     //battery
     On_Charging_Started: "battery.chargingStarted",
@@ -379,8 +381,13 @@ export const RigEventModeType = {
     play_animation_random: 'play_animation_random',
     set_state: 'set_state'
 } as const;
+
+
+
 export type RigEventModeType =
     (typeof RigEventModeType)[keyof typeof RigEventModeType];
+
+
 
 export const RigIfBusyActionType = {
     queue: 'queue',
@@ -388,6 +395,8 @@ export const RigIfBusyActionType = {
     skip: 'skip'
 } as const;
 export type RigIfBusyActionType = (typeof RigIfBusyActionType)[keyof typeof RigIfBusyActionType];
+
+
 
 export type RigModifier =
     {
@@ -411,6 +420,7 @@ export type RigModifier =
         mode: 'set' | 'add' | 'multiply';
         value: number | boolean;
     }
+
 
 export type RigAction =
     {
@@ -442,6 +452,8 @@ export const RigLayeringOrderNodeType = {
 } as const;
 export type RigLayeringOrderNodeType = (typeof RigLayeringOrderNodeType)[keyof typeof RigLayeringOrderNodeType];
 
+
+
 export interface RigActionGroupModifier {
     target: string; //name of group
     target_type: 'group';
@@ -456,6 +468,8 @@ export interface RigActionElementModifier {
     property: RigElementParameters;
     value: number | string | boolean;
 }
+
+
 export interface RigPoseState {
     id: string;
     modifiers: (RigActionGroupModifier | RigActionElementModifier)[];
@@ -463,6 +477,8 @@ export interface RigPoseState {
 export interface RigPose {
     states: RigPoseState[];
 };
+
+
 
 export interface RigAnimationKeyframe {
     time_ms: number; //point in animation timeline to run
@@ -475,6 +491,8 @@ export interface RigAnimation {
     loop: boolean;
     keyframes: RigAnimationKeyframe[];
 };
+
+
 
 export const HardwareSensors = {
     Accelerometer: 'accel',
@@ -490,6 +508,9 @@ export const HardwareSensors = {
     AmbientLight: 'ambient_light'
 } as const;
 export type HardwareSensors = (typeof HardwareSensors)[keyof typeof HardwareSensors];
+
+
+
 
 export const RigParameters = {
     position_x: 'position.x',
@@ -557,6 +578,9 @@ export const DeviceParameters = {
 } as const;
 export type DeviceParameters = (typeof DeviceParameters)[keyof typeof DeviceParameters];
 
+
+
+
 export type RigBinding =
     {
         target: string;
@@ -585,6 +609,9 @@ export type RigBinding =
         min: number;
         max: number;
     };
+
+
+
 
 export const RigPointInterpolationTypeEnum: RigEnum = Object.freeze({
     id: "interpolation_type",
@@ -704,21 +731,44 @@ export const createDefaultRigObject = (overrides: Partial<RigObject> = {}): RigO
     };
 };
 
+
+export const NodeTypes = {
+    Root: 'Root',
+    Group: 'Group',
+    Element: 'Element',
+    Point: 'Point',
+    ControlPoint: 'ControlPoint',
+    PathPoint: 'PathPoint',
+    None: 'None'
+} as const;
+
 export const SelectedNodeType = {
     Root: 'Root',
     Group: 'Group',
     Element: 'Element',
     Point: 'Point',
     ControlPoint: 'ControlPoint',
-    PathPoint: 'PathPoint', //all of the points in between two points when quadratic or cubic interpolation is used.
     None: 'None'
 } as const;
 export type SelectedNodeType = (typeof SelectedNodeType)[keyof typeof SelectedNodeType];
-export interface SelectedNode {
-    name: string;
-    type: SelectedNodeType;
-    index: number;
-}
+export type SelectedNode = {
+    node_type: "Root";
+} |
+{
+    node_guid: string;
+    node_type: "Group" | "Element";
+} |
+{
+    parent_node_guid: string;
+    node_type: "Point";
+    node_index: number;
+} |
+{
+    parent_node_guid: string; //element node guid
+    node_type: "ControlPoint";
+    node_parent_index: number; //point index
+    node_index: number; //control point index
+};
 
 export interface NodeFrame {
     nodeType: SelectedNodeType;
