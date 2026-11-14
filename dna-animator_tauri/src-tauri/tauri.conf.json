@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "dna-animator",
+        "title": "DNA Animator",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "decorations": false
       }
     ],
     "security": {

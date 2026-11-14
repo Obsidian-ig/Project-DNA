@@ -19,6 +19,7 @@ if (pulledPageStates) {
 }
 
 console.log("Checking crash status...");
+/*
 let crash_status =  await window.electronAPI.getCrashStatus();
 if (crash_status === "0") {
     console.log("No crash detected.");
@@ -39,12 +40,11 @@ if (crash_status === "0") {
 }
 appState.SetCrashStatus(crash_status);
 appState.ManagePageStatesChangeHistories();
-
+*/
 
 appState.UpdateTheme();
 appState.MarkAsDoneLoading();
-window.electronAPI.showWindow();
-window.electronAPI.showWindow();
+//window.electronAPI.showWindow();
 
 export function handleError({ error, event }) {
     appState.SetLoadingErrorMessage("An unexcpected error occurred during initialization. Check the console for more details.");
