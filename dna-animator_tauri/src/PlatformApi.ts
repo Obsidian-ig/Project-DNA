@@ -106,9 +106,19 @@ class PlatformApi {
         return true;
     }
 
-    closeWindow() {
+    async closeWindow() {
         if (this.appWindow) {
+            await this.makeAppDataDir();
+            try {
+                let filePath = "crash_status";
+                await writeTextFile(filePath, "0", {baseDir: BaseDirectory.AppData});
+            } catch (e) {
+                console.error(e);
+                return;
+            }
             this.appWindow.close();
+        } else {
+            //update crash_status
         }
     }
 

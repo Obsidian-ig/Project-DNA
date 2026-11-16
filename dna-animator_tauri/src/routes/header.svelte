@@ -2,10 +2,11 @@
 <script lang="ts">
 	import logo from '$lib/assets/DNA Animator Logo.svg';
 	import { resolve } from '$app/paths';
-	import { appState, Theme, HeaderType } from '../AppState.svelte';
-	import { headerActions } from './header-actions.svelte.ts';
+	import { appState, HeaderType } from '../AppState.svelte';
+	import { headerActions } from './header-actions.svelte';
 	import type { HeaderActionsPanels } from './header-actions.svelte.ts';
 	import type { PageConfig } from '../AppState.svelte';
+    import { platformApi } from '../PlatformApi';
 
 	let {pageConfig}:{pageConfig: PageConfig} = $props();
 	let showDropdownMenu = $state(false);
@@ -49,23 +50,23 @@
 	<p class="navbar-title">{(pageState?.title)}</p>
 	<div class="navbar-window-buttons-container">
 		<button class="navbar-window-button" onclick={() => {
-			window.electronAPI?.minimizeWindow();
+			platformApi.minimizeWindow();
 		}}>_</button>
 		<button class="navbar-window-button" aria-label="Restore or Maximize" onclick={async () => {
-			let isFullscreen = await window.electronAPI.isFullscreen();
-			let isMaximized = await window.electronAPI.isMaximized();
+			let isFullscreen = await platformApi.isFullscreen();
+			let isMaximized = await platformApi.isMaximized();
 			if (isFullscreen || isMaximized) {
-				window.electronAPI.restoreWindow();
+				platformApi.restoreWindow();
 				console.log("Was fullscreen!");
 			} else {
-				window.electronAPI.maximizeWindow();
+				platformApi.maximizeWindow();
 				console.log("Was not fullscreen!");
 			}
 		}}>
 		<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>
 	</button>
 		<button class="navbar-window-button" onclick={() => {
-			window.electronAPI.closeWindow();
+			platformApi.closeWindow();
 		}}>X</button>
 	</div>
 </nav>
