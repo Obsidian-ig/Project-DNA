@@ -347,6 +347,12 @@ export const CreateDefaultAppConfig = (overrides: Partial<AppConfig> = {}): AppC
     };
 };
 
+export const CreateAllDefaultPageStates = (): PageState[] => {
+    return [
+        CreateDefaultPageState({title: "Rig Playground", id: "rig_playground"})
+    ];
+};
+
 
 class AppState {
     config = $state(CreateDefaultAppConfig()); //whatever should/needs to be persistant between sessions.

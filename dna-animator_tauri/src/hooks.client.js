@@ -1,50 +1,49 @@
 /*This whole file is used for initialization.*/
-import { appState, CreateDefaultAppConfig, Theme } from "./AppState.svelte";
+import { appDataDir, join } from "@tauri-apps/api/path";
+import { appState, CreateAllDefaultPageStates, CreateDefaultAppConfig, CreateDefaultPageState } from "./AppState.svelte";
+import { platformApi } from "./PlatformApi";
 
 console.log("App initializing...");
-let pulledConfig = localStorage.getItem("appConfig");
+let pulledConfig = await platformApi.getAppConfig();
 if (pulledConfig) {
-    let configObject = JSON.parse(pulledConfig);
-    appState.ImportConfig(configObject);
+    appState.ImportConfig(CreateDefaultAppConfig(pulledConfig));
+    console.log("Successfully imported app config, some values may have been added with the default values if they were missing from the config save.");
 } else {
-    localStorage.setItem("appConfig", JSON.stringify(CreateDefaultAppConfig()));
+    console.error("Failed to import app config! Using default.");
+    appState.ImportConfig(CreateDefaultAppConfig());
 }
 
-let pulledPageStates = localStorage.getItem("pageStates");
+let pulledPageStates = await platformApi.getPageStates();
 if (pulledPageStates) {
-    let stateObject = pulledPageStates ? JSON.parse(pulledPageStates) : undefined;
-    appState.ImportPageStates(stateObject);
+    appState.ImportPageStates(pulledPageStates.map((pps) => CreateDefaultPageState(pps)));
 } else {
-    appState.CreatePageStatesInLocalStorage();
+    console.error("Failed to import page states! Using default.");
+    appState.ImportPageStates(CreateAllDefaultPageStates());
 }
 
 console.log("Checking crash status...");
-/*
-let crash_status =  await window.electronAPI.getCrashStatus();
-if (crash_status === "0") {
-    console.log("No crash detected.");
-} else if (crash_status === "1") {
-    console.warn("App crash detected.");
-} else {
-    let fileSaveStatus = await window.electronAPI.saveOrCreateFile("crash_status", "1");
-    if (fileSaveStatus) {
-        console.warn("First startup? 'crash_status' file was missing. Created file. No Crash Detectable.")
-        crash_status = "0";
-    } else {
-        console.error("First startup? 'crash_status' file is missing! An error occurred when attempting to create the file!");
-        crash_status = "1";
+const crash_status = await platformApi.getCrashStatus();
+if (crash_status) {
+    if (crash_status === "0") {
+        console.log("No crash detected.");
+        const result = await platformApi.saveOrCreateFile(await join(await appDataDir(), "crash_status"), "1");
+        if (result) {
+            console.log("Updated crash_status successfully!");
+        } else {
+            console.error("Failed to update crash_status!");
+        }
+    } else if (crash_status === "1") {
+        console.warn("App crash detected.");
     }
+} else {
+    console.error("Unable to import crash_status! Assuming crash occurred.");
+    appState.SetCrashStatus(crash_status);
+    appState.ManagePageStatesChangeHistories();
 }
-if (crash_status === "0") {
-    window.electronAPI.saveOrCreateFile("crash_status", "1"); //mark crash_status as the app is currently running.
-}
-appState.SetCrashStatus(crash_status);
-appState.ManagePageStatesChangeHistories();
-*/
 
 appState.UpdateTheme();
 appState.MarkAsDoneLoading();
-//window.electronAPI.showWindow();
+platformApi.showWindow();
 
 export function handleError({ error, event }) {
     appState.SetLoadingErrorMessage("An unexcpected error occurred during initialization. Check the console for more details.");
