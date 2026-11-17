@@ -105,11 +105,11 @@ Ideas/Plans:
 				{
 					name: "DNA Rig Files",
 					extensions: ["dnar", "json"],
-				},
-			],
-			JSON.stringify(cleanedRigObject, null, 2),
+				}
+			]
 		);
 		if (result) {
+			await platformApi.saveOrCreateFile(result, JSON.stringify(cleanedRigObject, null, 2));
 			console.log("Successfully saved new rig!");
 			appState.UpdatePageStateLoadedRigFilePath(pageId, result);
 		} else {
@@ -144,7 +144,7 @@ Ideas/Plans:
 		if (!pageState) return;
 		console.log("Import Rig!");
 
-		let selectedFilePaths = await platformApi.openFileDialog(
+		let selectedFilePath = await platformApi.openFileDialog(
 			"Select a Rig File",
 			"DNA Rig Files",
 			[
@@ -154,13 +154,12 @@ Ideas/Plans:
 				},
 			],
 		);
-		let rigFilePath = selectedFilePaths?.[0];
-		console.log("Rig File Path: " + rigFilePath);
-		if (!rigFilePath) {
+		console.log("Rig File Path: " + selectedFilePath);
+		if (!selectedFilePath) {
 			console.log("Failed to get rig file path!");
 			return;
 		}
-		let fileData = await platformApi.readTextFile(rigFilePath);
+		let fileData = await platformApi.readTextFile(selectedFilePath);
 		if (!fileData) {
 			console.error("Unable to read rig file!");
 			return;
@@ -203,7 +202,7 @@ Ideas/Plans:
 		}
 		appState.UpdatePageStateExpandedNodes(pageId, []);
 		appState.UpdatePageStateLoadedRig(pageId, rigObject);
-		appState.UpdatePageStateLoadedRigFilePath(pageId, rigFilePath);
+		appState.UpdatePageStateLoadedRigFilePath(pageId, selectedFilePath);
 		appState.ResetPageStateRestorePoints(pageId);
 		pageState.rigRestorePoints.push(rigObject);
 		pageState.nodeFrames = [];

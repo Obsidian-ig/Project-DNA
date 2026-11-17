@@ -5,6 +5,8 @@
 	import Header from './header.svelte';
 	import { page } from '$app/state';
 	import { untrack } from 'svelte';
+    import { platformApi } from '../PlatformApi';
+    import { appDataDir, join } from '@tauri-apps/api/path';
 
 	let { children } = $props();
 	let debounce = false;
@@ -15,15 +17,17 @@
 		const config = $state.snapshot(appState.config);
 		untrack(() => {
 			if (debounceTimer) clearTimeout(debounceTimer);
-			debounceTimer = setTimeout(() => {
+			debounceTimer = setTimeout(async () => {
 				if (!debounce) {
 					debounce = true;
 					console.log('Started debounce!');
 				} else {
-					//console.log(window.Date.now(), debounceStart, window.Date.now() - debounceStart);
-					//WORKING HERE NEED TO CONVERT THESE TO USE THE FS TO SAVE THE FILES TO THE APPDATA FOLDER
-					localStorage.setItem('pageStates', JSON.stringify(states));
-					localStorage.setItem('appConfig', JSON.stringify(config));
+					if (!await platformApi.saveOrCreateFile(await join(await appDataDir(), "page_states.json"), JSON.stringify(states))) {
+						console.error("Failed to save page states to file!");
+					}
+					if (!platformApi.saveOrCreateFile(await join(await appDataDir(), "app_config.json"), JSON.stringify(config))) {
+						console.error("Failed to save app config to file!");
+					}
 					appState.UpdateTheme();
 					debounce = false;
 					console.log('Ended debounce!');

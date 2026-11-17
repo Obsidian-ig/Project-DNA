@@ -26,16 +26,7 @@
       "identifier": "fs:scope",
       "allow": [
         {
-          "path": "$APPDATA"
-        },
-        {
-          "path": "$DOCUMENT/DNA Animator"
-        },
-        {
-          "path": "$DOCUMENT/DNA Animator/**"
-        },
-        {
-          "path": "$DOWNLOAD/**"
+          "path": "**/*"
         }
       ]
     },
