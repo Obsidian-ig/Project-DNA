@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { appState } from "../AppState.svelte.ts";
+    import { appState } from "../AppState.svelte";
 </script>
 
 <svelte:head>
@@ -17,4 +17,4 @@
     }
     appState.ChangeTheme(themeToChangeTo);
 }}>Change Theme</button>
-<a href="#/rig-tester">Go To Rig Tester</a>
+<a href="/rig-tester">Go To Rig Tester</a>

@@ -12,13 +12,13 @@ Ideas/Plans:
 -->
 
 <script lang="ts">
-	import { onDestroy, untrack } from 'svelte';
+	import { onDestroy, untrack } from "svelte";
 	import {
 		appState,
 		HeaderPanelOptionType,
 		HeaderType,
-		type PageConfig
-	} from '../../AppState.svelte.ts';
+		type PageConfig,
+	} from "../../AppState.svelte";
 	import {
 		Colors,
 		Copy,
@@ -29,83 +29,94 @@ Ideas/Plans:
 		Redo,
 		registerHeaderActions,
 		TextAndFont,
-		Undo
-	} from '../header-actions.svelte.js';
-	import RigTree from '../../components/RigTree.svelte';
-	import { Pane, Splitpanes } from 'svelte-splitpanes';
-	import RigPropsExplorer from '../../components/RigPropsExplorer.svelte';
-	import RigDisplay from '../../components/RigDisplay.svelte';
-	import type { RigObject, SelectedNode } from '../../DNARig.ts';
+		Undo,
+	} from "../header-actions.svelte.js";
+	import RigTree from "../../components/RigTree.svelte";
+	import { Pane, Splitpanes } from "svelte-splitpanes";
+	import RigPropsExplorer from "../../components/RigPropsExplorer.svelte";
+	import RigDisplay from "../../components/RigDisplay.svelte";
+	import type { RigObject, SelectedNode } from "../../DNARig.ts";
 	import {
 		createDefaultRigObject,
 		GetNameIdForControlPoint,
 		GetNameIdForElementPoint,
 		RemoveKeysFromObject,
 		RigLayeringOrderNodeType,
-		SelectedNodeType
-	} from '../../DNARig.ts';
-	import trashIcon from '../../lib/assets/trash-icon-white.png';
+		SelectedNodeType,
+	} from "../../DNARig";
+	import trashIcon from "../../lib/assets/trash-icon-white.png";
+	import { platformApi } from "../../PlatformApi";
 
-	const pageId = 'rig_playground';
+	const pageId = "rig_playground";
 	let currentRigFile: File | null = $state(null);
 	let savedChanges = $state(true);
-	let pageState = $derived(appState.pageStates.find((ps) => ps.id === pageId));
-	let rigObject: RigObject | null | undefined = $derived(pageState?.loadedRig);
+	let pageState = $derived(
+		appState.pageStates.find((ps) => ps.id === pageId),
+	);
+	let rigObject: RigObject | null | undefined = $derived(
+		pageState?.loadedRig,
+	);
 	let showRigRestorePoints = $state(false);
 
 	async function saveRig() {
 		if (!pageState) return;
-		console.log('Save Rig!');
+		console.log("Save Rig!");
 		if (!pageState.loadedRig) {
-			console.log('Failed to save rig as it is null in the appstate!');
+			console.log("Failed to save rig as it is null in the appstate!");
 			return;
 		}
 		//cut the runtime properties out of the rig object.
 		let cleanedRigObject: RigObject = RemoveKeysFromObject(rigObject, [
-			'transforms',
-			'previewRender',
-			'guid'
+			"transforms",
+			"previewRender",
+			"guid",
 		]);
 		if (!pageState.loadedRigFilePath) {
-			console.log('Unable to save rig as the file path is invalid!');
+			console.log("Unable to save rig as the file path is invalid!");
 			saveRigAs();
 			return;
 		}
-		let result = await window.electronAPI.saveOrCreateFile(
+		let result = await platformApi.saveOrCreateFile(
 			pageState.loadedRigFilePath,
-			JSON.stringify(cleanedRigObject, null, 2)
+			JSON.stringify(cleanedRigObject, null, 2),
 		);
-		console.log(result ? 'Saved Rig Successfully!' : 'Failed to save rig :(');
+		console.log(
+			result ? "Saved Rig Successfully!" : "Failed to save rig :(",
+		);
 		savedChanges = true;
-		appState.UpdatePageStatePartial(pageId, { title: 'Rig Playground' });
+		appState.UpdatePageStatePartial(pageId, { title: "Rig Playground" });
 	}
 	async function saveRigAs() {
 		if (!pageState) return;
-		console.log('Save Rig As!');
+		console.log("Save Rig As!");
 		if (!pageState.loadedRig) {
-			console.log('Failed to save rig as it is null in the appstate!');
+			console.log("Failed to save rig as it is null in the appstate!");
 			return;
 		}
 		//cut the runtime properties out of the rig object.
 		let cleanedRigObject: RigObject = RemoveKeysFromObject(rigObject, [
-			'transforms',
-			'previewRender',
-			'guid'
+			"transforms",
+			"previewRender",
+			"guid",
 		]);
-		let result = await window.electronAPI.saveNewFile(
-			'Save New Rig',
-			'DNA Rig Files',
-			['dnar', 'json'],
-			JSON.stringify(cleanedRigObject, null, 2)
+		let result = await platformApi.saveNewFile(
+			"Save New Rig",
+			[
+				{
+					name: "DNA Rig Files",
+					extensions: ["dnar", "json"],
+				},
+			],
+			JSON.stringify(cleanedRigObject, null, 2),
 		);
-		if (result.success) {
-			console.log('Successfully saved new rig!');
-			appState.UpdatePageStateLoadedRigFilePath(pageId, result.filePath);
+		if (result) {
+			console.log("Successfully saved new rig!");
+			appState.UpdatePageStateLoadedRigFilePath(pageId, result);
 		} else {
-			console.log('Failed to save new rig :(');
+			console.log("Failed to save new rig :(");
 		}
 		savedChanges = true;
-		appState.UpdatePageStatePartial(pageId, { title: 'Rig Playground' });
+		appState.UpdatePageStatePartial(pageId, { title: "Rig Playground" });
 	}
 	function closeRig() {
 		console.log("Close rig");
@@ -126,24 +137,34 @@ Ideas/Plans:
 		appState.UpdatePageStateLoadedRigFilePath(pageId, null);
 		appState.UpdatePageStateSelectedNode(pageId, null);
 		appState.ResetPageStateRestorePoints(pageId);
-		console.log('New Rig!');
+		console.log("New Rig!");
 		pageState.nodeFrames = [];
 	}
 	async function importRig() {
 		if (!pageState) return;
-		console.log('Import Rig!');
-		let selectedFilePaths = await window.electronAPI.openFile(
-			'Select a Rig File',
-			'DNA Rig Files',
-			['dnar', 'json']
+		console.log("Import Rig!");
+
+		let selectedFilePaths = await platformApi.openFileDialog(
+			"Select a Rig File",
+			"DNA Rig Files",
+			[
+				{
+					name: "DNA Rig File",
+					extensions: ["dnar", "json"],
+				},
+			],
 		);
 		let rigFilePath = selectedFilePaths?.[0];
-		console.log('Rig File Path: ' + rigFilePath);
+		console.log("Rig File Path: " + rigFilePath);
 		if (!rigFilePath) {
-			console.log('Failed to get rig file path!');
+			console.log("Failed to get rig file path!");
 			return;
 		}
-		let fileData = await window.electronAPI.readFile(rigFilePath);
+		let fileData = await platformApi.readTextFile(rigFilePath);
+		if (!fileData) {
+			console.error("Unable to read rig file!");
+			return;
+		}
 		let rigObject: RigObject | null = JSON.parse(fileData) as RigObject;
 		rigObject = createDefaultRigObject(rigObject);
 		if (rigObject) {
@@ -153,14 +174,14 @@ Ideas/Plans:
 				group.transforms = {
 					position: {
 						x: 0,
-						y: 0
+						y: 0,
 					},
 					rotation: 0,
 					scale: {
 						x: 1,
-						y: 1
+						y: 1,
 					},
-					rotation_two: 0
+					rotation_two: 0,
 				};
 			});
 
@@ -169,14 +190,14 @@ Ideas/Plans:
 				element.transforms = {
 					position: {
 						x: 0,
-						y: 0
+						y: 0,
 					},
 					rotation: 0,
 					scale: {
 						x: 1,
-						y: 1
+						y: 1,
 					},
-					rotation_two: 0
+					rotation_two: 0,
 				};
 			});
 		}
@@ -189,16 +210,16 @@ Ideas/Plans:
 	}
 	function openRigInFileExplorer() {
 		if (!pageState) return;
-		console.log('Open File Explorer!');
+		console.log("Open File Explorer!");
 		if (!pageState.loadedRigFilePath) {
-			console.log('Failed to get rig file path from appstate!');
+			console.log("Failed to get rig file path from appstate!");
 			return;
 		}
-		let splicedPath = pageState.loadedRigFilePath.split('\\');
+		let splicedPath = pageState.loadedRigFilePath.split("\\");
 		let splicedFolderPath = splicedPath.splice(splicedPath.length - 2, 1);
-		let joinedFolderPath = splicedFolderPath.join('');
+		let joinedFolderPath = splicedFolderPath.join("");
 		console.log(joinedFolderPath);
-		window.electronAPI.openFileExplorer(joinedFolderPath);
+		platformApi.openFolderOrFileInFileExplorer(joinedFolderPath, pageState.loadedRigFilePath, true);
 	}
 	function createRigRestorePoint() {
 		if (!rigObject || !pageState) {
@@ -212,130 +233,132 @@ Ideas/Plans:
 		showRigRestorePoints = true;
 	}
 	function exportRigPreviewAsPng() {
-		let canvas = document.getElementById('rig-display') as HTMLCanvasElement;
+		let canvas = document.getElementById(
+			"rig-display",
+		) as HTMLCanvasElement;
 		if (!canvas) {
-			console.error('Unable to get canvas element!');
+			console.error("Unable to get canvas element!");
 			return;
 		}
 		canvas.toBlob((blob) => {
 			if (!blob) return;
 			const url = URL.createObjectURL(blob);
-			const link = document.createElement('a');
+			const link = document.createElement("a");
 			link.download = url;
 			link.href = url;
 			link.click();
 			URL.revokeObjectURL(url);
-		}, 'image/png');
+		}, "image/png");
 	}
 
 	registerHeaderActions({
 		file: [
 			{
-				id: 'closePlayground',
+				id: "closePlayground",
 				action: () => {
-					navigation.navigate('/');
-				}
+					navigation.navigate("/");
+				},
 			},
 			{
-				id: 'closeRig',
-				action: closeRig
+				id: "closeRig",
+				action: closeRig,
 			},
 			{
-				id: 'importRig',
-				action: async () => importRig()
+				id: "importRig",
+				action: async () => importRig(),
 			},
 			{
-				id: 'newRig',
-				action: newRig
+				id: "newRig",
+				action: newRig,
 			},
 			{
-				id: 'saveRig',
-				action: saveRig
+				id: "saveRig",
+				action: saveRig,
 			},
 			{
-				id: 'saveRigAs',
-				action: saveRigAs
+				id: "saveRigAs",
+				action: saveRigAs,
 			},
 			{
-				id: 'openInFileExplorer',
-				action: openRigInFileExplorer
+				id: "openInFileExplorer",
+				action: openRigInFileExplorer,
 			},
 			{
-				id: 'createRigRestorePoint',
-				action: createRigRestorePoint
+				id: "createRigRestorePoint",
+				action: createRigRestorePoint,
 			},
 			{
-				id: 'loadRigRestorePoint',
-				action: loadRigRestorePoint
+				id: "loadRigRestorePoint",
+				action: loadRigRestorePoint,
 			},
 			{
-				id: 'exportPreviewAsImage',
-				action: exportRigPreviewAsPng
-			}
+				id: "exportPreviewAsImage",
+				action: exportRigPreviewAsPng,
+			},
 		],
 		edit: [
 			{
-				id: 'undo',
-				action: Undo
+				id: "undo",
+				action: Undo,
 			},
 			{
-				id: 'redo',
-				action: Redo
+				id: "redo",
+				action: Redo,
 			},
 			{
-				id: 'cut',
-				action: Cut
+				id: "cut",
+				action: Cut,
 			},
 			{
-				id: 'copy',
-				action: Copy
+				id: "copy",
+				action: Copy,
 			},
 			{
-				id: 'paste',
-				action: Paste
+				id: "paste",
+				action: Paste,
 			},
 			{
-				id: 'find',
-				action: Find
-			}
+				id: "find",
+				action: Find,
+			},
 		],
 		view: [
 			{
-				id: 'toggleRigTree',
-				action: () => {}
+				id: "toggleRigTree",
+				action: () => {},
 			},
 			{
-				id: 'togglePropertiesExplorer',
+				id: "togglePropertiesExplorer",
 				action: () => {
-					console.log('Toggle Props Explorer!');
-				}
+					console.log("Toggle Props Explorer!");
+				},
 			},
 			{
-				id: 'toggleDraggableIndicators',
+				id: "toggleDraggableIndicators",
 				action: () => {
-					console.log('Toggle Drag Indicators!');
-				}
+					console.log("Toggle Drag Indicators!");
+				},
 			},
 			{
-				id: 'toggleSensorsSimulation',
-				action: () => {}
-			}
+				id: "toggleSensorsSimulation",
+				action: () => {},
+			},
 		],
 		options: [
 			{
-				id: 'colors',
-				action: Colors
+				id: "colors",
+				action: Colors,
 			},
 			{
-				id: 'textAndFont',
-				action: TextAndFont
+				id: "textAndFont",
+				action: TextAndFont,
 			},
 			{
-				id: 'miscellaneous',
-				action: Miscellaneous
+				id: "miscellaneous",
+				action: Miscellaneous,
 			},
 			{
-				id: 'changeTheme',
+				id: "changeTheme",
 				action: () => {
 					let themeToChangeTo = appState.config.theme;
 					if (themeToChangeTo >= 2) {
@@ -344,24 +367,30 @@ Ideas/Plans:
 						themeToChangeTo++;
 					}
 					appState.ChangeTheme(themeToChangeTo);
-				}
-			}
+				},
+			},
 		],
 		device: [
 			{
-				id: 'toggleDeviceLivePreview',
-				action: () => {}
-			}
-		]
+				id: "toggleDeviceLivePreview",
+				action: () => {},
+			},
+		],
 	});
 	onDestroy(() => {
 		registerHeaderActions({});
-		window.removeEventListener('keydown', HandleKeyPress);
+		window.removeEventListener("keydown", HandleKeyPress);
 	}); //clears the registered actions obviously
 
 	//Make keybinds bindable at some point. Probably after the visual editor is finished.
 	function HandleKeyPress(e: KeyboardEvent) {
-		let keybind = appState.config.keybindings.find(k => k.keycode === e.code && k.shift === e.shiftKey && k.ctrl === e.ctrlKey && k.alt === e.altKey);
+		let keybind = appState.config.keybindings.find(
+			(k) =>
+				k.keycode === e.code &&
+				k.shift === e.shiftKey &&
+				k.ctrl === e.ctrlKey &&
+				k.alt === e.altKey,
+		);
 		if (!keybind) return;
 		e.preventDefault();
 
@@ -403,14 +432,14 @@ Ideas/Plans:
 	}
 
 	$effect(() => {
-		window.addEventListener('keydown', HandleKeyPress);
+		window.addEventListener("keydown", HandleKeyPress);
 	});
 
 	$effect(() => {
 		let config = {
-			title: 'Rig Playground'
+			title: "Rig Playground",
 		};
-		config.title = config.title + (savedChanges ? '' : ' *');
+		config.title = config.title + (savedChanges ? "" : " *");
 		appState.UpdatePageStatePartial(pageId, config);
 	});
 
@@ -418,43 +447,45 @@ Ideas/Plans:
 		if (pageState && rigObject) {
 			JSON.stringify(rigObject);
 			savedChanges = false;
-			appState.UpdatePageStatePartial(pageId, { title: 'Rig Playground *' });
+			appState.UpdatePageStatePartial(pageId, {
+				title: "Rig Playground *",
+			});
 
 			//remove elements/groups inside the expanded nodes that don't exist in the rig elements/groups.
 			pageState.expandedNodes?.slice().forEach((n) => {
-				if (n.type === SelectedNodeType.Element) {
+				if (n.node_type === SelectedNodeType.Element) {
 					let elementExists = false;
 					rigObject.elements.forEach((e) => {
-						if (e.name === n.name && n.type === SelectedNodeType.Element) elementExists = true;
+						if (e.guid === n.node_guid) elementExists = true;
 					});
 					if (!elementExists) {
 						pageState.expandedNodes?.splice(
-							pageState.expandedNodes.findIndex((n1) => n1.name === n.name && n1.type === n.type),
-							1
+							pageState.expandedNodes.findIndex(
+								(n1) =>
+									n1.node_type === n.node_type && n1.node_guid === n.node_guid,
+							),
+							1,
 						);
-						console.log('Removed unused element node from expandedElements');
+						console.log(
+							"Removed unused element node from expandedElements",
+						);
 					}
-				} else if (n.type === SelectedNodeType.Group) {
+				} else if (n.node_type === SelectedNodeType.Group) {
 					let groupExists = false;
 					rigObject.groups.forEach((g) => {
-						if (g.id === n.name && n.type === SelectedNodeType.Group) groupExists = true;
+						if (g.guid === n.node_guid) groupExists = true;
 					});
 					if (!groupExists) {
 						pageState.expandedNodes?.splice(
-							pageState.expandedNodes.findIndex((n1) => n1.name === n.name && n1.type === n.type),
-							1
-						);
-						console.log('Removed unused group node from expandedElements');
-					}
-				} else if (n.type === SelectedNodeType.Root) {
-					if (rigObject.name != n.name) {
-						pageState.expandedNodes?.splice(
 							pageState.expandedNodes.findIndex(
-								(n1) => n1.type === SelectedNodeType.Root && n1.name === n.name
+								(n1) =>
+									n1.node_type === n.node_type && n1.node_guid === n.node_guid,
 							),
-							1
+							1,
 						);
-						console.log('Removed unused root node from expandedElements');
+						console.log(
+							"Removed unused group node from expandedElements",
+						);
 					}
 				}
 			});
@@ -463,7 +494,7 @@ Ideas/Plans:
 </script>
 
 <svelte:head>
-	<title>{pageState?.title}{savedChanges ? '' : ' *'}</title>
+	<title>{pageState?.title}{savedChanges ? "" : " *"}</title>
 </svelte:head>
 
 <div class="app" id="app">
@@ -521,21 +552,39 @@ Ideas/Plans:
 		class="restore-point-item"
 		title="Load Restore Point"
 		onclick={() => {
-			appState.UpdatePageStateLoadedRigFromRestorePoint(pageId, $state.snapshot(restorePoint));
+			appState.UpdatePageStateLoadedRigFromRestorePoint(
+				pageId,
+				$state.snapshot(restorePoint),
+			);
 			showRigRestorePoints = false;
 		}}
 	>
 		<div class="rpi-preview-image-container">
-			<img class="rpi-preview-image" src={restorePoint.previewRender} alt="Preview" />
+			<img
+				class="rpi-preview-image"
+				src={restorePoint.previewRender}
+				alt="Preview"
+			/>
 		</div>
 		<div class="rpi-info-container">
 			<p>
-				<strong style="font-size: 17px; text-decoration: underline;">{restorePoint.name}</strong>
+				<strong style="font-size: 17px; text-decoration: underline;"
+					>{restorePoint.name}</strong
+				>
 			</p>
-			<p><strong>Last Updated:</strong> {restorePoint.last_updated_utc}</p>
+			<p>
+				<strong>Last Updated:</strong>
+				{restorePoint.last_updated_utc}
+			</p>
 			<p><strong>Total Groups:</strong> {restorePoint.groups.length}</p>
-			<p><strong>Total Elements:</strong> {restorePoint.elements.length}</p>
-			<p><strong>Total States:</strong> {restorePoint.state_enum.allowed_values.length}</p>
+			<p>
+				<strong>Total Elements:</strong>
+				{restorePoint.elements.length}
+			</p>
+			<p>
+				<strong>Total States:</strong>
+				{restorePoint.state_enum.allowed_values.length}
+			</p>
 		</div>
 		<button
 			class="rpi-delete-button"
@@ -558,7 +607,9 @@ Ideas/Plans:
 				class="lucide lucide-trash preview-icon"
 				><path d="M10 11v6" /><path d="M14 11v6" /><path
 					d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"
-				/><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg
+				/><path d="M3 6h18" /><path
+					d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+				/></svg
 			>
 		</button>
 	</div>
@@ -662,8 +713,11 @@ Ideas/Plans:
 
 		.rpi-preview-image-container {
 			background-color: #d9d9d9;
-			background-image:
-				linear-gradient(45deg, #9c9b9b 25%, transparent 25%),
+			background-image: linear-gradient(
+					45deg,
+					#9c9b9b 25%,
+					transparent 25%
+				),
 				linear-gradient(-45deg, #9c9b9b 25%, transparent 25%),
 				linear-gradient(45deg, transparent 75%, #9c9b9b 75%),
 				linear-gradient(-45deg, transparent 75%, #9c9b9b 75%);

@@ -21,6 +21,7 @@
 					console.log('Started debounce!');
 				} else {
 					//console.log(window.Date.now(), debounceStart, window.Date.now() - debounceStart);
+					//WORKING HERE NEED TO CONVERT THESE TO USE THE FS TO SAVE THE FILES TO THE APPDATA FOLDER
 					localStorage.setItem('pageStates', JSON.stringify(states));
 					localStorage.setItem('appConfig', JSON.stringify(config));
 					appState.UpdateTheme();
