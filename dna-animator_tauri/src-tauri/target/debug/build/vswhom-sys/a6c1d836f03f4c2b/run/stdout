@@ -1,0 +1,87 @@
+cargo:rerun-if-changed=build.rs
+cargo:rerun-if-changed=ext/vswhom.cpp
+cargo:rerun-if-env-changed=CC_PREFER_CLANG_CL_OVER_MSVC
+CC_PREFER_CLANG_CL_OVER_MSVC = None
+cargo:rerun-if-env-changed=VCINSTALLDIR
+VCINSTALLDIR = None
+cargo:rerun-if-env-changed=VSTEL_MSBuildProjectFullPath
+VSTEL_MSBuildProjectFullPath = None
+cargo:rerun-if-env-changed=VCToolsVersion
+VCToolsVersion = None
+VCToolsVersion = None
+VCToolsVersion = None
+cargo:rerun-if-env-changed=CXX_x86_64-pc-windows-msvc
+CXX_x86_64-pc-windows-msvc = Some(C:\Users\ksherman\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe)
+cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+cargo:rerun-if-env-changed=INCLUDE
+cargo:rerun-if-env-changed=EXTERNAL_INCLUDE
+cargo:rerun-if-env-changed=CL
+cargo:rerun-if-env-changed=_CL_
+cargo:rerun-if-env-changed=LIBPATH
+cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+CRATE_CC_NO_DEFAULTS = None
+cargo:rerun-if-env-changed=CXXFLAGS
+CXXFLAGS = None
+cargo:rerun-if-env-changed=HOST_CXXFLAGS
+HOST_CXXFLAGS = None
+cargo:rerun-if-env-changed=CXXFLAGS_x86_64_pc_windows_msvc
+CXXFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=CXXFLAGS_x86_64-pc-windows-msvc
+CXXFLAGS_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CC_FORCE_DISABLE
+CC_FORCE_DISABLE = None
+CC_PREFER_CLANG_CL_OVER_MSVC = None
+VCINSTALLDIR = None
+VSTEL_MSBuildProjectFullPath = None
+VCToolsVersion = None
+VCToolsVersion = None
+VCToolsVersion = None
+CXX_x86_64-pc-windows-msvc = Some(C:\Users\ksherman\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe)
+CRATE_CC_NO_DEFAULTS = None
+CXXFLAGS = None
+HOST_CXXFLAGS = None
+CXXFLAGS_x86_64_pc_windows_msvc = None
+CXXFLAGS_x86_64-pc-windows-msvc = None
+vswhom.cpp
+ext/vswhom.cpp(213): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+ext/vswhom.cpp(216): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+ext/vswhom.cpp(431): warning C4456: declaration of 'hr' hides previous local declaration
+ext/vswhom.cpp(418): note: see declaration of 'hr'
+ext/vswhom.cpp(459): warning C4244: 'argument': conversion from 'LONGLONG' to 'int', possible loss of data
+ext/vswhom.cpp(502): warning C4456: declaration of 'rc' hides previous local declaration
+ext/vswhom.cpp(410): note: see declaration of 'rc'
+CC_FORCE_DISABLE = None
+cargo:rerun-if-env-changed=AR_x86_64-pc-windows-msvc
+AR_x86_64-pc-windows-msvc = Some(C:\Users\ksherman\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\lib.exe)
+cargo:rerun-if-env-changed=ARFLAGS
+ARFLAGS = None
+cargo:rerun-if-env-changed=HOST_ARFLAGS
+HOST_ARFLAGS = None
+cargo:rerun-if-env-changed=ARFLAGS_x86_64_pc_windows_msvc
+ARFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=ARFLAGS_x86_64-pc-windows-msvc
+ARFLAGS_x86_64-pc-windows-msvc = None
+AR_x86_64-pc-windows-msvc = Some(C:\Users\ksherman\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\lib.exe)
+ARFLAGS = None
+HOST_ARFLAGS = None
+ARFLAGS_x86_64_pc_windows_msvc = None
+ARFLAGS_x86_64-pc-windows-msvc = None
+CC_PREFER_CLANG_CL_OVER_MSVC = None
+VCINSTALLDIR = None
+VSTEL_MSBuildProjectFullPath = None
+VCToolsVersion = None
+VCToolsVersion = None
+VCToolsVersion = None
+CXX_x86_64-pc-windows-msvc = Some(C:\Users\ksherman\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe)
+cargo:rustc-link-lib=static=vswhom
+cargo:rustc-link-search=native=C:\Users\ksherman\Documents\GitHub\Project-DNA\dna-animator_tauri\src-tauri\target\debug\build\vswhom-sys/a6c1d836f03f4c2b\out
+cargo:rerun-if-env-changed=CXXSTDLIB_x86_64-pc-windows-msvc
+CXXSTDLIB_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CXXSTDLIB_x86_64_pc_windows_msvc
+CXXSTDLIB_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=HOST_CXXSTDLIB
+HOST_CXXSTDLIB = None
+cargo:rerun-if-env-changed=CXXSTDLIB
+CXXSTDLIB = None
+cargo:rustc-link-lib=dylib=OleAut32
+cargo:rustc-link-lib=dylib=Ole32

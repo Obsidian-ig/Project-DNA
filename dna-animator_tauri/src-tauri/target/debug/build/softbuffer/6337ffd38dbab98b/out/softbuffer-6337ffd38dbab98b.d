@@ -1,0 +1,14 @@
+C:\Users\ksherman\Documents\GitHub\Project-DNA\dna-animator_tauri\src-tauri\target\debug\build\softbuffer/6337ffd38dbab98b\out\softbuffer-6337ffd38dbab98b.d: C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\lib.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\backend_dispatch.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\backend_interface.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\backends\mod.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\backends\win32.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\error.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\util.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\../README.md
+
+C:\Users\ksherman\Documents\GitHub\Project-DNA\dna-animator_tauri\src-tauri\target\debug\build\softbuffer/6337ffd38dbab98b\out\libsoftbuffer-6337ffd38dbab98b.rmeta: C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\lib.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\backend_dispatch.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\backend_interface.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\backends\mod.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\backends\win32.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\error.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\util.rs C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\../README.md
+
+C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\lib.rs:
+C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\backend_dispatch.rs:
+C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\backend_interface.rs:
+C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\backends\mod.rs:
+C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\backends\win32.rs:
+C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\error.rs:
+C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\util.rs:
+C:\Users\ksherman\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\softbuffer-0.4.8\src\../README.md:
+
+# env-dep:CARGO_PKG_VERSION=0.4.8
