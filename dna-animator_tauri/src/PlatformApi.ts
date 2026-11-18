@@ -23,8 +23,9 @@ class PlatformApi {
         if (this.appWindow) {
             await this.makeAppDataDir();
             let filePath = "app_config.json";
+            let joinedFilePath = await join(await appDataDir(), filePath);
             try {
-                if (await exists(await join(await appDataDir(), filePath))) {
+                if (await exists(joinedFilePath)) {
                     return JSON.parse(await readTextFile(filePath, { baseDir: BaseDirectory.AppData }));
                 } else {
                     console.warn("appConfig file didn't exist in app data. Creating.");
@@ -47,10 +48,11 @@ class PlatformApi {
         if (this.appWindow) {
             await this.makeAppDataDir();
             let filePath = "page_states.json";
+            let joinedFilePath = await join(await appDataDir(), filePath);
             try {
-                if (await exists(await join(await appDataDir(), filePath))) {
+                if (await exists(joinedFilePath)) {
                     const data = JSON.parse(await readTextFile(filePath, { baseDir: BaseDirectory.AppData }));
-                    return data["page_states"];
+                    return data;
                 } else {
                     console.warn("Page States file didn't exist in app data. Creating.");
                     const defaultPageStates = CreateAllDefaultPageStates();

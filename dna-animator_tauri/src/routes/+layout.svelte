@@ -33,7 +33,7 @@
 					console.log('Ended debounce!');
 					console.log('Saved pageStates to local storage!');
 				}
-			}, 1000);
+			}, 100);
 		});
 		return () => {
 			if (debounceTimer) clearTimeout(debounceTimer);
